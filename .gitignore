@@ -1,0 +1,20 @@
+# Environments
+.venv/
+venv/
+env/
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local Data (щоб не пушити твої реальні чеки та історію)
+receipt.jpg
+fridge_items.json
+fridge_history.json
+copy_flavors.json
+ingredients.csv
+sources/
+
+# IDEs
+.vscode/
+.idea/

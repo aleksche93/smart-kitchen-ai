@@ -1,0 +1,232 @@
+[
+  {
+    "ingredient": "Chicken",
+    "category": "Meat",
+    "pairings": [
+      {
+        "paired_with": "Basil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Bay leaf",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Butter",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Carrots",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Cinnamon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Mushrooms",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Beef",
+    "category": "Meat",
+    "pairings": [
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Black pepper",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Mushrooms",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Rosemary",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Thyme",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Red wine",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Carrots",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Bacon",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Basil",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Tomato",
+    "category": "Vegetable",
+    "pairings": [
+      {
+        "paired_with": "Basil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Bell peppers",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Cheese",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Black pepper",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Salt",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Thyme",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Garlic",
+    "category": "Allium",
+    "pairings": [
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Tomatoes",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Vinegar",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Basil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Beef",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Chicken",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Rosemary",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Basil",
+    "category": "Herb",
+    "pairings": [
+      {
+        "paired_with": "Cheese",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Pasta",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Tomatoes",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Zucchini",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Chicken",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Fish",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Pine nuts",
+        "affinity": "good"
+      }
+    ]
+  }
+]
