@@ -36,6 +36,18 @@ This project demonstrates a fully functional Applied AI pipeline:
     python smart_fridge.py
     ```
 
+## 🐳 Deployment via Docker
+Для швидкого розгортання екосистеми як ізольованого контейнера, використовуйте Docker & Docker Compose:
+
+```bash
+# 1. Скомпілюйте образ (build)
+docker-compose build
+
+# 2. Запустіть сервіс у фоновому режимі (up)
+docker-compose up -d
+```
+> **Увага:** Переконайтеся, що змінна середовища `GEMINI_API_KEY` експортована перед запуском docker-compose, оскільки вона прокидається всередину контейнера.
+
 ## 🗺️ Roadmap (Next Iterations)
 - [ ] Implement Pantry and Freezer modules for non-perishable routing.
 - [ ] Containerize the application using Docker for isolated deployments.

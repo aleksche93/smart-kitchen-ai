@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  smart-kitchen-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-kitchen-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Прокидаємо ключ до Gemini з хост-машини
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      # Прокидаємо локальний код у контейнер для швидкої розробки без ребілду (hot-reload)
+      - .:/app
+    # Бажано переконатись, що локальні артефакти на кшталт .venv не заважають
+    # (для цього використовуємо .dockerignore)
