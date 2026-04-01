@@ -37,18 +37,17 @@ This project demonstrates a fully functional Applied AI pipeline:
     ```
 
 ## 🐳 Deployment via Docker
-Для швидкого розгортання екосистеми як ізольованого контейнера, використовуйте Docker & Docker Compose:
+For fast deploy an ecosystem as an isolated container, use Docker & Docker Compose:
 
 ```bash
-# 1. Скомпілюйте образ (build)
+# 1. Build image
 docker-compose build
-
-# 2. Запустіть сервіс у фоновому режимі (up)
+# 2. Run service in background
 docker-compose up -d
 ```
-> **Увага:** Переконайтеся, що змінна середовища `GEMINI_API_KEY` експортована перед запуском docker-compose, оскільки вона прокидається всередину контейнера.
+> **Note:** Make sure the `GEMINI_API_KEY` environment variable is exported before running docker-compose, as it is passed into the container.
 
 ## 🗺️ Roadmap (Next Iterations)
 - [ ] Implement Pantry and Freezer modules for non-perishable routing.
-- [ ] Containerize the application using Docker for isolated deployments.
+- [x] Containerize the application using Docker for isolated deployments.
 - [ ] Transition local JSON storage to a lightweight Vector DB for semantic RAG search.
