@@ -42,6 +42,7 @@ For fast deploy an ecosystem as an isolated container, use Docker & Docker Compo
 ```bash
 # 1. Build image
 docker-compose build
+
 # 2. Run service in background
 docker-compose up -d
 ```
