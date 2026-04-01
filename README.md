@@ -50,5 +50,5 @@ docker-compose up -d
 
 ## 🗺️ Roadmap (Next Iterations)
 - [ ] Implement Pantry and Freezer modules for non-perishable routing.
-- [ ] Containerize the application using Docker for isolated deployments.
+- [x] Containerize the application using Docker for isolated deployments.
 - [ ] Transition local JSON storage to a lightweight Vector DB for semantic RAG search.
