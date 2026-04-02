@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат із Шефом</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+        }
+        .msg { margin: 8px 0; padding: 6px 10px; border-radius: 6px; }
+        .you { background: #eee; }
+        .chef { background: #ffe5d0; }
+        .state { font-size: 0.8em; color: #777; }
+        #chat { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">← Назад до асистента</a>
+
+<h1>🍳 Чат із Шефом</h1>
+
+<div id="chat"></div>
+
+<input id="input" type="text" placeholder="Напиши щось..." style="width:80%;">
+<button id="send">Надіслати</button>
+
+<script>
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+
+    function addMessage(text, cls) {
+        const div = document.createElement('div');
+        div.className = 'msg ' + cls;
+        div.innerHTML = text;
+        chat.appendChild(div);
+        chat.scrollTop = chat.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text) return;
+
+        addMessage("Ти: " + text, "you");
+        input.value = "";
+
+        const res = await fetch("http://127.0.0.1:8000/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text})
+        });
+
+        const data = await res.json();
+        addMessage(`Шеф (${data.state}): ${data.reply}`, "chef");
+    }
+
+    send.onclick = sendMessage;
+
+    input.addEventListener("keydown", e => {
+        if (e.key === "Enter") sendMessage();
+    });
+</script>
+
+</body>
+</html>

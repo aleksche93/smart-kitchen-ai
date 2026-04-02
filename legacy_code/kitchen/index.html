@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Кухня — Culinary AI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="kitchen-root">
+
+    <!-- LEFT PANEL -->
+    <aside id="nav-panel" class="side-panel hidden">
+        <h3>Навігація</h3>
+        <button>Інгредієнти</button>
+        <button>Рецепти</button>
+        <button>Поєднання</button>
+    </aside>
+
+    <!-- SCENE -->
+    <main id="scene">
+
+        <!-- BACK BUTTON -->
+        <header id="kitchen-header">
+            <a id="backToMain" class="back-link">← Назад</a>
+        </header>
+
+        <!-- Background -->
+        <div id="kitchen-bg"></div>
+
+        <!-- Chef -->
+        <div id="chef-container">
+            <img id="chef-image" src="assets/chef/chef.png" alt="Шеф">
+            <div id="chef-bubbles-container"></div>
+        </div>
+
+        <!-- Dialog under scene -->
+        <div id="dialog-area">
+            <div id="chef-bubble">
+                <div id="chef-text"></div>
+            </div>
+
+            <div id="chef-buttons"></div>
+        </div>
+
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside id="actions-panel" class="side-panel hidden">
+        <h3>Дії</h3>
+        <button>Почати готувати</button>
+        <button>Згенерувати рецепт</button>
+        <button>Зберегти</button>
+        <button>Поділитися</button>
+    </aside>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

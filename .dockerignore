@@ -16,6 +16,8 @@ fridge_history.json
 copy_flavors.json
 ingredients.csv
 sources/
+legacy_code/
+ARCHITECTURE.md
 
 # IDEs
 .vscode/

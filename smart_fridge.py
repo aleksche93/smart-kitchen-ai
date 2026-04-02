@@ -8,31 +8,32 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from google import genai
 from google.genai import types
 from scanner import scan_receipt
+from core.locales import i18n
 
 # Pydantic Модель для валідації введених продуктів
 class ProductValidationModel(BaseModel):
     name: str = Field(..., min_length=1)
     amount: float = Field(..., gt=0)
     days_left: int = Field(..., ge=-3650) # Just to prevent extreme edge cases
-    unit: str = Field("шт.")
-    category: str = Field("Інше")
+    unit: str = Field("pcs")
+    category: str = Field("Other")
     
     model_config = ConfigDict(extra="ignore")
 
 # База знань (Flavor Bible) тепер читається динамічно Шефом (get_chef_advice)
 
 TRANSLATIONS: Dict[str, str] = {
-    "beef": "Яловичина",
-    "garlic": "Часник",
-    "rosemary": "Розмарин",
-    "egg": "Яйце",
-    "milk": "Молоко"
+    "beef": "Beef",
+    "garlic": "Garlic",
+    "rosemary": "Rosemary",
+    "egg": "Egg",
+    "milk": "Milk"
 }
 
 class BaseProduct:
     total_items: int = 0
 
-    def __init__(self, name: str, days_left: Optional[int] = None, expiration_date: Optional[str] = None, unit: str = "шт.", amount: float = 1.0, category: str = "Інше", history_limit: int = 8, **kwargs: Any) -> None:
+    def __init__(self, name: str, days_left: Optional[int] = None, expiration_date: Optional[str] = None, unit: str = "pcs", amount: float = 1.0, category: str = "Other", history_limit: int = 8, **kwargs: Any) -> None:
         # Pydantic validation
         days_for_validation = int(days_left) if days_left is not None else 0
         ProductValidationModel(name=name, amount=amount, days_left=days_for_validation, unit=unit, category=category)
@@ -74,20 +75,20 @@ class BaseProduct:
         self.history.append(f"[{timestamp}] {event}")
         if len(self.history) > self.history_limit:
             removed: str = self.history.pop(0)
-            print(f"⚠️ Найстаріший запис видалено: {removed}")
+            print(f"⚠️ Oldest record deleted: {removed}")
 
     async def reduce_amount(self, amount_to_take: float) -> bool:
         if amount_to_take > self.amount:
-            print(f"❌ Недостатньо {self.name}! Залишилося лише {self.amount} {self.unit}")
+            print(f"❌ Not enough {self.name}! Only {self.amount} {self.unit} left.")
             return False
         
         self.amount -= amount_to_take
-        await self.add_history(f"Використано {amount_to_take} {self.unit}")
-        print(f"✅ Відлито/відрізано {amount_to_take} {self.unit} від '{self.name}'. Лишилося {self.amount:.2f} {self.unit}")
+        await self.add_history(f"Used {amount_to_take} {self.unit}")
+        print(f"✅ Taken {amount_to_take} {self.unit} from '{self.name}'. Left: {self.amount:.2f} {self.unit}")
         return True
 
     async def show_history(self) -> None:
-        print(f"📜 Історія продукту {self.name}:")
+        print(f"📜 Product history for {self.name}:")
         for record in self.history:
             print(record)
                     
@@ -95,22 +96,23 @@ class BaseProduct:
         days: int = self.days_left
 
         if days == 1:
-            word = "день"
+            word = i18n.get("fridge.status.days_1", "day")
         elif 2 <= days <= 4:
-            word = "дні"
+            word = i18n.get("fridge.status.days_2_4", "days")
         else:
-            word = "днів"
+            word = i18n.get("fridge.status.days_many", "days")
         
         warning_msg: str = ""
 
         if days < 0:
-            warning_msg = "🤢 ЗІПСУВАВСЯ! ТЕРМІНОВО ВИКИНУТИ!"
+            warning_msg = i18n.get("fridge.warnings.spoiled", " 🤢 SPOILED! DISCARD IMMEDIATELY!")
         elif days == 0:
-            warning_msg = " ⚠️ ОСТАННІЙ ШАНС! Приготувати сьогодні."
+            warning_msg = i18n.get("fridge.warnings.last_chance", " ⚠️ LAST CHANCE! Cook today.")
         elif days <= 2:
-            warning_msg = " 🕒 Скоро зіпсується."
+            warning_msg = i18n.get("fridge.warnings.soon", " 🕒 Will spoil soon.")
                 
-        status: str = f"Продукт {self.display_name}: залишилося {days} {word}{warning_msg}"
+        template = i18n.get("fridge.status.product_info", "Product {name}: {days} {word} left{warning}")
+        status: str = template.format(name=self.display_name, days=days, word=word, warning=warning_msg)
         return status
 
     @property
@@ -163,13 +165,15 @@ class PackagedProduct(BaseProduct):
 
             if new_exp_date < self._expiration_date:
                 self._expiration_date = new_exp_date.replace(hour=23, minute=59, second=59)
-            if "(відкрито)" not in self.name:
-                self.name = f"{self.name} (відкрито)"
+            
+            opened_label = i18n.get("fridge.warnings.opened", " (opened)")
+            if opened_label not in self.name:
+                self.name = f"{self.name}{opened_label}"
 
-            await self.add_history(f"Відкрито пакування. Новий термін придатності: {self.expiration_date}")
-            print(f"🔓 {self.name}! Термін придатності: {self.days_left} дн.") 
+            await self.add_history(f"Package opened. New expiration date: {self.expiration_date}")
+            print(f"🔓 {self.name}! Expiration in: {self.days_left} days.") 
         else:
-            print(f"⚠️ {self.name} вже було відкрито раніше.")
+            print(f"⚠️ {self.name} was already opened before.")
 
     async def reduce_amount(self, amount_to_take: float) -> bool:
         if not self.is_open:
@@ -179,7 +183,8 @@ class PackagedProduct(BaseProduct):
     async def get_status(self) -> str:
         base_info: str = await super().get_status()
         if self.is_open:
-            return f"🔓 {base_info} (відкрито)"
+            opened_label = i18n.get("fridge.warnings.opened", " (opened)")
+            return f"🔓 {base_info}{opened_label}"
         return base_info
 
     async def to_dict(self) -> Dict[str, Any]:
@@ -238,23 +243,23 @@ class Fridge:
                     
                     self.__items.append(product)
                 
-                print(f"✅ Завантажено {len(self.__items)} продуктів з історії.")
+                print(f"✅ Loaded {len(self.__items)} products from history.")
                 
         except FileNotFoundError:
-            print("ℹ️ Історія продуктів не знайдена. Починаємо з чистого аркуша.")
+            print("ℹ️ Product history not found. Starting with a clean slate.")
     
     async def suggest_pairings(self, product_name: str) -> None:
         target: Optional[BaseProduct] = next((p for p in self.__items if p.name.lower() == product_name.lower()), None)
 
         if not target:
-            print(f"❌ '{product_name}' немає в холодильнику.")
+            print(f"❌ '{product_name}' not found in the fridge.")
             return
 
         matches: List[str] = await target.find_matches(self.__items)
         if matches:
-            print(f"✨ Ідеальні пари для '{target.display_name}': {', '.join(matches)}")
+            print(f"✨ Perfect pairings for '{target.display_name}': {', '.join(matches)}")
         else:
-            print(f"😔 Для '{target.display_name}' зараз немає пар у холодильнику.")
+            print(f"😔 No pairings found right now for '{target.display_name}' in the fridge.")
 
     async def analyze_fridge(self) -> Dict[str, Dict[str, Any]]:
         urgent_items: List[BaseProduct] = await self.get_urgent_list() 
@@ -275,23 +280,23 @@ class Fridge:
     async def show_recommendations(self) -> None:
         data: Dict[str, Dict[str, Any]] = await self.analyze_fridge()
         if not data:
-            print("\n✅ Усі продукти в порядку.")
+            print("\n✅ All products are perfectly fine.")
             return
 
-        print("\n👨‍🍳 ПОРАДИ ВІД ШЕФА:")
+        print("\n👨‍🍳 CHEF'S ADVICE:")
         for category, products in data.items():
             print(f"\n--- {category.upper()} ---")
             for product, details in products.items():
                 days: int = details["days"]
                 pairs: str = ", ".join(details["pairs"])
-                print(f"  💡 {product} (залишилось: {days} дн.): пасує до {pairs}")   
+                print(f"  💡 {product} (left: {days} days): pairs well with {pairs}")   
 
     async def get_chef_advice(self) -> None:
-        print("\n👨‍🍳 ШЕФ: Аналізую ваші критичні запаси...")
+        print("\n👨‍🍳 CHEF: Analyzing your critical inventory...")
         urgent_items = await self.get_urgent_list()
         
         if not urgent_items:
-            print("✨ Вам пощастило, жоден продукт не псується!")
+            print("✨ You are lucky, nothing is spoiling!")
             return
 
         try:
@@ -299,9 +304,9 @@ class Fridge:
                 content = await f.read()
                 knowledge_data = json.loads(content)
         except Exception:
-            print("⚠️ База знань Шефа недоступна (помилка читання knowledge/flavors.json).")
+            print("⚠️ Chef's knowledge base is unavailable (error reading knowledge/flavors.json).")
             for item in urgent_items:
-                print(f"🔥 {item.display_name} скоро зіпсується (залишилось {item.days_left} дн.), але без бази знань кулінарні поради неможливі.")
+                print(f"🔥 {item.display_name} is spoiling soon (left {item.days_left} days), but culinary advice is impossible without knowledge base.")
             return
 
         flavor_map = {item["ingredient"].lower(): item["pairings"] for item in knowledge_data}
@@ -318,18 +323,18 @@ class Fridge:
                 
                 if best_pairs:
                     pairs_str = ", ".join(best_pairs)
-                    print(f"🔥 {item.display_name} скоро зіпсується! Шеф рекомендує поєднати його з: {pairs_str}")
+                    print(f"🔥 {item.display_name} is spoiling soon! The Chef recommends pairing it with: {pairs_str}")
                     available_pairings_for_items[item.display_name.lower()] = best_pairs
                 else:
-                    print(f"🔥 {item.display_name} скоро зіпсується (залишилось {item.days_left} дн.) без спеціальних крутих порад.")
+                    print(f"🔥 {item.display_name} is spoiling soon (left {item.days_left} days) without any special recommendations.")
             else:
-                print(f"🔥 {item.display_name} скоро зіпсується (залишилось {item.days_left} дн.), спеціальних порад Шефа немає.")
+                print(f"🔥 {item.display_name} is spoiling soon (left {item.days_left} days), no special Chef advice available.")
 
         if not available_pairings_for_items:
             return
             
         print("\n" + "="*50)
-        target = await async_input("Шеф, який продукт рятуємо першим? (Введіть назву або натисніть Enter для скасування): ")
+        target = await async_input("Chef, which product do we save first? (Enter name or press Enter to cancel): ")
         target = target.strip().lower()
         if not target:
             return
@@ -339,11 +344,11 @@ class Fridge:
         if selected_display_name:
             recipe = await generate_recipe_from_pairings(selected_display_name.capitalize(), available_pairings_for_items[selected_display_name])
             print("\n" + "="*50)
-            print(f"👨‍🍳 РЕЦЕПТ ВІД ШЕФА ({selected_display_name.upper()}):\n")
+            print(f"👨‍🍳 RECIPE FROM THE CHEF ({selected_display_name.upper()}):\n")
             print(recipe)
             print("="*50 + "\n")
         else:
-            print(f"❌ '{target}' не знайдено серед критичних продуктів з ідеальними поєднаннями.")
+            print(f"❌ '{target}' not found among critical products with perfect pairings.")
 
     async def __add_fridge_log(self, message: str) -> None:
         timestamp: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -360,27 +365,27 @@ class Fridge:
 
         for old_p in same_items:
             if getattr(old_p, 'is_open', False):
-                warnings.append(f"є відкрита пачка {old_p.name}")
+                warnings.append(f"an open package of {old_p.name} exists")
 
             days: int = old_p.days_left
             if days < 0:
-                warnings.append(f"одна з позицій {old_p.name} вже зіпсована! (термін {days} дн.)")
+                warnings.append(f"an item {old_p.name} is already spoiled! (term {days} days)")
             elif days <= 2:
-                warnings.append(f"термін придатності {old_p.name} закінчується (залишилось {days} дн.)")
+                warnings.append(f"expiration date of {old_p.name} is ending (left {days} days)")
 
         if warnings:
             unique_warnings: List[str] = list(set(warnings))
-            return "⚠️ Порада: " + "; ".join(unique_warnings)
+            return "⚠️ Advice: " + "; ".join(unique_warnings)
         return ""
                
     async def add_product(self, product: BaseProduct, silent: bool = False) -> bool:
         if product.days_left < 0:
             if not silent:
                 days: int = product.days_left
-                print(f"🔮 Спроба додати {product.name}... Щось не свіже =(")
-                print(f"⚠️ Відхилено: термін '{days} дн.' — не придатний для зберігання.")
+                print(f"🔮 Attempting to add {product.name}... Something's not fresh =(")
+                print(f"⚠️ Rejected: expiration '{days} days' — not suitable for storage.")
             
-            await product.add_history(f"Відхилено (термін {product.days_left} дн.)")
+            await product.add_history(f"Rejected (expiration {product.days_left} days)")
             return False
             
         self.__items.append(product)
@@ -388,12 +393,12 @@ class Fridge:
 
         is_open: bool = getattr(product, "is_open", False)
         prefix: str = "🔓 " if is_open else ""
-        log_msg: str = f"Додано: {prefix}{product.name}. {warning}".strip()
+        log_msg: str = f"Added: {prefix}{product.name}. {warning}".strip()
 
         await self.__add_fridge_log(log_msg)
 
         if not silent:
-            print(f"{prefix}{product.name} додано до холодильнику. {warning}\n")
+            print(f"{prefix}{product.name} added to the fridge. {warning}\n")
             await self.__save_products()
             await self.__save_history()
         return True
@@ -403,7 +408,7 @@ class Fridge:
             return
 
         all_attempt_names: str = ", ".join(set([p.name for p in products_list]))
-        print(f"🔮 Спроба додати {all_attempt_names} — {len(products_list)} шт...")
+        print(f"🔮 Attempting to add {all_attempt_names} — {len(products_list)} items...")
 
         added_items: List[BaseProduct] = []
         rejected_by_days: Dict[int, int] = {} 
@@ -418,24 +423,24 @@ class Fridge:
                 rejected_units[p.unit] = rejected_units.get(p.unit, 0) + 1
 
         if rejected_by_days:
-            print("⚠️ Відхилено:")
+            print("⚠️ Rejected:")
             for days, count in rejected_by_days.items():
-                print(f" - {count} шт. : термін '{days} дн.' — не придатний для зберігання.")
+                print(f" - {count} items : expiration '{days} days' — not suitable for storage.")
         
         if added_items:
             names: str = ", ".join(set([p.name for p in added_items]))
-            print(f"📦 Успішно додано: {names} — {len(added_items)} шт.\n")
+            print(f"📦 Successfully added: {names} — {len(added_items)} items.\n")
 
         if rejected_units:
             summary: str = ", ".join([f"{count} {unit}" for unit, count in rejected_units.items()])
-            print(f"❌ Разом відхилено зіпсованих: {summary}\n")
+            print(f"❌ Total spoiled items rejected: {summary}\n")
 
     async def find_by_category(self, category_name: str) -> List[BaseProduct]:
         results: List[BaseProduct] = [
             item for item in self.__items
             if item.category.lower() == category_name.lower()
         ]
-        print(f"🔍 Пошук за категорією '{category_name}': знайдено {len(results)} шт.")
+        print(f"🔍 Searching by category '{category_name}': found {len(results)} items.")
         return results
 
     async def find_by_name(self, search_name: str) -> List[BaseProduct]:
@@ -447,13 +452,13 @@ class Fridge:
     async def remove_product(self, product_name: str) -> bool:
         for item in self.__items:
             if item.name == product_name:
-                await item.add_history("Вилучено з холодильника")
+                await item.add_history("Removed from the fridge")
                 self.__items.remove(item)
-                await self.__add_fridge_log(f"Вилучено: {product_name}")
+                await self.__add_fridge_log(f"Removed: {product_name}")
                 await self.__save_history()
                 await self.__save_products()
                 return True  
-        print(f"❓ Продукту {product_name} немає в холодильнику, не можу дістати.")
+        print(f"❓ Product {product_name} is not in the fridge, can't take it out.")
         return False
             
     async def has_product(self, product_name: str) -> bool:
@@ -465,25 +470,25 @@ class Fridge:
     async def check_fridge(self) -> None:
         print("_"*66)
         if not self.__items:
-            print("📭 Холодильник порожній.")
+            print("📭 The fridge is empty.")
             return
 
         urgent_items: List[BaseProduct] = [p for p in self.__items if p.days_left <= 2]
                 
         if urgent_items:
-            print("\n---ПЕРЕВІРКА ХОЛОДИЛЬНИКА---\n")
-            print("🔥 ТЕРМІНОВО ВЖИТИ:")
+            print("\n--- FRIDGE AUDIT ---\n")
+            print("🔥 CONSUME URGENTLY:")
             grouped: Dict[Tuple[str, str, int], float] = {}
             for p in urgent_items:
                 key = (p.name, p.unit, p.days_left)
                 grouped[key] = grouped.get(key, 0) + p.amount
                 
             for (name, unit, days), total in grouped.items():
-                print(f" - {name} ({days} дн.) — {total} {unit}")
+                print(f" - {name} ({days} days) — {total} {unit}")
 
             print("_"*66)
         
-        print(f"📦 Всього у холодильнику: {len(self.__items)} позицій.")
+        print(f"📦 Total items in fridge: {len(self.__items)}.")
 
         status_counts: Dict[Tuple[str, str], float] = {}
         for item in self.__items:
@@ -491,9 +496,9 @@ class Fridge:
             status = (status_str, item.unit)
             status_counts[status] = status_counts.get(status, 0) + item.amount
         
-        print("\n❄️ ВМІСТ ХОЛОДИЛЬНИКА:")
+        print("\n❄️ FRIDGE CONTENTS:")
         for (status_str, unit), count in status_counts.items():
-            print(f"- {status_str} | Кількість: {count} {unit}")
+            print(f"- {status_str} | Quantity: {count} {unit}")
         
         print("_"*66)
 
@@ -506,9 +511,9 @@ class Fridge:
         spoiled_count: int = len(self.__items) - len(fresh_items)
         self.__items = fresh_items
         if spoiled_count > 0:
-            print(f"🧹 Прибирання завершено! Викинуто зіпсованих продуктів: {spoiled_count}")
+            print(f"🧹 Cleanup complete! Discarded spoiled products: {spoiled_count}")
         else:
-            print("✨ Все чисто! Зіпсованих продуктів не знайдено.")
+            print("✨ All clean! No spoiled products found.")
 
     async def get_urgent_list(self) -> List[BaseProduct]:
         urgent_items: List[BaseProduct] = [
@@ -527,7 +532,7 @@ class Fridge:
             key = (item.name, item.unit, status, item.category)
             stats[key] = stats.get(key, 0) + item.amount
 
-        print("\n📊 СТАТИСТИКА ХОЛОДИЛЬНИКА:")
+        print("\n📊 FRIDGE STATISTICS:")
         for (name, unit, is_open, category), count in stats.items():
             prefix: str = "🔓 " if is_open else ""
             log_msg: str = f"{category} | {prefix}{name}: {count} {unit}".strip()
@@ -541,24 +546,24 @@ class Fridge:
         sample: Optional[BaseProduct] = next((p for p in self.__items if p.name.lower() == product_name.lower()), None)
         unit: str = sample.unit if sample else ""
 
-        print(f"📊 Загальний запас '{product_name}': {total} {unit}")
+        print(f"📊 Total stock of '{product_name}': {total} {unit}")
         return total
 
     async def use_product(self, product_name: str, amount_to_use: float) -> Optional[str]:
         found_products: List[BaseProduct] = [p for p in self.__items if p.name.lower().startswith(product_name.lower())]
 
         if not found_products:
-            print(f"❌ '{product_name}' немає в холодильнику.")
+            print(f"❌ '{product_name}' not found in the fridge.")
             return None
 
         total_available: float = sum(p.amount for p in found_products)
 
         if total_available < amount_to_use:
-            print(f"⚠️ Недостатньо '{product_name}'. Треба {amount_to_use}, а є лише {total_available}.")
+            print(f"⚠️ Not enough '{product_name}'. Need {amount_to_use}, only have {total_available}.")
             return None
 
         remaining_to_take: float = amount_to_use
-        print(f"🍴 Починаємо брати {amount_to_use} {found_products[0].unit} '{product_name}'...")
+        print(f"🍴 Starting to take {amount_to_use} {found_products[0].unit} of '{product_name}'...")
 
         for p in found_products:
             if remaining_to_take <= 0:
@@ -568,16 +573,16 @@ class Fridge:
                 taken: float = p.amount
                 remaining_to_take -= taken
                 self.__items.remove(p)
-                print(f" ✅ Використано повністю: {p.name} ({taken} {p.unit})")
+                print(f" ✅ Used entirely: {p.name} ({taken} {p.unit})")
             else:
                 await p.reduce_amount(remaining_to_take)
                 remaining_to_take = 0
         
         left_over: float = sum(p.amount for p in found_products if p in self.__items)
-        log_msg: str = f"Використано {amount_to_use:.2f} '{product_name}'. Лишилося: {left_over:.2f} {found_products[0].unit}"
+        log_msg: str = f"Used {amount_to_use:.2f} '{product_name}'. Left: {left_over:.2f} {found_products[0].unit}"
         await self.__add_fridge_log(log_msg)
         print(log_msg)
-        print(f"✨ Готово! Ви взяли все, що потрібно.")
+        print(f"✨ Done! You took everything you needed.")
         return log_msg
 
     async def __save_products(self) -> None:
@@ -601,40 +606,40 @@ class Recipe:
     async def can_cook(self, fridge: Fridge) -> bool:
         print("_"*66)
         if fridge.is_empty():
-            print("📭 Холодильник зовсім порожній!")
+            print("📭 The fridge is completely empty!")
             return False
 
         missing_items: List[str] = []
-        print("\n--- ПЕРЕВІРКА РЕЦЕПТУ ---")
+        print("\n--- RECIPE CHECK ---")
         
         for ingredient in self.ingredients:
             if not await fridge.has_product(ingredient.name):
                 missing_items.append(ingredient.name)
         
         if not missing_items:
-                print(f"\n✅ Бінго! Всі інгредієнти для '{self.name}' є в наявності.")
+                print(f"\n✅ Bingo! All ingredients for '{self.name}' are available.")
                 return True
         else:        
             items_str: str = ", ".join(missing_items)
-            print(f"🛒 Ой! Для рецепта '{self.name}' варто докупити: {items_str}")
+            print(f"🛒 Oops! For the recipe '{self.name}' you should buy: {items_str}")
             return False
         
     async def cook(self, fridge: Fridge) -> None:
         if await self.can_cook(fridge):
-            print(f"👨‍🍳 Готуємо {self.name}...")
+            print(f"👨‍🍳 Cooking {self.name}...")
             for ingredient in self.ingredients:
                 await fridge.remove_product(ingredient.name)
-            print(f"🍽️ {self.name} готово!")
+            print(f"🍽️ {self.name} is ready!")
         else:
-            print(f"🚫 Неможливо приготувати {self.name}. Перевірте список покупок.")
+            print(f"🚫 Cannot cook {self.name}. Check your shopping list.")
 
     @classmethod
     async def print_search_results(cls, results: List[BaseProduct]) -> None:
         if not results:
-            print("🔍 Нічого не знайдено.")
+            print("🔍 Nothing found.")
         else:
             product_name: str = results[0].name
-            print(f"🔍 Знайдено позицій '{product_name}': {len(results)}")
+            print(f"🔍 Found {len(results)} items for '{product_name}':")
 
             for item in results:
                 print(await item.get_status())
@@ -650,7 +655,7 @@ except Exception as e:
     client = None # Запобіжник, щоб імпорт не падав
 
 async def generate_recipe_from_pairings(ingredient: str, pairings: list) -> str:
-    prompt = f"Ти — Executive Chef. У користувача сьогодні закінчується термін придатності: {ingredient}. Ідеальні поєднання: {pairings}. Згенеруй ОДИН дуже короткий, чіткий рецепт на 15 хвилин, щоб врятувати цей продукт. Використовуй професійну кухонну термінологію (mise-en-place, sear, deglaze). Без зайвої лірики."
+    prompt = f"You are an Executive Chef. The user has an ingredient expiring soon: {ingredient}. Perfect pairings: {pairings}. Generate ONE very short, precise 15-minute recipe to save this product. Use professional kitchen terminology (mise-en-place, sear, deglaze). No extra fluff."
     
     try:
         response = await client.aio.models.generate_content(
@@ -659,34 +664,34 @@ async def generate_recipe_from_pairings(ingredient: str, pairings: list) -> str:
         )
         return response.text
     except Exception as e:
-        return f"❌ Помилка на лінії (API Error): {e}"
+        return f"❌ API Error: {e}"
 
 async def get_user_product_input() -> Optional[BaseProduct]:
-    print("\n--- 📝 Додавання нового продукту ---")
+    print("\n--- 📝 Adding a new product ---")
     
-    name_input = await async_input("Назва (англійською): ")
+    name_input = await async_input("Name (English): ")
     name = name_input.lower().strip()
-    category_input = await async_input("Категорія (М'ясо, Овочі, Молочне): ")
+    category_input = await async_input("Category (Meat, Veggies, Dairy): ")
     category = category_input.strip()
     
     try:
-        days_input = await async_input("Термін придатності (днів): ")
+        days_input = await async_input("Expiration date (days): ")
         days: int = int(days_input)
-        amount_input = await async_input("Кількість (цифрами): ")
+        amount_input = await async_input("Quantity (numbers): ")
         amount: float = float(amount_input)
     except ValueError:
-        print("❌ Помилка: введіть числове значення!")
+        print("❌ Error: please enter a numeric value!")
         return None
 
-    unit_input = await async_input("Одиниця виміру (кг, шт, л): ")
+    unit_input = await async_input("Unit (kg, pcs, l): ")
     unit = unit_input.strip()
 
-    print("\nОберіть тип продукту:")
-    print("1. Звичайний (BaseProduct)")
-    print("2. В упаковці (PackagedProduct)")
-    print("3. Швидкопсувний (PerishableProduct)")
+    print("\nChoose product type:")
+    print("1. Standard (BaseProduct)")
+    print("2. Packaged (PackagedProduct)")
+    print("3. Perishable (PerishableProduct)")
     
-    choice = await async_input("Ваш вибір (1-3): ")
+    choice = await async_input("Your choice (1-3): ")
 
     try:
         if choice == "1":
@@ -699,14 +704,14 @@ async def get_user_product_input() -> Optional[BaseProduct]:
             )
             
         elif choice == "2":
-            ans_input = await async_input("Упаковка вже відкрита? (так/ні): ")
+            ans_input = await async_input("Is the package already opened? (yes/no): ")
             ans = ans_input.lower().strip()
-            is_open_bool: bool = (ans == "так")
+            is_open_bool: bool = (ans == "yes")
             try:
-                days_after_input = await async_input("Термін придатності після відкриття (днів): ")
+                days_after_input = await async_input("Expiration days after opening: ")
                 days_after: int = int(days_after_input)
             except ValueError:
-                print("❌ Помилка: введіть числове значення!")
+                print("❌ Error: please enter a numeric value!")
                 return None
             return PackagedProduct(
                 name=name, 
@@ -728,25 +733,25 @@ async def get_user_product_input() -> Optional[BaseProduct]:
             )
             
         else:
-            print("❌ Невірний вибір типу.")
+            print("❌ Invalid type selection.")
             return None
     except ValidationError as e:
-        print(f"❌ Помилка валідації введених даних: {e}")
+        print(f"❌ Validation error: {e}")
         return None
 
 async def main() -> None:
     my_fridge = await Fridge.create()
     
     while True:
-        print("\n--- 🧊 РОЗУМНИЙ ХОЛОДИЛЬНИК ---")
-        print("1. Додати продукт ➕")
-        print("2. Що в холодильнику? 📋")
-        print("3. Поради Шефа 👨‍🍳")
-        print("4. Екстрені поради Шефа 👨‍🍳🔥")
-        print("5. Відсканувати чек покупок 📸")
-        print("0. Вихід 🚪")
+        print("\n--- 🧊 SMART FRIDGE ---")
+        print("1. Add product ➕")
+        print("2. What's in the fridge? 📋")
+        print("3. Chef's Advice 👨‍🍳")
+        print("4. Urgent Chef's Advice 👨‍🍳🔥")
+        print("5. Scan shopping receipt 📸")
+        print("0. Exit 🚪")
 
-        choice = await async_input("\nОберіть дію: ")
+        choice = await async_input("\nChoose an action: ")
 
         if choice == "1":
             new_product = await get_user_product_input()
@@ -760,15 +765,15 @@ async def main() -> None:
         elif choice == "4":
             await my_fridge.get_chef_advice()
         elif choice == "5":
-            img_path = await async_input("Введіть шлях до фото чека (Enter для 'receipt.jpg'): ")
+            img_path = await async_input("Enter path to receipt photo (Enter for 'receipt.jpg'): ")
             if not img_path.strip():
                 img_path = "receipt.jpg"
                 
             if not os.path.exists(img_path):
-                print(f"❌ Файл '{img_path}' не знайдено.")
+                print(f"❌ File '{img_path}' not found.")
             else:
                 try:
-                    print(f"🔄 Запускаємо AI-розпізнавання чеку (це може зайняти кілька секунд)...")
+                    print(f"🔄 Starting AI receipt scan (this might take a few seconds)...")
                     items = await asyncio.to_thread(scan_receipt, img_path)
                     if items:
                         total_items = len(items)
@@ -776,36 +781,36 @@ async def main() -> None:
                         
                         for item in items:
                             try:
-                                cat = item.get("category", "Інше").lower()
+                                cat = item.get("category", "Other").lower()
                                 p_name = item.get("name", "Unknown")
                                 
                                 if cat == "fridge":
                                     product = BaseProduct(
                                         name=p_name,
-                                        category=item.get("category", "fridge"),
+                                        category="fridge",
                                         amount=float(item.get("quantity", 1.0)),
-                                        unit=item.get("unit", "шт."),
+                                        unit=item.get("unit", "pcs"),
                                         days_left=7
                                     )
                                     await my_fridge.add_product(product, silent=True)
-                                    print(f"❄️ Додано {p_name} у Холодильник.")
+                                    print(f"❄️ Added {p_name} to the Fridge.")
                                     added_to_fridge += 1
                                 else:
-                                    print(f"🗄️ {p_name} відправлено у зону {cat} (Модуль ще в розробці).")
+                                    print(f"🗄️ {p_name} sent to {cat} zone (Module in development).")
                                     
                             except Exception as e:
-                                print(f"⚠️ Помилка обробки продукту {item.get('name')}: {e}")
+                                print(f"⚠️ Error processing product {item.get('name')}: {e}")
                                 
-                        print(f"✅ Успішно розпізнано {total_items} продуктів. З них додано до холодильника: {added_to_fridge}.")
+                        print(f"✅ Successfully recognized {total_items} products. Added to fridge: {added_to_fridge}.")
                     else:
-                        print("ℹ️ Сканер не знайшов продуктів на цьому чеку.")
+                        print("❌ No products found or an error occurred.")
                 except Exception as e:
-                    print(f"❌ Критична помилка під час сканування: {e}")
+                    print(f"❌ Processing error: {e}")
         elif choice == "0":
-            print("Смачного! До зустрічі! 👋")
+            print("👋 See you later!")
             break
         else:
-            print("❌ Невірний вибір, спробуйте ще раз.")
+            print("❌ Invalid choice. Try again.")
 
 if __name__ == "__main__":
     asyncio.run(main())

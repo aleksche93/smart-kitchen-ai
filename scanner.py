@@ -20,7 +20,7 @@ class ReceiptResponse(BaseModel):
 client = genai.Client()
 
 def scan_receipt(image_path: str):
-    print(f"📷 Сканування чеку: {image_path}...")
+    print(f"📷 Scanning receipt: {image_path}...")
     
     try:
         # Завантажуємо зображення через PIL
@@ -54,13 +54,13 @@ def scan_receipt(image_path: str):
         return data.get("items", [])
         
     except Exception as e:
-        print(f"❌ Помилка сканування: {e}")
+        print(f"❌ Scan error: {e}")
         return []
 
 # Блок для тестування файлу окремо
 if __name__ == "__main__":
     # Переконайся, що файл receipt.jpg лежить у цій же папці
     items = scan_receipt("receipt.jpg")
-    print("\n📦 РОЗПІЗНАНІ ПРОДУКТИ:")
+    print("\n📦 RECOGNIZED PRODUCTS:")
     for item in items:
         print(f"- {item['name']} ({item['quantity']} {item['unit']}) -> [Zone: {item['category']}]")

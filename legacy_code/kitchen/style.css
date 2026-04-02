@@ -1,0 +1,182 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #000;
+    font-family: "Inter", sans-serif;
+}
+
+/* ROOT LAYOUT */
+#kitchen-root {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* SIDE PANELS */
+.side-panel {
+    width: 240px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+    transition: transform 0.3s ease;
+}
+
+.side-panel.hidden {
+    transform: translateX(-100%);
+}
+
+#actions-panel.hidden {
+    transform: translateX(100%);
+}
+
+/* SCENE */
+#scene {
+    position: relative;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+/* Background image */
+#kitchen-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('assets/backgrounds/kitchen_bg.jpg');
+    background-size: cover;
+    background-position: center;
+    z-index: 1;
+}
+
+/* Chef */
+#chef-container {
+    position: absolute;
+    right: 20px;
+    bottom: 100px;
+    z-index: 3;
+}
+
+#chef-image {
+    height: 420px;
+    filter: drop-shadow(0 0 12px rgba(0,0,0,0.6));
+}
+
+/* DIALOG AREA */
+#dialog-area {
+    position: relative;
+    z-index: 50;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    padding: 20px 30px;
+    color: #fff; /* головне! */
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+/* Buttons */
+#chef-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#chef-buttons button {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#chef-buttons button:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+#chef-buttons button:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+#chef-bubbles-container {
+    position: absolute;
+    right: 140px;   /* ближче до рота */
+    bottom: 360px;  /* вище, щоб виходили з голови */
+    width: 160px;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.chef-bubble-small {
+    background: rgba(255, 245, 235, 0.85); /* теплий кремовий */
+    border: 2px solid #c1121f;
+    border-radius: 24px 24px 6px 24px; /* форма бабла */
+    padding: 6px 12px;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    max-width: 66px; /* вже не широкі */
+    color: #2b2b2b;
+    opacity: 0;
+    transform: translateY(10px) scale(0.95) rotate(-1deg);
+    transition: 0.35s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    position: relative;
+}
+
+.chef-bubble-small::before {
+    content: "";
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    width: 12px;
+    height: 12px;
+    background: rgba(255, 245, 235, 0.85);
+    border-left: 2px solid #c1121f;
+    border-bottom: 2px solid #c1121f;
+    transform: rotate(45deg);
+}
+
+/* маленька калина */
+.chef-bubble-small::after {
+    content: "";
+    position: absolute;
+    top: -1px;
+    right: -6px;
+    width: 31px;
+    height: 56px;
+    background-image: url("assets/ornaments/kalyna.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.8;
+}
+
+.chef-bubble-small.show {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+}
+
+#kitchen-header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 999999; /* поверх усього */
+    pointer-events: auto; /* дозволяє кліки */
+}
+
+#kitchen-header a {
+    display: inline-block;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    user-select: none; /* щоб не виділявся текст */
+}
+
+#kitchen-header a:hover {
+    background: rgba(0,0,0,0.8);
+}
