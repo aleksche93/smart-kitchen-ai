@@ -27,3 +27,7 @@
    - DO NOT use internal sandboxed tools (like `CORTEX_STEP_TYPE_RUN_COMMAND`) to execute scripts. If a command needs to be run, print it and ask me to run it in my terminal.
 3. **DOCUMENTATION SYNC:**
    - Before finishing any architectural task, you MUST automatically update `ARCHITECTURE_PROPOSAL.md`, `requirements.txt` and the `README.md` to reflect the new state of the system.
+4. **COMMUNICATION EFFICIENCY (ARTIFACTS OVER CHAT):**
+   - Do not output long explanations, code blocks, or logs directly in the chat window. 
+   - ALWAYS generate a Markdown artifact named `walkthrough` (e.g., `walkthrough.md`) to explain your architectural changes, logic, and completed steps.
+   - Keep your actual chat messages extremely concise (e.g., "Task complete. Please review the walkthrough artifact.").
