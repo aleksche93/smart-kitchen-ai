@@ -5,6 +5,8 @@ import asyncio
 import json
 import aiofiles
 import uuid
+from dotenv import load_dotenv
+load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -149,7 +151,7 @@ class RecipeRequest(BaseModel):
 
 class ActionStub(BaseModel):
     action: str
-    params: dict
+    params: Optional[str] = Field(None, description="Parameters in JSON string format")
 
 class ChefResponse(BaseModel):
     advice_text: str
@@ -237,9 +239,7 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
         # Structured output strictly returns valid JSON mapped to ChefResponse
         response = await client.aio.models.generate_content(
             model='gemini-2.5-flash',
-            contents=[
-                types.Content(role="user", parts=[types.Part.from_text(text=system_prompt + "\n\n" + user_prompt)])
-            ],
+            contents=system_prompt + "\n\n" + user_prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=ChefResponse,
@@ -247,7 +247,15 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
             )
         )
         
-        chef_response_data = json.loads(response.text)
+        if not response.text:
+            raise ValueError(f"Gemini returned empty text. Candidates: {response.candidates}")
+            
+        # Extract parsed object if provided natively by the SDK (google-genai)
+        if getattr(response, "parsed", None):
+            chef_response_data = response.parsed.model_dump()
+        else:
+            raw_text = response.text.replace("```json", "").replace("```", "").strip()
+            chef_response_data = json.loads(raw_text)
         
         # 5. Save the updated emotional state
         await session.commit()
@@ -259,6 +267,9 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
             "chef_response": chef_response_data
         }
     except Exception as e:
+        import traceback
+        print(f"❌ Gemini Chef API Error: {e}")
+        traceback.print_exc()
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 

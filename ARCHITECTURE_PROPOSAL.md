@@ -69,7 +69,7 @@ We will switch Gemini generation to strictly use `response_schema`. Instead of r
 ```python
 class ActionStub(BaseModel):
     action: str  -- e.g., "activate_stove", "set_timer"
-    params: dict -- e.g., {"minutes": 15, "temperature": 180}
+    params: Optional[str] = Field(None, description="Parameters in JSON string format") -- e.g., "{\"minutes\": 15, \"temperature\": 180}"
 
 class ChefResponse(BaseModel):
     advice_text: str
