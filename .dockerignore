@@ -17,7 +17,7 @@ copy_flavors.json
 ingredients.csv
 sources/
 legacy_code/
-ARCHITECTURE.md
+ARCHITECTURE_old.md
 
 # IDEs
 .vscode/

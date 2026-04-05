@@ -85,6 +85,18 @@ Initially, `tool_commands` will remain empty or hold dummy stubs, which the UI c
 - **Base Logic**: All variables, function names, metrics (like FSM state names), DB fields, HTTP responses, logs, and prints will be cleanly translated to standard **English**.
 - **Localization (i18n)**: All hardcoded Ukrainian strings found in `chef_persona.py` (e.g., `"Морепродукти так довго не живуть.", "Це вже не креветки..."`) will be mapped to keys and stored in a localization file `locales/uk.json`. In Python, the code will dynamically load: `i18n.get("response.overcooked_seafood.0")`.
 
+### 5. Frontend UI/UX Architecture (Phase 4 & 5: B2C Pivot)
+
+The UI layers over FastAPI as a detached Vue 3 + Vite Single Page Application, connected via CORS policies and configured with Tailwind CSS (`@tailwindcss/typography`).
+
+- **3-Panel Dashboard System:** 
+  1. *Left Panel (`FridgeList.vue`)*: Fetches dynamic inventory via `useKitchenAPI.js`, formatting raw server dates dynamically (e.g. `expiration_date` parsing).
+  2. *Center Panel (`InteractionZone.vue` & `ChefAvatar.vue`)*: The Stateful Hub. Uses "Dual-Mode Logic" (handling pure chat prompts decoupled from direct ingredient interactions).
+  3. *Right Panel (`AdviceDisplay.vue`)*: Parses deeply nested JSON payloads from the LLM via a pure structured Vue dynamic flow (using `JSON.parse` fallback to markdown). `ConsoleLog.vue` has been hidden to remove technical IoT stubs from the B2C view.
+  4. *Toasts System*: Ephemeral `simulateAction` state feedback for B2C interactive stubs.
+- **Neo-Ukrainian Warmth Tokens:** Dark slate defaults (`bg-slate-900`) overlayed with subtle cultural geometry (5% opacity `vyshyvanka-pattern.svg`). Accent colors are rotated from cold basic RGBs to B2C warm tones: `neoTerracotta` (`#c2410c`) and `neoWheat` (`#fde047`).
+- **Vue `<Teleport>` Workflow:** Directly injecting modals (such as `ItemModal.vue`) into the root `body` node, ensuring strict internal-scroll behaviors (`overflow-y-auto`) inside individual grid columns do not break or clip overlay content.
+
 ## Verification Plan
 
 ### Automated Tests
