@@ -56,3 +56,25 @@ class ChefSessionModel(Base):
     user_id = Column(GUID(), primary_key=True)
     recent_triggers = Column(JSON, default=list) # Short-term memory history
     ui_events = Column(JSON, default=list)       # UI session history
+
+class InventoryItemModel(Base):
+    """Stores all user inventory items with smart categorization and expiration logic."""
+    __tablename__ = 'inventory_items'
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), default=uuid.uuid4) # Foreign key loosely implied
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    storage_location = Column(String, nullable=False, default='Fridge')
+    quantity = Column(Float, default=1.0)
+    unit = Column(String, default="pcs")
+    price = Column(Float, nullable=True)
+    added_date = Column(String, nullable=False) # Store ISO formatted date string
+    expiry_date = Column(String, nullable=True) # Null for non-perishables
+
+from datetime import datetime
+
+class ReceiptHistoryModel(Base):
+    __tablename__ = 'receipt_history'
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    image_hash = Column(String(64), unique=True, index=True, nullable=False)
+    scan_date = Column(String, default=lambda: datetime.utcnow().isoformat())

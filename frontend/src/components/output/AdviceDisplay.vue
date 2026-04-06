@@ -1,39 +1,85 @@
 <template>
-  <Card title="Chef's Advice" class="h-[60%] mb-4">
-    <div v-if="chefState.adviceText || chefState.recipeText" class="space-y-4">
-      <div v-if="chefState.adviceText" class="bg-slate-800/80 p-6 rounded-xl border border-slate-700/50">
+  <Card title="Chef's Advice" class="h-[60%] mb-4 flex flex-col overflow-hidden">
+    <div v-if="chefState.adviceText || chefState.recipeText" class="flex-1 flex flex-col min-h-0 space-y-4">
+      <div v-if="chefState.adviceText" class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shrink-0">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-2 border-b border-slate-700 pb-1">Contextual Advice</h4>
         <p class="text-slate-300 leading-relaxed font-sans text-sm">{{ chefState.adviceText }}</p>
       </div>
 
-      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-6 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col">
-        <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-2 pb-1">Generated Recipe</h4>
-        <!-- JSON Structured Rendering -->
-        <div v-if="parsedRecipe" class="prose prose-invert prose-sm max-w-none text-slate-300 mb-6">
-          <h2 class="text-neoWheat border-b border-slate-700/50 pb-2 mb-4">{{ parsedRecipe.name || parsedRecipe.title || 'Custom Recipe' }}</h2>
+      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col min-h-0 flex-1">
+        <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
+        
+        <!-- Multi-Option Structured Rendering -->
+        <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col min-h-0">
           
-          <template v-if="parsedRecipe.ingredients && parsedRecipe.ingredients.length">
-            <h3 class="text-slate-400 uppercase tracking-widest text-xs mt-4 mb-2">Ingredients</h3>
-            <ul class="my-2">
-              <li v-for="(ing, i) in parsedRecipe.ingredients" :key="'ing'+i" class="my-1">{{ ing }}</li>
-            </ul>
-          </template>
+          <!-- Interactive Recipe Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 shrink-0 min-w-0">
+            <button 
+              v-for="(recipe, idx) in parsedRecipes" 
+              :key="'card'+idx"
+              @click="selectedRecipeIndex = idx"
+              :class="['text-left px-3 py-2 rounded-lg border transition-all cursor-pointer select-none overflow-hidden flex flex-col', 
+                       selectedRecipeIndex === idx ? 'bg-slate-800/80 border-neoWheat shadow-[0_0_15px_rgba(253,224,71,0.15)]' : 'bg-transparent border-slate-700 hover:bg-slate-800/50']"
+            >
+              <div class="flex w-full items-start justify-between min-w-0 gap-2 mb-1">
+                <div class="flex gap-1.5 text-[10px] uppercase tracking-wider opacity-80 font-bold text-slate-400 min-w-0 overflow-hidden items-center">
+                  <span class="truncate block" v-if="recipe.time">⏱ {{ recipe.time }}</span>
+                  <span class="shrink-0 block" v-if="recipe.time && recipe.difficulty">•</span>
+                  <span class="truncate block" v-if="recipe.difficulty">📊 {{ recipe.difficulty }}</span>
+                </div>
+                <!-- Dynamic Icons with Micro-Animation -->
+                <span class="text-sm shrink-0 drop-shadow-md" :class="{'animate-pulse scale-110 transition-transform': selectedRecipeIndex === idx, 'opacity-50 grayscale': selectedRecipeIndex !== idx}">
+                  {{ idx === 0 ? '⚡' : (idx === 1 ? '🥘' : '🎨') }}
+                </span>
+              </div>
+              <div class="font-bold text-sm w-full leading-tight line-clamp-2 hyphens-auto break-words" :class="selectedRecipeIndex === idx ? 'text-neoWheat' : 'text-slate-400'">{{ recipe.name || 'Recipe Option' }}</div>
+            </button>
+          </div>
 
-          <template v-if="parsedRecipe.instructions && parsedRecipe.instructions.length">
-            <h3 class="text-slate-400 uppercase tracking-widest text-xs mt-6 mb-2">Instructions</h3>
-            <ol class="my-2">
-              <li v-for="(inst, i) in parsedRecipe.instructions" :key="'inst'+i" class="my-1 text-slate-300">{{ inst }}</li>
-            </ol>
-          </template>
-          
-          <!-- Edge case: some LLMs return text inside a notes string -->
-          <p v-if="parsedRecipe.notes" class="mt-4 italic text-slate-400">{{ parsedRecipe.notes }}</p>
+          <!-- Accordion View - Active Recipe -->
+          <div :key="'accordion_view_' + selectedRecipeIndex" class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-3">
+            
+            <!-- Ingredients Accordion (Open by default) -->
+            <details v-if="activeRecipe.ingredients && activeRecipe.ingredients.length" open class="group bg-slate-800 rounded-lg border border-slate-700 overflow-hidden transition-all duration-300">
+              <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden focus:outline-none hover:bg-slate-700/50 transition-colors">
+                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">Ingredients</h3>
+                <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div class="px-4 pb-4 pt-1 bg-slate-800/50">
+                <ul class="space-y-1 list-disc list-inside text-sm text-slate-300">
+                  <li v-for="(ing, i) in activeRecipe.ingredients" :key="'ing'+i" class="pl-1">{{ ing }}</li>
+                </ul>
+              </div>
+            </details>
+
+            <!-- Instructions Accordion (Closed by default) -->
+            <details v-if="activeRecipe.instructions && activeRecipe.instructions.length" class="group bg-slate-800 rounded-lg border border-slate-700 overflow-hidden transition-all duration-300">
+              <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden focus:outline-none hover:bg-slate-700/50 transition-colors">
+                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">Instructions</h3>
+                <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </summary>
+              <div class="px-4 pb-4 pt-1 bg-slate-800/50">
+                <ol class="space-y-2 list-decimal list-inside text-sm text-slate-300">
+                  <li v-for="(inst, i) in activeRecipe.instructions" :key="'inst'+i" class="pl-1 leading-relaxed">{{ inst }}</li>
+                </ol>
+              </div>
+            </details>
+            
+            <!-- Notes -->
+            <div v-if="activeRecipe.notes" class="px-4 py-3 bg-slate-800/30 rounded-lg border border-slate-700/50">
+              <p class="italic text-xs text-slate-400">{{ activeRecipe.notes }}</p>
+            </div>
+
+          </div>
         </div>
         
-        <!-- Markdown Fallback -->
-        <div v-else class="prose prose-invert prose-sm max-w-none text-slate-300 markdown-body mb-6" v-html="formatMarkdown(chefState.recipeText)"></div>
+        <!-- Markdown Fallback (Legacy) -->
+        <div v-else class="flex-1 overflow-y-auto pr-2 custom-scrollbar prose prose-invert prose-sm max-w-none text-slate-300 markdown-body mb-2" v-html="formatMarkdown(chefState.recipeText)"></div>
         
-        <!-- B2C Action Stubs -->
         <!-- B2C Action Stubs -->
         <div class="mt-auto border-t border-slate-700/50 pt-4 flex flex-col relative">
           <!-- Toast Notification -->
@@ -81,18 +127,31 @@ const simulateAction = (msg) => {
   toastTimeout = setTimeout(() => { activeToast.value = null }, 2500)
 }
 
-const parsedRecipe = computed(() => {
-  if (!chefState.recipeText) return null
-  try {
-    const data = JSON.parse(chefState.recipeText)
-    return data
-  } catch (e) {
-    return null
+const selectedRecipeIndex = ref(0)
+
+const parsedRecipes = computed(() => {
+  if (!chefState.recipeText) return []
+  let data
+  if (typeof chefState.recipeText === 'object') {
+    data = chefState.recipeText
+  } else {
+    try {
+      data = JSON.parse(chefState.recipeText)
+    } catch (e) {
+      return []
+    }
   }
+  // Safe extraction map for array payload or legacy objects
+  if (Array.isArray(data)) return data
+  return data.recipe_options || (data.recipe ? [data.recipe] : [data])
+})
+
+const activeRecipe = computed(() => {
+  return parsedRecipes.value[selectedRecipeIndex.value] || {}
 })
 
 const formatMarkdown = (text) => {
-  if (!text) return ''
+  if (!text || typeof text !== 'string') return ''
   return text
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
@@ -108,6 +167,20 @@ const formatMarkdown = (text) => {
 </script>
 
 <style>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;  
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #334155; 
+  border-radius: 4px;
+}
 .markdown-body strong {
   @apply text-slate-100 font-semibold;
 }

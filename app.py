@@ -27,8 +27,10 @@ from google import genai
 from google.genai import types
 
 # Import existing logic
-from scanner import scan_receipt
-from smart_fridge import Fridge, BaseProduct
+from datetime import datetime, timedelta
+from sqlalchemy import select
+from db.models import InventoryItemModel, ReceiptHistoryModel
+import hashlib
 
 app = FastAPI(
     title="Smart Kitchen AI",
@@ -47,14 +49,8 @@ app.add_middleware(
 # Dummy User Context
 DEFAULT_USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 
-my_fridge = None
-
 @app.on_event("startup")
 async def startup_event():
-    global my_fridge
-    my_fridge = await Fridge.create()
-    print("✅ Web API: Fridge initialized.")
-    
     # Init DB and default user
     await init_db()
     print("✅ Web API: Database initialized.")
@@ -74,90 +70,156 @@ async def startup_event():
 def read_root():
     return {"message": "Welcome to Smart Kitchen AI Ecosystem API!"}
 
-@app.post("/api/v1/scan-receipt")
-async def scan_receipt_api(file: UploadFile = File(...)):
+class ParsedReceiptItem(BaseModel):
+    name: str = Field(..., description="Normalized clean name of the product")
+    category: str = Field(..., description="Semantic grouping: Dairy, Meat, Produce, etc.")
+    storage_location: str = Field(..., description="MUST BE one of: Fridge, Freezer, Pantry, Bathroom, Other")
+    estimated_days_left: Optional[int] = Field(None, description="Estimated shelf life in days. Return null for non-perishables.")
+    quantity: float = Field(default=1.0, description="Number of items or amount")
+    unit: str = Field(default="pcs", description="Unit of measurement, e.g., pcs, kg, L")
+    price: Optional[float] = Field(None, description="Total price for the item, if detected")
+
+class ParsedReceiptResponse(BaseModel):
+    store_name: str = Field(..., description="Store name extracted from receipt")
+    store_address: Optional[str] = Field(None, description="Store address if found")
+    receipt_date: Optional[str] = Field(None, description="ISO format date if found on the receipt")
+    items: List[ParsedReceiptItem]
+
+@app.post("/api/v1/fridge/receipt")
+async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSession = Depends(get_db)):
     """
-    Accepts a receipt image, extracts products using Gemini Vision,
-    and automatically adds 'fridge' items to the database.
+    Intelligently parses receipt images using Gemini Vision into SQLite Inventory records with deduplication.
     """
-    if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-        raise HTTPException(status_code=400, detail=i18n.get("api.error.only_images_allowed", "Only JPG/PNG images are allowed."))
+    if not client:
+        raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
+        
+    allowed_mimes = ['image/jpeg', 'image/png', 'image/webp']
+    if file.content_type not in allowed_mimes:
+        raise HTTPException(status_code=400, detail="Only JPG, PNG, or WEBP allowed.")
+        
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image size exceeds 5MB limit.")
+        
+    image_hash = hashlib.sha256(content).hexdigest()
     
-    # Temporary file for synchronous scanner backward compatibility
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        temp_file_path = temp_file.name
-
+    # Check deduplication layer
+    exists = await session.execute(select(ReceiptHistoryModel).where(ReceiptHistoryModel.image_hash == image_hash))
+    if exists.scalars().first():
+        raise HTTPException(status_code=409, detail={"is_duplicate": True, "message": "Receipt already scanned."})
+        
+    receipt_sys_prompt = """
+    You are a Smart Kitchen Data Architect. Analyze the provided grocery receipt image.
+    1. Normalization: Clean up messy abbreviations (e.g., convert 'MLK 2.5% VOL' to 'Milk 2.5%').
+    2. Storage Routing: Accurately classify where the item belongs. `storage_location` MUST BE one of: "Fridge", "Freezer", "Pantry", "Bathroom", "Other".
+    3. Shelf-life Estimation: Provide a realistic `estimated_days_left` for perishable foods. IMPORTANT: Return null for non-perishables. Do NOT use 0 for non-perishables.
+    4. STRICT PRIVACY PROTOCOL: Completely ignore and scrub any Personally Identifiable Information (PII) like credit card digits, personal names, and phone numbers. You may extract the store name and address.
+    """
+    
     try:
-        print(f"🔄 Web API: Scanning receipt {file.filename}...")
-        # Async call to synchronous legacy code to prevent blocking event loop
-        items = await asyncio.to_thread(scan_receipt, temp_file_path)
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[
+                receipt_sys_prompt,
+                types.Part.from_bytes(data=content, mime_type=file.content_type)
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=ParsedReceiptResponse,
+                temperature=0.2
+            )
+        )
         
-        if not items:
-            return {"status": "success", "message": i18n.get("api.error.scan_failed", "Scanner found no products."), "added_to_fridge": 0, "recognized_items": []}
-
-        total_items = len(items)
-        added_to_fridge = 0
-        added_items_details = []
-        routed_items = []
-        
-        for item in items:
-            cat = item.get("category", "other").lower()
-            p_name = item.get("name", "Unknown")
+        if getattr(response, "parsed", None):
+            receipt_data = response.parsed.model_dump()
+        else:
+            raw_text = response.text.replace("```json", "").replace("```", "").strip()
+            receipt_data = json.loads(raw_text)
             
-            if cat == "fridge":
-                product = BaseProduct(
-                    name=p_name,
-                    category=item.get("category", "fridge"),
-                    amount=float(item.get("quantity", 1.0)),
-                    unit=item.get("unit", "pcs"),
-                    days_left=7
-                )
-                await my_fridge.add_product(product, silent=True)
-                added_to_fridge += 1
-                added_items_details.append(p_name)
-            else:
-                routed_items.append({"name": p_name, "zone": cat, "status": "Module in development"})
+        added_items = []
+        current_date = datetime.now()
+        
+        for item_data in receipt_data.get("items", []):
+            expiry = None
+            if item_data.get("estimated_days_left") is not None:
+                expiry = (current_date + timedelta(days=item_data["estimated_days_left"])).isoformat()
                 
+            new_item = InventoryItemModel(
+                user_id=DEFAULT_USER_ID,
+                name=item_data["name"],
+                category=item_data["category"],
+                storage_location=item_data["storage_location"],
+                quantity=item_data.get("quantity", 1.0),
+                unit=item_data.get("unit", "pcs"),
+                price=item_data.get("price", None),
+                added_date=current_date.isoformat(),
+                expiry_date=expiry
+            )
+            session.add(new_item)
+            added_items.append(item_data["name"])
+            
+        # Add to history to prevent duplicates
+        new_receipt = ReceiptHistoryModel(image_hash=image_hash)
+        session.add(new_receipt)
+            
+        await session.commit()
+        
         return {
-            "status": "success", 
-            "total_recognized": total_items, 
-            "added_to_fridge_count": added_to_fridge,
-            "fridge_items_added": added_items_details,
-            "other_routed_items": routed_items
+            "status": "success",
+            "store_name": receipt_data.get("store_name", "Unknown Store"),
+            "total_recognized": len(added_items),
+            "items_added": added_items
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
 
 @app.get("/api/v1/fridge")
-async def get_fridge_inventory():
-    """Returns current fridge inventory (all fresh products) in JSON format."""
-    if not my_fridge:
-        raise HTTPException(status_code=500, detail="Fridge not initialized")
+async def get_fridge_inventory(session: AsyncSession = Depends(get_db)):
+    """Returns current fridge inventory directly from SQLite."""
+    query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    all_items = query.scalars().all()
     
     items_data = []
-    # Звертаємось до поля _Fridge__items 
-    for item in my_fridge._Fridge__items: 
-        if item.days_left > 0:
-            items_data.append(await item.to_dict())
+    current_date = datetime.now()
+    
+    for item in all_items:
+        days_left = 999
+        if item.expiry_date:
+            try:
+                days_left = (datetime.fromisoformat(item.expiry_date) - current_date).days
+            except:
+                pass
         
+        if days_left > 0:
+            items_data.append({
+                "id": str(item.id),
+                "name": item.name,
+                "category": item.category,
+                "amount": item.quantity,
+                "unit": item.unit,
+                "days_left": days_left if item.expiry_date else None
+            })
+            
     return {"status": "success", "total_fresh": len(items_data), "inventory": items_data}
 
 class RecipeRequest(BaseModel):
     ingredient: str
 
-class ActionStub(BaseModel):
-    action: str
-    params: Optional[str] = Field(None, description="Parameters in JSON string format")
+class RecipeOption(BaseModel):
+    name: str
+    ingredients: List[str]
+    instructions: List[str]
+    time: str
+    difficulty: str
 
 class ChefResponse(BaseModel):
     advice_text: str
-    recipe: Optional[str] = None
+    recipe_options: List[RecipeOption]
     emotion_displayed: str
-    tool_commands: List[ActionStub] = Field(default_factory=list)
+    tool_commands: List[str]
 
 try:
     client = genai.Client()
@@ -170,30 +232,40 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
     Generates a recipe from the Chef for a chosen critical ingredient,
     using Flavor Bible combinations and integrating the Chef FSM.
     """
-    if not my_fridge:
-        raise HTTPException(status_code=500, detail="Fridge not initialized")
     if not client:
         raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
 
-    urgent_items = await my_fridge.get_urgent_list()
-    target_name = request.ingredient.lower()
+    user_query = request.ingredient.strip() if request.ingredient else ""
     
-    # Check if this product is among spoiling items
-    has_target = next((item for item in urgent_items if item.name.lower() == target_name), None)
-    if not has_target:
-        msg = i18n.get("api.error.ingredient_not_found").replace("{ingredient}", request.ingredient)
-        raise HTTPException(
-            status_code=400, 
-            detail=msg
-        )
+    # 1. Passive Context Generation from DB
+    fridge_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    all_items = fridge_query.scalars().all()
+    
+    fridge_summary_list = []
+    current_date = datetime.now()
+    
+    for item in all_items:
+        if item.expiry_date:
+            try:
+                days_left = (datetime.fromisoformat(item.expiry_date) - current_date).days
+                if days_left > 0:
+                    fridge_summary_list.append(f"{item.name} ({days_left}d left)")
+            except:
+                pass
+        else:
+            fridge_summary_list.append(f"{item.name}")
+            
+    fridge_summary = ", ".join(fridge_summary_list)
+    if not fridge_summary:
+        fridge_summary = "The fridge is completely empty."
 
-    # 1. Load Database state for default user
+    # 1.1 Load Database state for default user
     state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
     memory_db = await session.get(ChefMemoryModel, DEFAULT_USER_ID)
     session_db = await session.get(ChefSessionModel, DEFAULT_USER_ID)
     
     if not state_db or not memory_db or not session_db:
-        raise HTTPException(status_code=500, detail="State not found for default user. Did startup_event run?")
+        raise HTTPException(status_code=500, detail="State not found for default user.")
 
     # 2. Initialize Core Wrappers
     chef_fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
@@ -201,38 +273,31 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
 
     # 3. Trigger the FSM
     chef_fsm.trigger(ChefTrigger.COMPLEX_TASK)
-    
-    # Let Persona react to ingredient
-    chef_persona.update_preferences(target_name)
+    chef_persona.update_preferences(user_query)
 
-    # Read knowledge base
+    # Passive Flavor Bible Lookup (Only append if we find a direct hit for the query)
+    best_pairs = []
     try:
         async with aiofiles.open("knowledge/flavors.json", "r", encoding="utf-8") as f:
             knowledge_data = json.loads(await f.read())
+            flavor_map = {item["ingredient"].lower(): item["pairings"] for item in knowledge_data}
+            if user_query.lower() in flavor_map:
+                best_pairs = [
+                    p["paired_with"] for p in flavor_map[user_query.lower()]
+                    if p.get("affinity") in ["classic", "highly recommended"]
+                ]
     except Exception:
-        raise HTTPException(status_code=500, detail=i18n.get("api.error.knowledge_data_missing"))
-        
-    flavor_map = {item["ingredient"].lower(): item["pairings"] for item in knowledge_data}
-    
-    if target_name not in flavor_map:
-        msg = i18n.get("api.error.no_pairings_for_ingredient").replace("{ingredient}", request.ingredient)
-        raise HTTPException(status_code=404, detail=msg)
-        
-    best_pairs = [
-        p["paired_with"] for p in flavor_map[target_name]
-        if p.get("affinity") in ["classic", "highly recommended"]
-    ]
-    
-    if not best_pairs:
-        msg = i18n.get("api.error.no_classic_pairings").replace("{ingredient}", request.ingredient)
-        raise HTTPException(status_code=404, detail=msg)
+        pass # Gracefully ignore KB missing in dual-mode
 
     # 4. Generate Dynamic Prompt for Gemini & Structured Outputs
     system_prompt = chef_persona.generate_system_prompt()
+    
+    pairings_context = f"Relevant Flavor Pairs: {best_pairs}.\n" if best_pairs else ""
     user_prompt = (
-        f"I need advice on saving: {has_target.display_name.capitalize()}.\n"
-        f"Ideal pairings from your knowledge base: {best_pairs}.\n"
-        f"Provide compelling advice based on your current emotional state, give a recipe, and suggest any smart interactions via tool_commands."
+        f"Available Fridge Items as context: {fridge_summary}\n"
+        f"User Input/Query: \"{user_query}\"\n"
+        f"{pairings_context}"
+        f"Provide compelling advice based on your persona, a structured recipe object if requested, and any tool_commands."
     )
 
     try:
@@ -255,15 +320,39 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
             chef_response_data = response.parsed.model_dump()
         else:
             raw_text = response.text.replace("```json", "").replace("```", "").strip()
-            chef_response_data = json.loads(raw_text)
+            try:
+                chef_response_data = json.loads(raw_text)
+            except json.JSONDecodeError as e:
+                chef_response_data = {
+                    "advice_text": f"System Error: Chef is too chaotic. {e}",
+                    "recipe_options": [{
+                        "name": "Chef's Surprise",
+                        "ingredients": [],
+                        "instructions": ["Improvise!"],
+                        "time": "15 min",
+                        "difficulty": "Easy"
+                    }],
+                    "emotion_displayed": "ANGRY",
+                    "tool_commands": []
+                }
+            
+        # Pydantic Fallback handling: enforce strict sub-schema format
+        if "recipe_options" not in chef_response_data or not chef_response_data.get("recipe_options"):
+            chef_response_data["recipe_options"] = [{
+                "name": "Chef's Surprise",
+                "ingredients": [],
+                "instructions": ["Improvise!"],
+                "time": "15 min",
+                "difficulty": "Easy"
+            }]
         
         # 5. Save the updated emotional state
         await session.commit()
 
+        # In Dual-Mode, ingredient parameter is just arbitrary user query
         return {
             "status": "success",
-            "ingredient_to_save": has_target.display_name,
-            "days_left": has_target.days_left,
+            "ingredient_to_save": user_query,
             "chef_response": chef_response_data
         }
     except Exception as e:

@@ -1,4 +1,3 @@
-Markdown
 # 🍳 Smart Kitchen AI Ecosystem (Stateful Autonomous Agent)
 
 An asynchronous, multimodal AI agent built to optimize kitchen inventory, reduce food waste, and provide real-time culinary orchestration using **Google Gemini Pro API**, **Agentic RAG**, and **FastAPI**.
@@ -41,11 +40,5 @@ The API will be available at http://localhost:8000. Interactive documentation (S
 
 ---
 
-## 🗺️ Roadmap (Next Iterations)
-- [x] Migrate from CLI to FastAPI REST microservice.
-- [x] Containerize the ecosystem using Docker & Docker Compose.
-- [x] Implement persistent state (FSM memory) via SQLite and JSON columns.
-- [x] **Phase 4 & 5:** Build a modern Vue 3 SPA Frontend with B2C Pivot ("Neo-Ukrainian Warmth"), Teleport modals, and dynamic 3-panel architecture.
-- [x] **Phase 5.1:** B2C UI Polish (Structured JSON recipe rendering, Interactive Hover Toasts, Hiding technical IoT logs).
-- [ ] Implement Pantry and Freezer modules for non-perishable routing.
-- [ ] Transition local JSON knowledge base to a Vector DB for semantic RAG search.
+## 🗺️ Roadmap & Tasks
+Please see `MASTER_ROADMAP.md` for historical phases, current task tracking, and future iterations.

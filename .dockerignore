@@ -13,11 +13,9 @@ __pycache__/
 receipt.jpg
 fridge_items.json
 fridge_history.json
-copy_flavors.json
 ingredients.csv
 sources/
-legacy_code/
-ARCHITECTURE_old.md
+archive/
 
 # IDEs
 .vscode/

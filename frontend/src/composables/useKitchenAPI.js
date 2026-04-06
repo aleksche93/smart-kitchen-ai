@@ -56,7 +56,7 @@ export function useKitchenAPI() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const resp = await fetch(`${BASE_URL}/scan-receipt`, {
+      const resp = await fetch(`${BASE_URL}/fridge/receipt`, {
         method: 'POST',
         body: formData
       })

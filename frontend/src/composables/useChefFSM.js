@@ -15,7 +15,7 @@ export function useChefFSM() {
       const chefResp = apiResponse.chef_response
       chefState.emotionDisplay = chefResp.emotion_displayed || 'IDLE'
       chefState.adviceText = chefResp.advice_text || ''
-      chefState.recipeText = chefResp.recipe || ''
+      chefState.recipeText = chefResp.recipe_options || chefResp.recipe || ''
       chefState.toolCommands = chefResp.tool_commands || []
       
       // Flash danger state dynamically if angry
