@@ -2,6 +2,12 @@ import { ref, reactive } from 'vue'
 
 const BASE_URL = 'http://localhost:8000/api/v1'
 
+// Shared global reactivity
+const globalInventory = ref([])
+const globalHistory = ref([])
+const globalActiveTab = ref('kitchen')
+const globalSelectedReceipt = ref(null)
+
 export function useKitchenAPI() {
   const isLoading = ref(false)
   const error = ref(null)
@@ -9,18 +15,29 @@ export function useKitchenAPI() {
   const fetchFridge = async () => {
     isLoading.value = true
     try {
-      // Stubbing GET /fridge since we haven't explicitely added it yet in app.py
-      // fallback to mock data until backend is fully wired
       const response = await fetch(`${BASE_URL}/fridge`).catch(() => null)
       if (response && response.ok) {
         const data = await response.json()
-        return data.inventory || []
+        globalInventory.value = data.inventory || []
       }
-      return [
-        { name: 'Beef', days_left: 1, amount: 0.5, unit: 'kg', category: 'Meat' },
-        { name: 'Milk', days_left: -1, amount: 1, unit: 'l', category: 'Dairy' },
-        { name: 'Carrot', days_left: 5, amount: 3, unit: 'pcs', category: 'Veggies' },
-      ]
+      return globalInventory.value
+    } catch (err) {
+      error.value = err.message
+      return []
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const fetchHistory = async () => {
+    isLoading.value = true
+    try {
+      const response = await fetch(`${BASE_URL}/fridge/history`).catch(() => null)
+      if (response && response.ok) {
+        const data = await response.json()
+        globalHistory.value = data.history || []
+      }
+      return globalHistory.value
     } catch (err) {
       error.value = err.message
       return []
@@ -51,6 +68,24 @@ export function useKitchenAPI() {
     }
   }
 
+  const deleteReceipt = async (receiptId) => {
+    isLoading.value = true
+    try {
+      const resp = await fetch(`${BASE_URL}/fridge/receipt/${receiptId}`, {
+        method: 'DELETE'
+      })
+      if (!resp.ok) throw new Error('Failed to delete receipt')
+      // Reactivity: Refresh both synchronously
+      await Promise.all([fetchFridge(), fetchHistory()])
+      return true
+    } catch (err) {
+      error.value = err.message
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const scanReceipt = async (file) => {
     isLoading.value = true
     try {
@@ -60,8 +95,16 @@ export function useKitchenAPI() {
         method: 'POST',
         body: formData
       })
-      if (!resp.ok) throw new Error('Scan failed')
-      return await resp.json()
+      if (!resp.ok) {
+        if (resp.status === 409) throw new Error('Receipt already scanned (Duplicate)')
+        const errData = await resp.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Scan failed')
+      }
+      const data = await resp.json()
+      
+      // Trigger global reactivity update synchronously
+      await Promise.all([fetchFridge(), fetchHistory()])
+      return data
     } catch (err) {
       error.value = err.message
       throw err
@@ -70,5 +113,10 @@ export function useKitchenAPI() {
     }
   }
 
-  return { isLoading, error, fetchFridge, getChefAdvice, scanReceipt }
+  return { 
+    isLoading, error, 
+    inventory: globalInventory, history: globalHistory, 
+    activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
+    fetchFridge, fetchHistory, getChefAdvice, scanReceipt, deleteReceipt 
+  }
 }

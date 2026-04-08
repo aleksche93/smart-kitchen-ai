@@ -13,6 +13,13 @@ This document serves as the Single Source of Truth for the Smart Kitchen AI Ecos
 - SQLite and `aiosqlite` integration with async SQLAlchemy sessions.
 - Stateful Chef memory (tracking FSM states and "cooking sins") using JSON columns.
 
+### Phase 9: System Integration & User Experience [100% COMPLETE] ✅
+- Phase 9.1: Receipt Archive Infrastructure (Physical storage, Hash Duplication logic).
+- Phase 9.2: Recovery & UI Expansion (SQLite wipe, UUID Schema, Gallery Frontend).
+- Phase 9.3: UX & Native Rules Migration (Traceability Bridge, Pill Navigation, Agentic Native Architecture).
+- Phase 9.4: Stability & Terminal UI (Data Reactivity, Ghosting Fix, Global ThoughtTicker).
+- Phase 9.5: Vision Optimization & Enterprise Polish (High-Density Financials, Hybrid Cropper, Animated Split-View, AI Sanitization, Bag Skill).
+
 ### Phase 3: Hardware Ingestion ✅
 - OCR receipt scanning via Gemini Vision (`scanner.py`, `POST /api/v1/scan-receipt`).
 - Direct integration mapping physical scanned goods to the database (`my_fridge._Fridge__items`).
@@ -42,5 +49,4 @@ Transition the Chef's response from a single forced monolithic recipe into an in
 ---
 
 ## Future Roadmap
-- **Phase 8:** Pantry and Freezer routing (non-perishables orchestration).
-- **Phase 9:** IoT Controller integration with the `ActionStub` pipeline.
+- **Phase 10:** The Bag Skill Fun Module Expansion, Draggable OS Windows, and IoT Controller integration stubs.

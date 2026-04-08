@@ -19,14 +19,22 @@
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
         <span v-if="!isLoading">Send ></span>
-        <span v-else>Wait...</span>
+        <span v-else class="flex items-center">
+          <span class="mr-2 animate-pulse">{{ processingAction.icon }}</span>
+          {{ processingAction.text }}...
+        </span>
       </button>
     </div>
 
-        <!-- Error Banner -->
+    <!-- Error Banner -->
     <div v-if="error" class="bg-red-900/40 border border-red-700 text-red-300 text-sm p-3 rounded-lg flex items-start animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.3)]">
       <span class="mr-2">⚠️</span>
       <p>{{ error }}</p>
+    </div>
+
+    <!-- Success Banner -->
+    <div v-if="successMsg" class="bg-green-900/40 border border-green-700 text-green-300 text-sm p-3 rounded-lg flex items-start shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all">
+      <p>{{ successMsg }}</p>
     </div>
 
     <!-- Scanner & Controls -->
@@ -60,26 +68,56 @@
       :items="scannedItems" 
       @clear="scannedItems = []" 
     />
+
+    <!-- Thought Ticker Log Stream -->
+    <ThoughtTicker />
+
+    <!-- Hybrid Cropper Teleport -->
+    <Teleport to="body">
+      <HybridCropper 
+         v-if="rawImageObject"
+         :image-url="rawImageObject"
+         @crop="handleCroppedImage"
+         @cancel="cancelCrop"
+      />
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefFSM, chefState } from '../../composables/useChefFSM'
 import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
+import HybridCropper from '../vision/HybridCropper.vue'
+import ThoughtTicker from './ThoughtTicker.vue'
 
 const { isLoading, error, getChefAdvice, scanReceipt } = useKitchenAPI()
 const { updateState, resetState } = useChefFSM()
 
 const localInput = ref('')
 const scannedItems = ref([])
+const successMsg = ref(null)
 
+const processingAction = computed(() => {
+   const lower = localInput.value.toLowerCase()
+   if (lower.includes('tomato') || lower.includes('vegetable') || lower.includes('potato') || lower.includes('onion') || lower.includes('carrot') || lower.includes('garlic')) {
+      return { text: "Chopping veg", icon: "🔪" }
+   }
+   if (lower.includes('water') || lower.includes('juice') || lower.includes('beer') || lower.includes('wine') || lower.includes('drink') || lower.includes('milk')) {
+      return { text: "Pouring drinks", icon: "🫗" }
+   }
+   if (lower.includes('meat') || lower.includes('chicken') || lower.includes('beef') || lower.includes('pork')) {
+      return { text: "Searing meat", icon: "🥩" }
+   }
+   return { text: "Heating pans", icon: "🍳" }
+})
 
 const handleReset = () => {
     resetState()
     localInput.value = ''
     error.value = null
+    successMsg.value = null
     scannedItems.value = []
 }
 
@@ -97,25 +135,54 @@ const handleAdvice = async () => {
   }
 }
 
-const handleFileUpload = async (event) => {
+const rawImageObject = ref(null)
+
+const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
   
+  // Set up raw image for HybridCropper to process 
+  rawImageObject.value = URL.createObjectURL(file)
+  event.target.value = '' // Reset file input
+}
+
+const cancelCrop = () => {
+  if (rawImageObject.value) {
+    URL.revokeObjectURL(rawImageObject.value)
+    rawImageObject.value = null
+  }
+}
+
+const handleCroppedImage = async (blob) => {
+  cancelCrop() // Clears the dialog and securely dismisses original blob memory
+  
   error.value = null
+  successMsg.value = null
   scannedItems.value = []
   
+  // Package Blob explicitly as receipt.jpg per API requirement
+  const fileToUpload = new File([blob], "receipt_cropped.jpg", { type: "image/jpeg" })
+  
   try {
-    const data = await scanReceipt(file)
-    // Assuming backend returns { message, items: [...] } or array
-    if (data.items) {
+    const data = await scanReceipt(fileToUpload)
+    if (data.items_added) {
+      scannedItems.value = data.items_added 
+      successMsg.value = `✅ Receipt processed! Store: ${data.store_name || 'Unknown'}. Added ${data.total_recognized} items.`
+      setTimeout(() => { successMsg.value = null }, 5000)
+      
+      const hasBag = data.items_added.some(item => item.is_bag)
+      if (hasBag) {
+        chefState.adviceText = "I have successfully processed your cropped receipt. Oh, Chef detected a bag! Moving it to your stash... Fun Module activated!"
+      } else {
+        chefState.adviceText = "I have successfully processed your cropped receipt and updated the fridge inventory! Check the Left Panel. Anything else you want to cook with?"
+      }
+    } else if (data.items) {
       scannedItems.value = data.items
     } else if (Array.isArray(data)) {
       scannedItems.value = data
     } else {
       scannedItems.value = [data]
     }
-    // Update global FSM state to refresh fridge eventually
-    chefState.adviceText = "I have successfully processed your receipt and updated the fridge inventory. Check the Left Panel. Anything else you want to cook with?"
     chefState.emotionDisplay = "FOCUSED"
   } catch (err) {
     // API throws errors appropriately

@@ -7,7 +7,7 @@
       Error: {{ error }}
     </div>
     
-    <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center p-12 text-slate-500 space-y-4 opacity-50">
+    <div v-else-if="inventory.length === 0" class="flex flex-col items-center justify-center p-12 text-slate-500 space-y-4 opacity-50">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 stroke-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
       </svg>
@@ -17,7 +17,7 @@
 
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
       <div 
-        v-for="item in items" 
+        v-for="item in inventory" 
         :key="item.name"
         @click="selectItem(item)"
         class="group p-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-neoGray hover:border-neoBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
@@ -66,14 +66,13 @@ import Card from '../ui/Card.vue'
 import ItemModal from './ItemModal.vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 
-const items = ref([])
 const showModal = ref(false)
 const activeItem = ref({})
 
-const { isLoading, error, fetchFridge } = useKitchenAPI()
+const { isLoading, error, inventory, fetchFridge, fetchHistory } = useKitchenAPI()
 
 const loadData = async () => {
-  items.value = await fetchFridge()
+  await Promise.all([fetchFridge(), fetchHistory()])
 }
 
 const selectItem = (item) => {

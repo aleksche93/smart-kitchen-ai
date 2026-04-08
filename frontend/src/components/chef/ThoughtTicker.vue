@@ -1,54 +1,84 @@
 <template>
-  <div class="relative w-full overflow-hidden bg-black/40 rounded-md border border-slate-700/50 p-2 font-mono text-xs">
-    <div class="flex items-center justify-between">
-      <span class="text-green-400 opacity-80 blink-cursor mr-2">_></span>
-      <div class="flex-1 overflow-hidden relative h-4">
-        <transition name="fade" mode="out-in">
-          <span v-if="!zenMode" :key="currentThought" class="absolute w-full truncate text-slate-400">
-            {{ currentThought }}
-          </span>
-          <span v-else class="absolute w-full text-slate-600 block text-center">
-            [Zen Mode Engaged]
-          </span>
-        </transition>
+  <Teleport to="body">
+    <!-- Draggable handle cursor preparation for Phase 10 -->
+    <div class="fixed bottom-6 right-6 z-[100] w-full max-w-sm overflow-hidden bg-black/90 rounded-lg border border-slate-700/70 shadow-2xl font-mono text-xs transition-all duration-500"
+         :class="isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'">
+      
+      <!-- Terminal Header -->
+      <div class="bg-slate-800/80 px-3 py-1.5 flex items-center justify-between border-b border-slate-700/50 cursor-move">
+        <div class="flex space-x-1.5">
+          <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+          <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+        </div>
+        <span class="text-[10px] text-slate-500 font-sans tracking-wide uppercase">AI Vision Agent</span>
+        <div class="w-4"></div>
       </div>
-      <button 
-        @click="zenMode = !zenMode" 
-        class="ml-2 text-slate-500 hover:text-neoYellow transition-colors"
-        title="Toggle Zen Mode"
-      >
-        🧘
-      </button>
+
+      <!-- Terminal Body -->
+      <div class="p-3 h-20 overflow-hidden relative flex flex-col justify-end">
+        <transition-group name="slide-up" tag="div" class="flex flex-col space-y-1">
+          <div v-for="(log, idx) in visibleLogs" :key="log.id" class="flex items-start text-green-400">
+             <span class="opacity-70 mr-2">$</span>
+             <span :class="{'opacity-50': idx !== visibleLogs.length - 1}">{{ log.text }}</span>
+             <span v-if="idx === visibleLogs.length - 1" class="blink-cursor ml-1">_</span>
+          </div>
+        </transition-group>
+      </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
+import { useKitchenAPI } from '../../composables/useKitchenAPI'
 
-const zenMode = ref(false)
-const thoughts = [
-  "Reading Flavor Bible...",
-  "Recalculating umami ratios...",
-  "Watching gastro-YouTube shorts...",
-  "Judging your chaotic history...",
-  "Dreaming of 3 Michelin stars...",
-  "Waiting for input..."
+const { isLoading } = useKitchenAPI()
+
+const baseLogs = [
+  "Analyzing OCR Stream...",
+  "Checking for AI Agent Traps: [CLEAN]",
+  "Checking Store Identity: Native Store Profile Detected",
+  "Applying Native Language Rule...",
+  "Sanitizing Data...",
+  "Calculating Unit Prices..."
 ]
 
-const currentThought = ref(thoughts[0])
-let interval
+const visibleLogs = ref([])
+let timer = null
+let logIndex = 0
 
-onMounted(() => {
-  interval = setInterval(() => {
-    if (!zenMode.value) {
-      const rd = Math.floor(Math.random() * thoughts.length)
-      currentThought.value = thoughts[rd]
+const startSimulation = () => {
+  visibleLogs.value = []
+  logIndex = 0
+  
+  const tick = () => {
+    if (!isLoading.value) return
+    
+    visibleLogs.value.push({ id: Date.now(), text: baseLogs[logIndex] })
+    if (visibleLogs.value.length > 3) visibleLogs.value.shift()
+    
+    logIndex++
+    if (logIndex < baseLogs.length) {
+      timer = setTimeout(tick, 1000 + Math.random() * 800)
     }
-  }, 5000)
+  }
+  
+  timer = setTimeout(tick, 500)
+}
+
+watch(isLoading, (newVal) => {
+  if (newVal) {
+    startSimulation()
+  } else {
+    clearTimeout(timer)
+    setTimeout(() => {
+      if (!isLoading.value) visibleLogs.value = []
+    }, 500) // Delay clearing so it fades out
+  }
 })
 
-onUnmounted(() => clearInterval(interval))
+onUnmounted(() => clearTimeout(timer))
 </script>
 
 <style scoped>
@@ -60,10 +90,16 @@ onUnmounted(() => clearInterval(interval))
   50% { opacity: 0; }
 }
 
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.5s ease;
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
 }
-.fade-enter-from, .fade-leave-to {
+.slide-up-enter-from {
   opacity: 0;
+  transform: translateY(10px);
+}
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -1,4 +1,4 @@
-# Project: Smart Kitchen AI Ecosystem
+# Project: Smart Kitchen AI Ecosystem - Persona & Rules
 
 ## Overview
 This system automates kitchen management. The main focus is LLM Orchestration between inventory, recipes, and analytics.

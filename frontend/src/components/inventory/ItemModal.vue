@@ -17,11 +17,36 @@
                </div>
              </div>
              <h2 class="text-2xl font-bold text-slate-100 capitalize">{{ item.name }}</h2>
-             <div class="mt-4 flex flex-col space-y-3">
+             <div class="mt-2 mb-4">
+               <button 
+                 v-if="item.receipt_id && receiptDetails" 
+                 @click="navigateToReceipt"
+                 class="group inline-flex items-center text-xs px-3 py-1.5 bg-slate-800/80 hover:bg-neoBlue/20 text-slate-300 hover:text-neoBlue rounded-full border border-slate-700/50 hover:border-neoBlue/50 transition-all cursor-pointer"
+                 title="View Source Receipt"
+               >
+                 <span class="mr-2">🧾</span>
+                 <span class="font-medium mr-1">{{ receiptDetails.store_name }}</span>
+                 <span class="opacity-50 mx-1">•</span>
+                 <span>{{ formatDate(receiptDetails.scan_date) }}</span>
+                 <svg class="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+               </button>
+             </div>
+             
+             <div class="flex flex-col space-y-3">
+               
+               <div v-if="item.storage_location" class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
+                 <span class="text-slate-400">Storage Location:</span>
+                 <span class="text-slate-200 font-medium">{{ item.storage_location }}</span>
+               </div>
+               
+               <div v-if="item.added_date && !receiptDetails" class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
+                 <span class="text-slate-400">Purchase Date:</span>
+                 <span class="text-slate-200">{{ formatDate(item.added_date) }}</span>
+               </div>
                
                <div class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
                  <span class="text-slate-400">Available Qty:</span>
-                 <span class="text-slate-200 font-mono">{{ item.amount }} {{ item.unit }}</span>
+                 <span class="text-slate-200 font-mono text-neoBlue">{{ formatAmount(item.amount) }} {{ item.unit }}</span>
                </div>
                
                <div class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
@@ -61,8 +86,21 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const { isLoading, getChefAdvice } = useKitchenAPI()
+const { isLoading, history, getChefAdvice, activeTab, selectedReceipt } = useKitchenAPI()
 const { updateState } = useChefFSM()
+
+const receiptDetails = computed(() => {
+  if (!props.item.receipt_id) return null
+  return history.value.find(r => r.id === props.item.receipt_id) || null
+})
+
+const navigateToReceipt = () => {
+  if (receiptDetails.value) {
+    selectedReceipt.value = receiptDetails.value
+    activeTab.value = 'archive'
+    close()
+  }
+}
 
 const close = () => {
     if(!isLoading.value) emit('close')
@@ -105,7 +143,12 @@ const formatDate = (dateString) => {
   if (!dateString) return 'Unknown Date'
   const dateObj = new Date(dateString)
   if (isNaN(dateObj.getTime())) return 'Unknown Date'
-  return dateObj.toLocaleDateString()
+  return dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+const formatAmount = (amount) => {
+  if (amount == null) return ''
+  return Number(amount).toString()
 }
 </script>
 
