@@ -7,10 +7,12 @@ const globalInventory = ref([])
 const globalHistory = ref([])
 const globalActiveTab = ref('kitchen')
 const globalSelectedReceipt = ref(null)
+const globalIsLoading = ref(false)
+const globalError = ref(null)
 
 export function useKitchenAPI() {
-  const isLoading = ref(false)
-  const error = ref(null)
+  const isLoading = globalIsLoading
+  const error = globalError
 
   const fetchFridge = async () => {
     isLoading.value = true
