@@ -17,7 +17,16 @@ fridge_history.json
 ingredients.csv
 sources/
 archive/
-#gemini/
+prompts/
+memory/
+
+# Agents
+.agents/
+agents/
+
+# Gemini
+.gemini/
+gemini/
 
 # IDEs
 .vscode/

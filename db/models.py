@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Float, JSON, Boolean, ForeignKey
+
+from sqlalchemy import Column, String, Float, JSON, Boolean, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 import sqlalchemy.types as types
@@ -71,3 +72,12 @@ class ReceiptHistoryModel(Base):
     scan_date = Column(String, default=lambda: datetime.utcnow().isoformat())
     
     items = relationship("InventoryItemModel", back_populates="receipt", cascade="all, delete-orphan")
+
+
+class UILayoutModel(Base):
+    """Stores exact positions and ordering of B2C dashboard widgets."""
+    __tablename__ = 'ui_layout'
+    user_id = Column(String(36), primary_key=True) # Usually DEFAULT_USER_ID
+    widget_id = Column(String, primary_key=True)   # interaction_zone, fridge_list, etc.
+    order_index = Column(Integer, default=0)
+    is_collapsed = Column(Boolean, default=False)

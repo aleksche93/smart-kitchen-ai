@@ -17,6 +17,13 @@ ingredients.csv
 sources/
 archive/
 gemini/
+.gemini/
+prompts/
+memory/
+
+# Agents
+.agents/
+agents/
 
 # IDEs
 .vscode/

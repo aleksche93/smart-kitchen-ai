@@ -10,7 +10,8 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 2. **Structured Tool Calling:** Forces the LLM to return strictly typed JSON responses (`ChefResponse`), including actionable stubs (`tool_commands`) designed for future IoT Smart Home integration.
 3. **Neo-Ukrainian Premium SPA:** A Vue 3 B2C Frontend utilizing Tailwind CSS and `<Teleport>` modals. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Terracotta, Wheat) to provide an immersive 3-panel user interface.
 4. **Dual-Mode Chat & Teleportation:** Interaction logic is cleanly divided. General chat runs via the main hub, while targeted ingredient recipes are triggered cleanly via isolated Item Modals utilizing Vue's Teleport feature.
-5. **Agentic RAG:** Asynchronously fetches "classic flavor pairings" from a local knowledge base (The Flavor Bible) to rescue expiring ingredients.
+5. **Modular UI Architecture & Workspace Mobility:** Fully decouple widgets using a Stateful Draggable Grid powered by Pinia and SQLite. Users can drag and reorder their dashboard, with complete persistence saved between sessions.
+6. **Agentic RAG:** Asynchronously fetches "classic flavor pairings" from a local knowledge base (The Flavor Bible) to rescue expiring ingredients.
 
 ## 👁️ Advanced Vision Pipeline & Security (Phase 9 Integration)
 The ecosystem features a robust, enterprise-grade ingestion engine for digitizing physical grocery receipts:
@@ -28,6 +29,14 @@ Please see `.agents/rules/` for the strict architectural standards on databases,
 - **Frontend:** Vue 3 (Composition API), Vite, Tailwind CSS (Typography Plugin), HTML5 Canvas (Vision Preprocessing)
 - **AI/LLM:** Google Gemini SDK (Function Calling, Structured Outputs, Multimodal Vision)
 - **DevOps:** Docker, Docker Compose, Volume Persistence
+
+## 🎮 Usage: Draggable OS Workspace
+In Phase 10, is introduced a fully dynamic workspace (Layout Engine):
+- **Drag & Drop**: Grab the `⠿` marker on any widget (e.g., Inventory or Chef Log) to reposition it. The state is instantly saved to the database.
+- **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
+- **Z-Index Focus**: The widget you are dragging or clicking automatically elevates to the top layer.
+- Upon page refresh, all your custom layout preferences are restored automatically!
+
 
 ## 🐳 Deployment (Dockerized)
 

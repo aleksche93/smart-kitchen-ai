@@ -35,29 +35,45 @@
         <div class="text-xs tracking-widest uppercase opacity-60">Status: Online</div>
       </header>
 
-      <!-- 3-Panel Layout Grid for Kitchen -->
-      <main v-if="activeTab === 'kitchen'" class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-6 min-h-0">
+
+      <!-- 3-Panel Layout Grid for Kitchen (Draggable) -->
+      <main v-if="activeTab === 'kitchen'" class="flex-1 min-h-0">
+        <draggable
+          v-if="layoutStore.isLoaded"
+          v-model="layoutStore.widgets"
+          item-key="widget_id"
+          class="grid grid-cols-1 md:grid-cols-12 gap-6 h-full"
+          handle=".drag-handle"
+          ghost-class="opacity-50"
+          :animation="200"
+        >
+          <template #item="{ element }">
+             <div :class="getColSpan(element.widget_id)" class="h-full flex flex-col justify-start">
+                <WidgetWrapper 
+                   :widget="element" 
+                   :title="getWidgetTitle(element.widget_id)"
+                   :isFocused="activeWidget === element.widget_id"
+                   @focus="activeWidget = element.widget_id"
+                   @update:collapse="(val) => { element.is_collapsed = val; layoutStore.saveLayout() }"
+                >
+                   <div class="h-full overflow-y-auto custom-scrollbar pr-2">
+                     <FridgeList v-if="element.widget_id === 'fridge'" />
+                     
+                     <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full">
+                        <ChefAvatar />
+                        <InteractionZone />
+                     </div>
+                     
+                     <AdviceDisplay v-else-if="element.widget_id === 'advice'" />
+                   </div>
+                </WidgetWrapper>
+             </div>
+          </template>
+        </draggable>
         
-        <!-- Left Panel: Inventory (Col span 3) -->
-        <aside class="md:col-span-3 h-full overflow-y-auto pr-2 custom-scrollbar">
-          <FridgeList />
-        </aside>
-
-        <!-- Center Panel: Stateful Chef (Col span 5) -->
-        <section class="md:col-span-5 h-full flex flex-col justify-start md:justify-center overflow-y-auto pr-2 custom-scrollbar">
-          <!-- Central Interactive Hub -->
-          <div class="bg-neoGray/30 backdrop-blur-md rounded-2xl border border-slate-700/50 p-8 shadow-2xl relative my-auto">
-             <ChefAvatar />
-             <ThoughtTicker />
-             <InteractionZone />
-          </div>
-        </section>
-
-        <!-- Right Panel: Output & IoT Console (Col span 4) -->
-        <aside class="md:col-span-4 h-full flex flex-col justify-between space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-           <AdviceDisplay />
-        </aside>
-
+        <div v-else class="h-full flex items-center justify-center text-slate-500 animate-pulse">
+           Loading Workspace...
+        </div>
       </main>
 
       <!-- Full Layout for Receipt Archive -->
@@ -70,16 +86,41 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+
+import { computed, ref, onMounted } from 'vue'
 import { useKitchenAPI } from './composables/useKitchenAPI'
+import { useLayoutStore } from './stores/layoutStore'
+import draggable from 'vuedraggable'
+import WidgetWrapper from './components/ui/WidgetWrapper.vue'
+
 import FridgeList from './components/inventory/FridgeList.vue'
 import ChefAvatar from './components/chef/ChefAvatar.vue'
-import ThoughtTicker from './components/chef/ThoughtTicker.vue'
 import InteractionZone from './components/chef/InteractionZone.vue'
 import AdviceDisplay from './components/output/AdviceDisplay.vue'
 import ReceiptArchive from './views/ReceiptArchive.vue'
 
 const { activeTab } = useKitchenAPI()
+
+const layoutStore = useLayoutStore()
+const activeWidget = ref(null)
+
+onMounted(() => {
+  layoutStore.fetchLayout()
+})
+
+const getColSpan = (widgetId) => {
+  if (widgetId === 'fridge') return 'md:col-span-3'
+  if (widgetId === 'chef_hub') return 'md:col-span-5'
+  if (widgetId === 'advice') return 'md:col-span-4'
+  return 'md:col-span-12'
+}
+
+const getWidgetTitle = (widgetId) => {
+  if (widgetId === 'fridge') return 'Inventory'
+  if (widgetId === 'chef_hub') return 'Command Hub'
+  if (widgetId === 'advice') return 'Culinary Advice'
+  return 'Widget'
+}
 </script>
 
 <style>

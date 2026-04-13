@@ -18,7 +18,7 @@ from pathlib import Path
 
 # New database and core imports
 from db.database import get_db, init_db, async_session
-from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel
+from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel
 from core.fsm import ChefFSM, ChefTrigger
 from core.persona import ChefPersona
 from core.locales import i18n
@@ -29,7 +29,7 @@ from google.genai import types
 
 # Import existing logic
 from datetime import datetime, timedelta
-from sqlalchemy import select
+from sqlalchemy import select, text
 from db.models import InventoryItemModel, ReceiptHistoryModel
 import hashlib
 
@@ -65,7 +65,7 @@ async def startup_event():
     print("✅ Web API: Database initialized.")
     
     # Run seamless ALTER TABLE migration for Phase 9.5
-    from sqlalchemy import text
+
     async with async_session() as session:
         try:
             await session.execute(text("ALTER TABLE inventory_items ADD COLUMN unit_price FLOAT"))
@@ -83,6 +83,20 @@ async def startup_event():
             print("✅ Web API: Database schema upgraded (added brand, is_packaged).")
         except Exception:
             pass
+    # Phase 10.1 UI Layout Upgrade
+    async with async_session() as session:
+        try:
+            await session.execute(text('''
+                CREATE TABLE IF NOT EXISTS ui_layout (
+                    user_id VARCHAR(36),
+                    widget_id VARCHAR PRIMARY KEY,
+                    order_index INTEGER DEFAULT 0,
+                    is_collapsed BOOLEAN DEFAULT 0
+                )
+            '''))
+            await session.commit()
+        except Exception as e:
+            print(f"UI Layout creation error: {e}")
     
     async with async_session() as session:
         user = await session.get(UserModel, DEFAULT_USER_ID)
@@ -510,5 +524,48 @@ async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool 
     """
     pass
 
+class LayoutPayload(BaseModel):
+    layout: List[dict]
+
+@app.get("/api/v1/ui/layout")
+async def get_ui_layout(session: AsyncSession = Depends(get_db)):
+    query = await session.execute(select(UILayoutModel).where(UILayoutModel.user_id == DEFAULT_USER_ID).order_by(UILayoutModel.order_index))
+    results = query.scalars().all()
+    
+    if not results:
+        # Default Chef's View Preset
+        default_layout = [
+            {"widget_id": "fridge", "order_index": 0, "is_collapsed": False},
+            {"widget_id": "chef_hub", "order_index": 1, "is_collapsed": False},
+            {"widget_id": "advice", "order_index": 2, "is_collapsed": False}
+        ]
+        for w in default_layout:
+            session.add(UILayoutModel(user_id=DEFAULT_USER_ID, **w))
+        await session.commit()
+        return {"layout": default_layout}
+        
+    layout_data = [{"widget_id": r.widget_id, "order_index": r.order_index, "is_collapsed": r.is_collapsed} for r in results]
+    return {"layout": layout_data}
+
+@app.post("/api/v1/ui/layout")
+async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends(get_db)):
+    # Clear old
+    await session.execute(text(f"DELETE FROM ui_layout WHERE user_id = '{DEFAULT_USER_ID}'"))
+    
+    # Insert new
+    for idx, w in enumerate(payload.layout):
+        widget_id = str(w.get("widget_id")).replace("'", "") # sanitize
+        is_col = w.get("is_collapsed", False)
+        
+        new_w = UILayoutModel(
+            user_id=DEFAULT_USER_ID,
+            widget_id=widget_id,
+            order_index=idx,
+            is_collapsed=is_col
+        )
+        session.add(new_w)
+        
+    await session.commit()
+    return {"status": "success"}
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
