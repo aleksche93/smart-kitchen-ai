@@ -6,7 +6,7 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 
 ## 🧠 Core Architecture & Features
 
-1. **Stateful AI Memory (SQLite + SQLAlchemy):** User habits, "cooking sins", and the Chef's emotional state (FSM) are persisted locally via async database sessions, allowing the LLM to remember past interactions.
+1. **Stateful AI Memory (SQLite + SQLAlchemy):** User habits, "cooking sins", and the Chef's emotional state (FSM) are persisted locally via async database sessions, mapped against safe backend cascade purges (The "Jules" Architecture).
 2. **Structured Tool Calling:** Forces the LLM to return strictly typed JSON responses (`ChefResponse`), including actionable stubs (`tool_commands`) designed for future IoT Smart Home integration.
 3. **Neo-Ukrainian Premium SPA:** A Vue 3 B2C Frontend utilizing Tailwind CSS and `<Teleport>` modals. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Terracotta, Wheat) to provide an immersive 3-panel user interface.
 4. **Dual-Mode Chat & Teleportation:** Interaction logic is cleanly divided. General chat runs via the main hub, while targeted ingredient recipes are triggered cleanly via isolated Item Modals utilizing Vue's Teleport feature.
@@ -30,13 +30,15 @@ Please see `.agents/rules/` for the strict architectural standards on databases,
 - **AI/LLM:** Google Gemini SDK (Function Calling, Structured Outputs, Multimodal Vision)
 - **DevOps:** Docker, Docker Compose, Volume Persistence
 
-## 🎮 Usage: Draggable OS Workspace
-In Phase 10, is introduced a fully dynamic workspace (Layout Engine):
-- **Drag & Drop**: Grab the `⠿` marker on any widget (e.g., Inventory or Chef Log) to reposition it. The state is instantly saved to the database.
+## 🎮 Usage: Draggable OS Workspace & Chat-First Hub
+In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transitioned to a Global Shell structure:
+- **Global Identity Shell**: The Chef's persistent avatar now lives in the unified Top Header, serving as an omnipresent navigation anchor equipped with session control. The Avatar uses a kinetic `@keyframes breathing` pulse to represent system vitality and dynamically shifts colors (Red/Yellow/Blue) acting as an Emotive FSM State tracker. 
+- **Chat-First Command Hub**: The central Interaction Zone has shed heavy UI buttons entirely, pivoting to a clean **Messenger Pattern** architecture pinning the input field to the bottom while your query history streams vertically above. Hardware vision triggers (like Receipt Scanning via Camera) are seamlessly isolated to a static top action bar.
+- **Cognitive Glassmorphism**: A floating `ThoughtTicker` HUD natively integrates with the background, actively broadcasting the core backend processes and flexing dynamically into empty chat spaces.
+- **Micro-Data Grids & Fuzzy Diffing**: The Culinary Advice interface directly cross-references generated LLM recipes with the live Fridge database, visually parsing ingredients into rich `Grid Format` data-blocs and rendering missing (+) vs available (✓) UI states.
+- **Drag & Drop**: Grab the `⠿` marker on any widget (e.g., Inventory or Culinary Advice) to reposition it. The state is instantly saved to the database.
 - **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
-- **Z-Index Focus**: The widget you are dragging or clicking automatically elevates to the top layer.
 - Upon page refresh, all your custom layout preferences are restored automatically!
-
 
 ## 🐳 Deployment (Dockerized)
 
@@ -59,4 +61,4 @@ The API will be available at http://localhost:8000. Interactive documentation (S
 ---
 
 ## 🗺️ Roadmap & Tasks
-Please see `MASTER_ROADMAP.md` for historical phases, current task tracking, and future iterations.
+Please check `MASTER_ROADMAP.md` for historical phases, current task tracking, and future iterations.

@@ -18,3 +18,20 @@ services:
       - ./data:/app/data
     # Бажано переконатись, що локальні артефакти на кшталт .venv не заважають
     # (для цього використовуємо .dockerignore)
+
+  smart-kitchen-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smart-kitchen-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Прокидаємо локальний код для hot-reload фронтенду
+      - ./frontend:/app
+      # Анонімний volume для node_modules, щоб уникнути конфліктів з хостом
+      - /app/node_modules
+    depends_on:
+      - smart-kitchen-api
+    environment:
+      - CHOKIDAR_USEPOLLING=true

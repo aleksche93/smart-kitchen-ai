@@ -1,5 +1,5 @@
 <template>
-  <Card title="Chef's Advice" class="h-[60%] mb-4 flex flex-col overflow-hidden">
+  <Card title="Chef's Advice" class="h-full min-h-[600px] mb-4 flex flex-col overflow-hidden">
     <div v-if="chefState.adviceText || chefState.recipeText" class="flex-1 flex flex-col min-h-0 space-y-4">
       <div v-if="chefState.adviceText" class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shrink-0">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-2 border-b border-slate-700 pb-1">Contextual Advice</h4>
@@ -23,9 +23,9 @@
             >
               <div class="flex w-full items-start justify-between min-w-0 gap-2 mb-1">
                 <div class="flex gap-1.5 text-[10px] uppercase tracking-wider opacity-80 font-bold text-slate-400 min-w-0 overflow-hidden items-center">
-                  <span class="truncate block" v-if="recipe.time">⏱ {{ recipe.time }}</span>
-                  <span class="shrink-0 block" v-if="recipe.time && recipe.difficulty">•</span>
-                  <span class="truncate block" v-if="recipe.difficulty">📊 {{ recipe.difficulty }}</span>
+                  <span class="truncate block" v-if="recipe.estimated_duration">⏱ {{ recipe.estimated_duration }} min</span>
+                  <span class="shrink-0 block" v-if="recipe.estimated_duration && recipe.recipe_complexity">•</span>
+                  <span class="truncate block" v-if="recipe.recipe_complexity">📊 {{ recipe.recipe_complexity }}</span>
                 </div>
                 <!-- Dynamic Icons with Micro-Animation -->
                 <span class="text-sm shrink-0 drop-shadow-md" :class="{'animate-pulse scale-110 transition-transform': selectedRecipeIndex === idx, 'opacity-50 grayscale': selectedRecipeIndex !== idx}">
@@ -48,9 +48,24 @@
                 </svg>
               </summary>
               <div class="px-4 pb-4 pt-1 bg-slate-800/50">
-                <ul class="space-y-1 list-disc list-inside text-sm text-slate-300">
-                  <li v-for="(ing, i) in activeRecipe.ingredients" :key="'ing'+i" class="pl-1">{{ ing }}</li>
-                </ul>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  <div v-for="(ingObj, i) in normalizedIngredients" :key="'ing_g'+i" 
+                       class="flex items-center gap-3 p-2 rounded-lg border transition-all"
+                       :class="ingObj.inStock ? 'bg-emerald-900/20 border-emerald-800/40 text-emerald-100' : 'bg-slate-800/80 border-slate-700/50 hover:border-slate-600'">
+                     <!-- Icon & Check -->
+                     <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-slate-900/50 shadow-inner relative">
+                       <span class="text-lg m-auto transform scale-110">{{ ingObj.icon }}</span>
+                       <span v-if="ingObj.inStock" class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-slate-800 shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+                     </div>
+                     <!-- Text -->
+                     <div class="flex flex-col min-w-0">
+                       <span class="text-[10px] font-bold text-neoBlue/80 truncate uppercase tracking-widest">{{ ingObj.qtyAndUnit }}</span>
+                       <span class="text-sm font-medium truncate capitalize" :class="ingObj.inStock ? 'text-emerald-300' : 'text-slate-300'">{{ ingObj.name }}</span>
+                     </div>
+                     <!-- Warning Plus -->
+                     <span v-if="!ingObj.inStock" class="ml-auto text-amber-500 font-bold shrink-0 text-sm drop-shadow-md" title="Missing in fridge">+</span>
+                  </div>
+                </div>
               </div>
             </details>
 
@@ -117,6 +132,50 @@
 import { computed, ref } from 'vue'
 import Card from '../ui/Card.vue'
 import { chefState } from '../../composables/useChefFSM'
+import { useKitchenAPI } from '../../composables/useKitchenAPI'
+
+const { inventory } = useKitchenAPI()
+
+const hasIngredient = (ingStr) => {
+  if (!ingStr || !inventory.value) return false
+  const parsed = parseIngredient(ingStr)
+  const ingLower = parsed.name.toLowerCase()
+  return inventory.value.some(invItem => ingLower.includes(invItem.name.toLowerCase()) || invItem.name.toLowerCase().includes(ingLower))
+}
+
+const parseIngredient = (rawString) => {
+   const match = rawString.trim().match(/^([\d.,/¼½¾]+(?:\s*(?:cups?|tbsp|tsp|g|kg|ml|l|oz|lb|pcs|cloves?|slices?))?)\s+(.*)$/i)
+   if (match) return { qtyAndUnit: match[1], name: match[2] }
+   return { qtyAndUnit: '-', name: rawString }
+}
+
+const getIngredientIcon = (name) => {
+   const n = name.toLowerCase()
+   if (n.includes('egg')) return '🥚'
+   if (n.includes('milk') || n.includes('cream')) return '🥛'
+   if (n.includes('water') || n.includes('juice')) return '💧'
+   if (n.includes('salt') || n.includes('pepper') || n.includes('spice')) return '🧂'
+   if (n.includes('meat') || n.includes('beef') || n.includes('pork') || n.includes('chicken')) return '🥩'
+   if (n.includes('tomato') || n.includes('onion') || n.includes('garlic') || n.includes('veg')) return '🧅'
+   if (n.includes('cheese') || n.includes('butter')) return '🧀'
+   if (n.includes('bread') || n.includes('flour')) return '🥖'
+   if (n.includes('oil')) return '🫒'
+   return '🔸'
+}
+
+const normalizedIngredients = computed(() => {
+  const raw = activeRecipe.value.ingredients
+  if (!raw) return []
+  const rawArray = Array.isArray(raw) ? raw : [raw]
+  return rawArray.map(ing => {
+    const parsed = parseIngredient(ing)
+    return {
+       ...parsed,
+       icon: getIngredientIcon(parsed.name),
+       inStock: hasIngredient(ing)
+    }
+  })
+})
 
 const activeToast = ref(null)
 let toastTimeout = null

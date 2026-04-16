@@ -16,14 +16,18 @@ fridge_history.json
 ingredients.csv
 sources/
 archive/
-gemini/
-.gemini/
 prompts/
 memory/
 
 # Agents
 .agents/
 agents/
+AGENTS.md
+.agents/rules/
+
+# Gemini
+gemini/
+.gemini/
 
 # IDEs
 .vscode/

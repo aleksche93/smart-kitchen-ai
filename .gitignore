@@ -22,7 +22,9 @@ memory/
 
 # Agents
 .agents/
+.agents/rules/
 agents/
+AGENTS.md
 
 # Gemini
 .gemini/

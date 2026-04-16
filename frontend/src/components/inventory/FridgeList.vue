@@ -15,15 +15,15 @@
       <p class="text-sm text-center">Scan a receipt to start adding inventory.</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
       <div 
         v-for="item in inventory" 
         :key="item.name"
         @click="selectItem(item)"
-        class="group p-4 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-neoGray hover:border-neoBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
+        class="group px-3 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-neoGray hover:border-neoBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
       >
-        <div class="flex justify-between items-start mb-2">
-          <span class="block font-bold text-slate-100 group-hover:text-neoBlue transition-colors text-lg capitalize">{{ item.name }}</span>
+        <div class="flex justify-between items-start mb-1">
+          <span class="block font-bold text-slate-100 group-hover:text-neoBlue transition-colors text-base capitalize">{{ item.name }}</span>
           <!-- Status Badges -->
           <span 
             v-if="item.days_left < 0" 
@@ -45,7 +45,7 @@
           </span>
         </div>
         
-        <div class="flex justify-between items-end border-t border-slate-700/50 pt-2 mt-2">
+        <div class="flex justify-between items-end border-t border-slate-700/50 pt-1 mt-1">
           <span class="text-xs font-mono text-neoBlue bg-neoBlue/10 px-2 py-0.5 rounded">{{ item.amount }} {{ item.unit }}</span>
           <div class="text-right">
              <span class="block text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{{ item.category }}</span>

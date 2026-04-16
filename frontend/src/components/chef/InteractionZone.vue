@@ -1,67 +1,81 @@
 <template>
-  <div class="mt-8 flex flex-col space-y-4">
-    <!-- Chat Input Area -->
-    <div class="flex space-x-2">
-      <input 
-        v-model="localInput"
-        type="text" 
-        placeholder="Enter ingredient or ask Chef..."
-        class="flex-1 bg-slate-900/50 border border-slate-600 focus:border-neoBlue focus:ring-1 focus:ring-neoBlue text-slate-200 rounded-lg py-3 px-4 outline-none transition-all shadow-inner"
-        @keyup.enter="handleAdvice"
-      />
-      <button 
-        @click="handleAdvice"
+  <div class="flex flex-col h-full bg-transparent overflow-hidden space-y-0 relative pb-2 pt-1 font-sans">
+    
+    <!-- Top Area: Actions Bar -->
+    <div class="flex justify-between items-center bg-slate-800/80 px-4 py-2 flex-shrink-0 border border-slate-700/50 rounded-lg mb-3">
+      <div class="flex items-center gap-4">
+        <!-- Scan Receipt File Picker -->
+        <label class="cursor-pointer text-xs uppercase tracking-wider font-bold text-slate-300 hover:text-neoYellow transition-colors flex items-center group" title="Scan Receipt / Vision">
+          <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          Scan Receipt
+          <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
+        </label>
+        <!-- Reset Session -->
+        <button @click="resetState" class="text-xs uppercase tracking-wider font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center group">
+          <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          Reset Session
+        </button>
+      </div>
 
-        :disabled="btnState === BUTTON_STATES.ACTIVE || !localInput.trim()"
-        class="w-32 bg-neoBlue hover:bg-blue-600 active:bg-blue-700 text-white font-medium rounded-lg transition-all duration-300 flex items-center justify-center shadow-[0_0_10px_rgba(59,130,246,0.3)] hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
-        :class="btnState === BUTTON_STATES.ACTIVE ? 'scale-95 opacity-90' : 'scale-100'"
+      <!-- Toggle HUD -->
+      <button 
+        @click="isConsoleOpen = !isConsoleOpen"
+        class="text-slate-500 hover:text-neoBlue transition-colors block"
+        title="Toggle HUD Console"
       >
-        <svg v-if="btnState === BUTTON_STATES.ACTIVE" class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span v-if="btnState === BUTTON_STATES.IDLE">Send ></span>
-        <span v-else class="flex items-center">
-          <span class="mr-2 animate-pulse">{{ processingAction.icon }}</span>
-          {{ processingAction.text }}...
-        </span>
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
       </button>
     </div>
 
     <!-- Error Banner -->
-    <div v-if="error" class="bg-red-900/40 border border-red-700 text-red-300 text-sm p-3 rounded-lg flex items-start animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.3)]">
+    <div v-if="error" class="bg-red-900/40 border border-red-700 text-red-300 text-sm p-3 rounded-lg flex items-start animate-pulse flex-shrink-0 mb-3">
       <span class="mr-2">⚠️</span>
       <p>{{ error }}</p>
     </div>
-
     <!-- Success Banner -->
-    <div v-if="successMsg" class="bg-green-900/40 border border-green-700 text-green-300 text-sm p-3 rounded-lg flex items-start shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all">
+    <div v-if="successMsg" class="bg-green-900/40 border border-green-700 text-green-300 text-sm p-3 rounded-lg flex items-start transition-all flex-shrink-0 mb-3">
       <p>{{ successMsg }}</p>
     </div>
 
-    <!-- Scanner & Controls -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-t border-slate-700/50 pt-4 mt-2 gap-4">
-      <div class="flex items-center space-x-4">
-          <span class="text-xs text-slate-500 tracking-wider uppercase">Actions</span>
-          <label class="cursor-pointer px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-md text-sm text-neoYellow transition-colors flex items-center shadow-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>Scan Receipt</span>
-            <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
-          </label>
+    <!-- Middle Area (Scrollable Message History) -->
+    <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3">
+       <div v-if="lastQuery" class="self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30">
+          {{ lastQuery }}
+       </div>
+       <div v-if="chefState.adviceText" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50">
+          {{ chefState.adviceText }}
+       </div>
+    </div>
+
+    <!-- Bottom Area: Chat Input Space -->
+    <div class="flex flex-col flex-shrink-0 mt-auto space-y-2">
+      <!-- Thought Ticker Terminal (Anchored directly above input when open) -->
+      <div v-show="isConsoleOpen" :class="[lastQuery || chefState.adviceText ? 'h-32' : 'flex-1 min-h-[120px]']" class="rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-md shadow-inner overflow-hidden relative transition-all duration-500 w-full shrink-0">
+        <ThoughtTicker />
       </div>
-      
-      <button 
-        @click="handleReset"
-        class="px-4 py-2 bg-slate-800 hover:bg-red-900/50 border border-slate-600 hover:border-red-700/50 rounded-md text-sm text-slate-400 hover:text-red-300 transition-colors flex items-center"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Reset Session
-      </button>
+
+      <div class="flex space-x-2">
+        <div class="relative flex-1">
+          <input 
+            v-model="localInput"
+            type="text" 
+            placeholder="Ask Chef..."
+            class="w-full bg-slate-900/50 border border-slate-600 focus:border-neoBlue focus:ring-1 focus:ring-neoBlue text-slate-200 rounded-full py-3 pl-5 pr-5 outline-none transition-all shadow-inner"
+            @keyup.enter="handleAdvice"
+          />
+        </div>
+        <button 
+          @click="handleAdvice"
+          :disabled="btnState === BUTTON_STATES.ACTIVE || !localInput.trim()"
+          class="w-[100px] bg-neoBlue hover:bg-blue-600 active:bg-blue-700 text-white font-medium rounded-full transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shrink-0 shadow-md"
+        >
+          <span v-if="btnState === BUTTON_STATES.IDLE" class="text-sm">Send</span>
+          <span v-else class="flex items-center text-xs whitespace-nowrap">
+            <span class="mr-1 animate-pulse">{{ processingAction.icon }}</span>
+            {{ processingAction.text }}
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Dynamic Receipt Output -->
@@ -71,8 +85,7 @@
       @clear="scannedItems = []" 
     />
 
-    <!-- Thought Ticker Log Stream -->
-    <ThoughtTicker />
+
 
     <!-- Hybrid Cropper Teleport -->
     <Teleport to="body">
@@ -100,6 +113,8 @@ const { updateState, resetState } = useChefFSM()
 const localInput = ref('')
 const scannedItems = ref([])
 const successMsg = ref(null)
+const isConsoleOpen = ref(true)
+const lastQuery = ref(null)
 
 
 const BUTTON_STATES = {
@@ -122,13 +137,7 @@ const processingAction = computed(() => {
    return { text: "Heating pans", icon: "🍳" }
 })
 
-const handleReset = () => {
-    resetState()
-    localInput.value = ''
-    error.value = null
-    successMsg.value = null
-    scannedItems.value = []
-}
+// No longer used actively here, reset logic is in App.vue top header
 
 const handleAdvice = async () => {
 
@@ -136,6 +145,7 @@ const handleAdvice = async () => {
   error.value = null
   btnState.value = BUTTON_STATES.ACTIVE
   try {
+    lastQuery.value = localInput.value
     const data = await getChefAdvice(localInput.value)
     updateState(data)
     localInput.value = '' // Clear input after successful send

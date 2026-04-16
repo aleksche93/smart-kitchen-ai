@@ -97,6 +97,15 @@ async def startup_event():
             await session.commit()
         except Exception as e:
             print(f"UI Layout creation error: {e}")
+            
+    # Ghost Eradication for Phase 10.1.7 and 10.2.1
+    async with async_session() as session:
+        try:
+            await session.execute(text("DELETE FROM ui_layout WHERE widget_id NOT IN ('fridge', 'chef_hub', 'advice')"))
+            await session.commit()
+            print("✅ Web API: Eradicated all orphaned ghost widgets from ui_layout.")
+        except Exception:
+            pass
     
     async with async_session() as session:
         user = await session.get(UserModel, DEFAULT_USER_ID)
@@ -112,6 +121,10 @@ async def startup_event():
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Smart Kitchen AI Ecosystem API!"}
+
+@app.get("/api/v1/health")
+def read_health():
+    return {"status": "ok", "version": "0.1"}
 
 class ParsedReceiptItem(BaseModel):
     name: str = Field(..., description="Normalized clean name of the product")
@@ -349,8 +362,8 @@ class RecipeOption(BaseModel):
     name: str
     ingredients: List[str]
     instructions: List[str]
-    time: str
-    difficulty: str
+    estimated_duration: int
+    recipe_complexity: str
 
 class ChefResponse(BaseModel):
     advice_text: str
@@ -466,8 +479,8 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
                         "name": "Chef's Surprise",
                         "ingredients": [],
                         "instructions": ["Improvise!"],
-                        "time": "15 min",
-                        "difficulty": "Easy"
+                        "estimated_duration": 15,
+                        "recipe_complexity": "Easy"
                     }],
                     "emotion_displayed": "ANGRY",
                     "tool_commands": []
@@ -479,8 +492,8 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
                 "name": "Chef's Surprise",
                 "ingredients": [],
                 "instructions": ["Improvise!"],
-                "time": "15 min",
-                "difficulty": "Easy"
+                "estimated_duration": 15,
+                "recipe_complexity": "Easy"
             }]
         
         # 5. Save the updated emotional state
@@ -519,10 +532,29 @@ async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db
 
 async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool = False):
     """
-    SKILL LOGIC PLACEHOLDER
-    (To be implemented by AntiGravity subagents)
+    Subagent Skill Logic: Completely deletes a receipt and handles cascading deletions
+    of associated inventory items safely.
     """
-    pass
+    async with async_session() as session:
+        receipt = await session.get(ReceiptHistoryModel, receipt_id)
+        if not receipt:
+            return False
+            
+        if receipt.image_path and os.path.exists(receipt.image_path):
+            try:
+                os.remove(receipt.image_path)
+            except Exception:
+                pass
+                
+        if delete_items:
+            items_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.receipt_id == receipt_id))
+            items = items_query.scalars().all()
+            for item in items:
+                await session.delete(item)
+                
+        await session.delete(receipt)
+        await session.commit()
+        return True
 
 class LayoutPayload(BaseModel):
     layout: List[dict]

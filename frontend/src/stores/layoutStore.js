@@ -13,7 +13,8 @@ export const useLayoutStore = defineStore('layout', () => {
       const resp = await fetch('http://localhost:8000/api/v1/ui/layout')
       if (resp.ok) {
         const data = await resp.json()
-        widgets.value = data.layout || []
+        const rawLayout = data.layout || []
+        widgets.value = sanitizeLayout(rawLayout)
       }
     } catch (e) {
       console.warn('Failed to fetch UI layout', e)
@@ -48,9 +49,14 @@ export const useLayoutStore = defineStore('layout', () => {
   // Focus functionality (Z-Index elevation simulator)
   const focusWidget = (widgetId) => {
     // Basic array reorder could work, but we are using vuedraggable.
-    // Realistically, we can just map an internal reactive state or rely on DOM focus.
-    // For now we persist logical state order instead.
   }
 
-  return { widgets, isLoaded, fetchLayout, focusWidget }
+  // Phase 10.2: Ghost Eradication & Strict State Registry
+  const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice']
+  const sanitizeLayout = (layoutArray) => {
+    if (!Array.isArray(layoutArray)) return []
+    return layoutArray.filter(w => WIDGET_REGISTRY.includes(w.widget_id))
+  }
+
+  return { widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout }
 })
