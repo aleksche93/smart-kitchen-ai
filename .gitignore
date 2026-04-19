@@ -11,7 +11,6 @@ __pycache__/
 test.db
 tests/
 
-# Local Data (щоб не пушити твої реальні чеки та історію)
 # Local data storage
 data/
 data/receipt_images/
