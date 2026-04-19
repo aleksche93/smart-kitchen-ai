@@ -37,6 +37,8 @@ In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transit
 - **Cognitive Glassmorphism**: A floating `ThoughtTicker` HUD natively integrates with the background, actively broadcasting the core backend processes and flexing dynamically into empty chat spaces.
 - **Micro-Data Grids & Fuzzy Diffing**: The Culinary Advice interface directly cross-references generated LLM recipes with the live Fridge database, visually parsing ingredients into rich `Grid Format` data-blocs and rendering missing (+) vs available (✓) UI states.
 - **Drag & Drop**: Grab the `⠿` marker on any widget (e.g., Inventory or Culinary Advice) to reposition it. The state is instantly saved to the database.
+- **Data Integrity & Security**: All UI manipulation endpoints are fortified against SQL injection using boundary parametrization. Receipt parsing features an ORM-decoupled engine (The Jules Fix), allowing item persistence when scan history is cleared.
+- **Zero-Build Sandbox**: A native ES6 Node test suite is integrated allowing instant validation of component states (`node tests/run.js`) without compiling Webpack/Vite bundles.
 - **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
 - Upon page refresh, all your custom layout preferences are restored automatically!
 

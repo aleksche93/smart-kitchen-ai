@@ -1,8 +1,7 @@
 import uuid
 
 from sqlalchemy import Column, String, Float, JSON, Boolean, ForeignKey, Integer
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship, declarative_base
 import sqlalchemy.types as types
 
 Base = declarative_base()
@@ -54,7 +53,7 @@ class InventoryItemModel(Base):
     added_date = Column(String, nullable=False) # Store ISO formatted date string
     expiry_date = Column(String, nullable=True) # Null for non-perishables
 
-    receipt_id = Column(String(36), ForeignKey('receipt_history.id'), nullable=True)
+    receipt_id = Column(String(36), ForeignKey('receipt_history.id', ondelete="SET NULL"), nullable=True)
     receipt = relationship("ReceiptHistoryModel", back_populates="items")
 
 from datetime import datetime
@@ -71,7 +70,7 @@ class ReceiptHistoryModel(Base):
     is_valid = Column(Boolean, default=True)
     scan_date = Column(String, default=lambda: datetime.utcnow().isoformat())
     
-    items = relationship("InventoryItemModel", back_populates="receipt", cascade="all, delete-orphan")
+    items = relationship("InventoryItemModel", back_populates="receipt")
 
 
 class UILayoutModel(Base):

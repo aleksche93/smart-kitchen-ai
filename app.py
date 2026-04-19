@@ -300,10 +300,10 @@ async def get_fridge_inventory(session: AsyncSession = Depends(get_db)):
     
     for item in all_items:
         days_left = 999
-        if item.expiry_date:
+        if item.expiry_date and len(item.expiry_date) >= 10:
             try:
                 days_left = (datetime.fromisoformat(item.expiry_date) - current_date).days
-            except:
+            except ValueError:
                 pass
         
         if days_left > 0:
@@ -532,8 +532,9 @@ async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db
 
 async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool = False):
     """
-    Subagent Skill Logic: Completely deletes a receipt and handles cascading deletions
-    of associated inventory items safely.
+    Subagent Skill Logic: Completely deletes a receipt.
+    Because of new Phase 10.3 ORM architecture, related items are orphaned 
+    rather than destroyed, simulating keeping items in fridge after receipt toss.
     """
     async with async_session() as session:
         receipt = await session.get(ReceiptHistoryModel, receipt_id)
@@ -546,10 +547,11 @@ async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool 
             except Exception:
                 pass
                 
+        # With SQLAlchemy ondelete="SET NULL", deleting receipt auto-orphans items.
+        # Strict user-triggered `delete_items` could be implemented if explicitly requested.
         if delete_items:
             items_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.receipt_id == receipt_id))
-            items = items_query.scalars().all()
-            for item in items:
+            for item in items_query.scalars().all():
                 await session.delete(item)
                 
         await session.delete(receipt)
@@ -581,8 +583,8 @@ async def get_ui_layout(session: AsyncSession = Depends(get_db)):
 
 @app.post("/api/v1/ui/layout")
 async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends(get_db)):
-    # Clear old
-    await session.execute(text(f"DELETE FROM ui_layout WHERE user_id = '{DEFAULT_USER_ID}'"))
+    # Clear old safely via parameterized queries
+    await session.execute(text("DELETE FROM ui_layout WHERE user_id = :uid"), {"uid": DEFAULT_USER_ID})
     
     # Insert new
     for idx, w in enumerate(payload.layout):

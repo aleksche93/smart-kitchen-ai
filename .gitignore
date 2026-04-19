@@ -2,10 +2,14 @@
 .venv/
 venv/
 .env
+env/
 
 # Python caches
 __pycache__/
 *.pyc
+.pytest_cache/
+test.db
+tests/
 
 # Local Data (щоб не пушити твої реальні чеки та історію)
 # Local data storage
