@@ -33,29 +33,14 @@ from sqlalchemy import select, text
 from db.models import InventoryItemModel, ReceiptHistoryModel
 import hashlib
 
-app = FastAPI(
-    title="Smart Kitchen AI",
-    description="Smart Kitchen ecosystem based on FastAPI",
-    version="0.1"
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Dummy User Context
+# Config & Constants
 DEFAULT_USER_ID = str(uuid.UUID("00000000-0000-0000-0000-000000000001"))
 
-from fastapi.staticfiles import StaticFiles
-Path("data/receipt_images").mkdir(parents=True, exist_ok=True)
-app.mount("/images", StaticFiles(directory="data/receipt_images"), name="images")
+from contextlib import asynccontextmanager
+from db.database import engine
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(fastapi_app: FastAPI):
     # Ensure physical storage directory exists
     Path("data").mkdir(parents=True, exist_ok=True)
     Path("data/receipt_images").mkdir(parents=True, exist_ok=True)
@@ -65,7 +50,6 @@ async def startup_event():
     print("✅ Web API: Database initialized.")
     
     # Run seamless ALTER TABLE migration for Phase 9.5
-
     async with async_session() as session:
         try:
             await session.execute(text("ALTER TABLE inventory_items ADD COLUMN unit_price FLOAT"))
@@ -83,6 +67,7 @@ async def startup_event():
             print("✅ Web API: Database schema upgraded (added brand, is_packaged).")
         except Exception:
             pass
+            
     # Phase 10.1 UI Layout Upgrade
     async with async_session() as session:
         try:
@@ -117,6 +102,32 @@ async def startup_event():
             session.add_all([user, state, memory, chef_session_db])
             await session.commit()
             print("✅ Web API: Default User Context created.")
+
+    yield
+    print("🛑 Web API: Shutting down, disposing database connection pool...")
+    await engine.dispose()
+
+app = FastAPI(
+    title="Smart Kitchen AI",
+    description="Smart Kitchen ecosystem based on FastAPI",
+    version="0.1",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Static Storage setup
+from fastapi.staticfiles import StaticFiles
+Path("data/receipt_images").mkdir(parents=True, exist_ok=True)
+app.mount("/images", StaticFiles(directory="data/receipt_images"), name="images")
+
+
 
 @app.get("/")
 def read_root():

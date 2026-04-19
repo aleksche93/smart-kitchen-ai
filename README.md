@@ -24,7 +24,7 @@ The ecosystem features a robust, enterprise-grade ingestion engine for digitizin
 Please see `.agents/rules/` for the strict architectural standards on databases, PKs, and UI rendering. All external subagents must respect these constraints.
 
 ## 🛠 Tech Stack
-- **Backend:** Python 3.12+, FastAPI, Uvicorn, Asyncio
+- **Backend:** Python 3.12+, FastAPI (Lifespan Context Architecture), Uvicorn, Asyncio
 - **Database:** SQLite, `aiosqlite`, SQLAlchemy (Async)
 - **Frontend:** Vue 3 (Composition API), Vite, Tailwind CSS (Typography Plugin), HTML5 Canvas (Vision Preprocessing)
 - **AI/LLM:** Google Gemini SDK (Function Calling, Structured Outputs, Multimodal Vision)
@@ -39,6 +39,7 @@ In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transit
 - **Drag & Drop**: Grab the `⠿` marker on any widget (e.g., Inventory or Culinary Advice) to reposition it. The state is instantly saved to the database.
 - **Data Integrity & Security**: All UI manipulation endpoints are fortified against SQL injection using boundary parametrization. Receipt parsing features an ORM-decoupled engine (The Jules Fix), allowing item persistence when scan history is cleared.
 - **Zero-Build Sandbox**: A native ES6 Node test suite is integrated allowing instant validation of component states (`node tests/run.js`) without compiling Webpack/Vite bundles.
+- **Lifespan Architecture**: Safe API backend initialization and teardown controlled by modern `@asynccontextmanager`, isolating database logic from UI routing processes.
 - **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
 - Upon page refresh, all your custom layout preferences are restored automatically!
 
