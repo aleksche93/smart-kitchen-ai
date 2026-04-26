@@ -12,21 +12,20 @@ env/
 __pycache__/
 *.pyc
 .pytest_cache/
+test.db
+tests/
 
 
-# Local Data (щоб не пушити твої реальні чеки та історію)
-receipt.jpg
-fridge_items.json
-fridge_history.json
-ingredients.csv
+# Local Data 
+data/
+data/receipt_images/
 sources/
 archive/
-prompts/
 memory/
+Jules_sync/
 
 # Agents
 .agents/
-agents/
 AGENTS.md
 .agents/rules/
 

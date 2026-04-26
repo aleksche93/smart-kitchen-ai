@@ -1,9 +1,17 @@
-# Smart Kitchen AI - Master Roadmap
+# 🗺️ MASTER ROADMAP: Smart Kitchen AI OS (2026)
 
-## Introduction
-This document serves as the Single Source of Truth for the Smart Kitchen AI Ecosystem development, mapping the transition from a CLI-based Stateful Agent to a B2C Vue 3 SPA architecture utilizing native structured outputs.
+## 🏁 STAGE I: STABLE FOUNDATION (PHASES 1–10.3.1) — `[100% COMPLETED]`
+*This block is a closed technological asset. The entire infrastructure is deployed and operational.*
 
-## Completed Phases
+- [x] **Backend Core:** FastAPI, asynchronous architecture (SQLAlchemy 2.0, aiosqlite).
+- [x] **Lifecycle Management:** Implementation of `lifespan` for safe connection/disconnection of resources and DB.
+- [x] **Vision Ingestion:** Gemini Vision API for receipt scanning with SHA-256 deduplication.
+- [x] **Security (Jules Protocol):** Full input sanitization, SQL bound parameters, injection protection.
+- [x] **UI Framework:** Vue 3 (Dark Mode), Draggable UI Matrix, Pinia for state management.
+- [x] **DevOps:** Docker containerization, GitHub Sync, `.env` isolation.
+
+<details>
+<summary><b>View Detailed History (Phases 1 - 10.3.1)</b></summary>
 
 ### Phase 1: Microservice Migration ✅
 - CLI to FastAPI REST API migration.
@@ -12,7 +20,6 @@ This document serves as the Single Source of Truth for the Smart Kitchen AI Ecos
 ### Phase 2: State Persistence ✅
 - SQLite and `aiosqlite` integration with async SQLAlchemy sessions.
 - Stateful Chef memory (tracking FSM states and "cooking sins") using JSON columns.
-
 
 ### Phase 3: Hardware Ingestion ✅
 - OCR receipt scanning via Gemini Vision (`scanner.py`, `POST /api/v1/scan-receipt`).
@@ -95,13 +102,90 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - **SQL Hardening**: Sanitized system endpoints (like UI state manipulation) via strict SQLAlchemy bound-parameter `text()` executions, definitively closing injection vulnerability vectors.
 - **Micro-Optimizations**: Streamlined dataloader bottlenecks within `get_fridge_inventory` by substituting CPU-expensive `try/except` iteration blocks with fast length-check string validations.
 - **Zero-Build Testing**: Sculpted an external native Node.js test infrastructure mapping FSM state transitions locally without NPM or Vite dependencies, alongside deep Python backend behavioral validations utilizing `pytest`.
+
 ### Phase 10.3.1: Application Lifecycle Refactoring [100% COMPLETED] ✅
 - **Lifespan Migration**: Replaced deprecated `@app.on_event("startup")` events in `app.py` with SQLAlchemy 2.0+ compliant `lifespan` contextual managers, guaranteeing clean database connectivity startup and graceful teardown (`engine.dispose()`).
 - **Resource Insulation**: Abstracted dynamic routing and persistent volume paths safely outside the immediate logic boundary of Starlette to prevent API boot deadlocks.
 - **Static Analysis Compliance**: Standardized variable sequence in `app.py`, ensuring all global constants (`DEFAULT_USER_ID`) and resource managers (`lifespan`) are defined before their respective references, resolving 30+ linter warnings.
 - **Robust Documentation**: Integrated updated documentation tracking modern API boot processes.
 
+</details>
+
 ---
 
-## Future Roadmap
-- **Phase 11**: IoT Controller integration stubs, household inventory zone, and persistent web-push notifications.
+## 🚀 STAGE II: INTERACTION & ORCHESTRATION (PHASES 10.4–11) — `[PRIORITY №1]`
+*Transition to "Chef as Orchestrator" architecture. Separation of communication logic and task execution.*
+
+### Phase 10.4: Interaction Decoupling & Persona Sandbox
+- [x] **"Jules" Security & Observability (Batch 1):** Implemented FSM validation tests, Native XSS Shield in `AdviceDisplay.vue`, and added explicit `lifespan` initialization logging.
+- [x] **"Jules" Performance & Robustness (Batch 2):** Eradicated N+1 query bottlenecks via bulk SQLAlchemy deletion (`delete_receipt_and_sync_inventory`) and secured locales JSON parsing.
+- [ ] **Decoupled Input Logic:** Separation of the single input into "Chat" (communication with Brains) and "Generator" (calling a skill/worker).
+- [ ] **Chef as Orchestrator:** Transforming the Chef into a controlling model that asynchronously calls agents (Scanner, Generator, Inventory Analyst).
+- [ ] **Persona Hardening (Sarcastic Constraint):** 
+    - [ ] Implementation of context restriction directives (strictly kitchen/groceries).
+    - [ ] Setting up sarcastic redirects for off-topic requests (e.g., about physics or the sky).
+- [ ] **Logic Cleanup:** Complete elimination of text duplication between Chat messages and Advice blocks.
+
+### Phase 11: Cognitive Brain & Agentic RAG
+- [ ] **Vector DB & Flavor Bible:** Creation of a vector knowledge base (e.g., Qdrant/Chroma) for dynamic flavor pairing search.
+- [ ] **Flavor Harmony Score:** Algorithm for evaluating ingredient compatibility (Weighting 1.0 - 4.0) based on RAG.
+- [ ] **Persona RAG:** Connecting the knowledge base to the Chef's Brains (Flavor Bible, personal preferences) to prevent hallucinations.
+- [ ] **The "Sin-Sieve" Agent:** Autonomous agent for detecting errors in recipes (e.g., `protein_chaos`).
+- [ ] **Smart Receipt 2.0:** Transition to proactive financial analytics (Unit price tracking, categorical normalization).
+- [ ] **Agentic Skill Interface:** Standardization of the interaction protocol between the Chef and his "Workers".
+
+---
+
+## 🎮 STAGE III: LIVE HUD & JUICY UX (PHASE 12)
+*Visualization of the AI's "thought process" and enhancement of emotional response.*
+
+- [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
+	- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
+- [ ] **Persistent Persona State:** Saving the Chef's emotional state and context between page reloads (Redis/LocalStorage).
+- [ ] **Live Thought Ticker 2.0:**
+	- [ ] Relocation of the ticker to the upper zone (closer to the avatar, but without rigid attachment to the header).
+    - [ ] Visualization of asynchronous agent work (status-stream: "Chef is thinking...", "Scanner Agent is working...", "Generator is forming a response...").
+    - [ ] Global "thoughts" terminal widget for the Chef (FSM state log + Zen Mode).
+- [ ] **Visual Polish:** Strengthening color indication of states and updating animations (preparation for 3D-Kozak implementation).
+- [ ] **Processing Feedback:** Contextual animations (🔪 for slicing, 🥘 for cooking) instead of standard spinners.
+
+---
+
+## 🏗️ STAGE IV: ECOSYSTEM & SKILLS (PHASES 13–14)
+*Expanding capabilities through specialized modules.*
+
+### Phase 13: Capability Expansion
+- [ ] **Skill: Recipe Generator:** Transforming the generator into an autonomous asynchronous tool with its own instructions.
+- [ ] **Skill: Bag Management:** Module for tracking consumable materials ("bag of bags").
+	- [ ] **Bag Skill (Skill-Based Architecture):** Separate skill for the "bag of bags" (`FunModuleBagModel` DB, visual widget).
+- [ ] **Search Trigger:** Function to invoke external search (Google Search/Gemini) through the Chef for complex queries.
+- [ ] **Financial Analyst Agent:** Proactive analytics of supermarket prices and offers.
+- [ ] **Loyalty-Tracker:** Agent that aggregates supermarket bonuses (_Silpo_, _ATB_) from OCR data.
+- [ ] **Chrono-Mise-en-place:** Visual timeline planner for parallel cooking processes.
+
+### Phase 14: Hands-Free and IoT Integration
+- [ ] **Voice Interaction:** Web Speech API (STT/TTS) — voice control of recipe steps.
+- [ ] **IoT Controller Stubs:** Creation of API endpoints for future integration with Home Assistant (ovens, refrigerators).
+- [ ] **Persistent Web-Push:** Notifications about product expiration dates directly to desktop/mobile.
+
+---
+
+## 🌌 STAGE V: NEXT-GEN AI & VISUALIZATION (PHASE 15+)
+*Future of the project: 3D, Edge Computing, total privacy, full autonomy, and immersion*
+
+- [ ] **Digital Twin (3D Kitchen):** Kitchen visualization via Three.js/Rive. Animated 3D-Chef moves between modules depending on system state.
+- [ ] **Edge Computing (Local AI):** Migration of analytics to **Gemma 4** (via WebGPU/AI Edge) to ensure 100% data privacy (Local Privacy First).
+- [ ] **Vision Mentor:** Video stream analysis of cooking (Computer Vision) for real-time user training in slicing techniques.
+- [ ] **Imagen 3 Integration:** Generation of photorealistic food images based on recipes created by the Chef.
+
+---
+
+## 📉 DIFF ANALYSIS (What changed?)
+
+| **Category** | **What was removed / changed** | **Reason** |
+|---|---|---|
+| **Completed** | "Migration to FastAPI", "SQL Hardening", "Lifespan managers" | These items were moved from "Future" to "Completed" (Phase 10.3.1 successfully closed). |
+| **Merged** | "Flavor Bible" + "Flavor Harmony Score" | This is a single entity. Harmony Score is a metric derived from RAG database integration. |
+| **Refined** | "Bag Skill" | In Phase 9.5, this was an idea; here it is highlighted as a separate module in Stage III (skills architecture). |
+| **Deleted** | "Firebase/Firestore Migration" | Decided to leave this as an option, but focus shifted to **Local AI (Gemma 4)** and **Edge Computing** for privacy. |
+| **Clarified** | "Thought Ticker" | Merged the idea of "Chat-first" and "Console UI" into a single Global Thought Ticker. |

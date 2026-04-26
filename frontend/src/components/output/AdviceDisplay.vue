@@ -211,7 +211,16 @@ const activeRecipe = computed(() => {
 
 const formatMarkdown = (text) => {
   if (!text || typeof text !== 'string') return ''
-  return text
+  
+  // Phase 10.4 XSS Shield: Native HTML escaping to eradicate Agent Traps
+  const safeText = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  return safeText
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')

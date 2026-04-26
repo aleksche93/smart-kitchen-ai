@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 
 LOCALES_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "locales")
 
@@ -14,7 +15,8 @@ class I18n:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 self.translations = json.load(f)
-        except Exception:
+        except Exception as e:
+            logging.error(f"Locales Error: Failed to parse {self.lang}.json - {e}")
             self.translations = {}
 
     def get(self, path: str, default: str = "") -> str | list:

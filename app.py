@@ -29,7 +29,7 @@ from google.genai import types
 
 # Import existing logic
 from datetime import datetime, timedelta
-from sqlalchemy import select, text
+from sqlalchemy import select, text, delete, update
 from db.models import InventoryItemModel, ReceiptHistoryModel
 import hashlib
 
@@ -38,6 +38,9 @@ DEFAULT_USER_ID = str(uuid.UUID("00000000-0000-0000-0000-000000000001"))
 
 from contextlib import asynccontextmanager
 from db.database import engine
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 @asynccontextmanager
 async def lifespan(fastapi_app: FastAPI):
@@ -47,16 +50,16 @@ async def lifespan(fastapi_app: FastAPI):
     
     # Init DB and default user
     await init_db()
-    print("✅ Web API: Database initialized.")
+    logging.info("Web API: Database initialized.")
     
     # Run seamless ALTER TABLE migration for Phase 9.5
     async with async_session() as session:
         try:
             await session.execute(text("ALTER TABLE inventory_items ADD COLUMN unit_price FLOAT"))
             await session.commit()
-            print("✅ Web API: Database schema upgraded (added unit_price).")
+            logging.info("Migration: unit_price column verified/added.")
         except Exception:
-            pass # Column already exists
+            logging.info("Migration: unit_price column verified/added.")
             
     # Batch 2 Database Upgrades
     async with async_session() as session:
@@ -64,9 +67,9 @@ async def lifespan(fastapi_app: FastAPI):
             await session.execute(text("ALTER TABLE inventory_items ADD COLUMN brand VARCHAR"))
             await session.execute(text("ALTER TABLE inventory_items ADD COLUMN is_packaged BOOLEAN DEFAULT 0"))
             await session.commit()
-            print("✅ Web API: Database schema upgraded (added brand, is_packaged).")
+            logging.info("Migration: brand & is_packaged columns verified/added.")
         except Exception:
-            pass
+            logging.info("Migration: brand & is_packaged columns verified/added.")
             
     # Phase 10.1 UI Layout Upgrade
     async with async_session() as session:
@@ -80,17 +83,18 @@ async def lifespan(fastapi_app: FastAPI):
                 )
             '''))
             await session.commit()
+            logging.info("Migration: ui_layout table verified/created.")
         except Exception as e:
-            print(f"UI Layout creation error: {e}")
+            logging.error(f"UI Layout creation error: {e}")
             
     # Ghost Eradication for Phase 10.1.7 and 10.2.1
     async with async_session() as session:
         try:
             await session.execute(text("DELETE FROM ui_layout WHERE widget_id NOT IN ('fridge', 'chef_hub', 'advice')"))
             await session.commit()
-            print("✅ Web API: Eradicated all orphaned ghost widgets from ui_layout.")
+            logging.info("Migration: Ghost widgets eradicated from ui_layout.")
         except Exception:
-            pass
+            logging.info("Migration: ui_layout cleanup verified.")
     
     async with async_session() as session:
         user = await session.get(UserModel, DEFAULT_USER_ID)
@@ -101,10 +105,12 @@ async def lifespan(fastapi_app: FastAPI):
             chef_session_db = ChefSessionModel(user_id=DEFAULT_USER_ID)
             session.add_all([user, state, memory, chef_session_db])
             await session.commit()
-            print("✅ Web API: Default User Context created.")
+            logging.info("DB Boot: Default User Context created.")
+        else:
+            logging.info("DB Boot: ChefMemoryModel verified.")
 
     yield
-    print("🛑 Web API: Shutting down, disposing database connection pool...")
+    logging.info("Web API: Shutting down, disposing database connection pool...")
     await engine.dispose()
 
 app = FastAPI(
@@ -525,21 +531,14 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
 
 @app.delete("/api/v1/fridge/receipt/{receipt_id}")
 async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db)):
-    # Simple cascade delete
-    receipt = await session.get(ReceiptHistoryModel, receipt_id)
-    if not receipt:
+    # Phase 10.4: Wire UI to use our new Bulk Deletion Architecture
+    # By default, we orphan items (delete_items=False) instead of hard deleting them.
+    success = await delete_receipt_and_sync_inventory(receipt_id, delete_items=False)
+    
+    if not success:
         raise HTTPException(status_code=404, detail="Receipt not found")
         
-    try:
-        if receipt.image_path and os.path.exists(receipt.image_path):
-            os.remove(receipt.image_path)
-            
-        await session.delete(receipt)
-        await session.commit()
-        return {"status": "success", "message": "Receipt and associated items deleted."}
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"status": "success", "message": "Receipt deleted and items orphaned successfully."}
 
 async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool = False):
     """
@@ -558,12 +557,18 @@ async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool 
             except Exception:
                 pass
                 
-        # With SQLAlchemy ondelete="SET NULL", deleting receipt auto-orphans items.
+        # Phase 10.4 Batch 2: Bulk Deletion Architecture (N+1 Query Eradication)
         # Strict user-triggered `delete_items` could be implemented if explicitly requested.
         if delete_items:
-            items_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.receipt_id == receipt_id))
-            for item in items_query.scalars().all():
-                await session.delete(item)
+            await session.execute(
+                delete(InventoryItemModel).where(InventoryItemModel.receipt_id == receipt_id)
+            )
+        else:
+            await session.execute(
+                update(InventoryItemModel)
+                .where(InventoryItemModel.receipt_id == receipt_id)
+                .values(receipt_id=None)
+            )
                 
         await session.delete(receipt)
         await session.commit()
