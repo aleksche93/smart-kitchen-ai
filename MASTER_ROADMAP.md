@@ -120,6 +120,7 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **"Jules" Security & Observability (Batch 1):** Implemented FSM validation tests, Native XSS Shield in `AdviceDisplay.vue`, and added explicit `lifespan` initialization logging.
 - [x] **"Jules" Performance & Robustness (Batch 2):** Eradicated N+1 query bottlenecks via bulk SQLAlchemy deletion (`delete_receipt_and_sync_inventory`) and secured locales JSON parsing.
 - [x] **"AI Brigade" UX Sync & Strategic RAG Update (Batch 3):** Established FSM-Pinia reactivity, enforced strict i18n for scanning feedback, and added 5MB client-side constraints.
+- [x] **"Sarcastic Reactivity & Ghost State" (Batch 3.1):** Created a Pinia Sarcastic Idle Engine, fixed global dimensional layout scrolling (CSS h-auto overrides), and developed frontend memory maps ("Ghost Metadata") for orphaned bulk-deleted receipts.
 - [ ] **Decoupled Input Logic:** Separation of the single input into "Chat" (communication with Brains) and "Generator" (calling a skill/worker).
 - [ ] **Chef as Orchestrator:** Transforming the Chef into a controlling model that asynchronously calls agents (Scanner, Generator, Inventory Analyst).
 - [ ] **Persona Hardening (Sarcastic Constraint):** 

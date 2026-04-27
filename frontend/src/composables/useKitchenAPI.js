@@ -5,6 +5,7 @@ const BASE_URL = 'http://localhost:8000/api/v1'
 // Shared global reactivity
 const globalInventory = ref([])
 const globalHistory = ref([])
+const globalGhostReceipts = ref([])
 const globalActiveTab = ref('kitchen')
 const globalSelectedReceipt = ref(null)
 const globalIsLoading = ref(false)
@@ -73,10 +74,22 @@ export function useKitchenAPI() {
   const deleteReceipt = async (receiptId) => {
     isLoading.value = true
     try {
+      const receiptToDelete = globalHistory.value.find(r => r.id === receiptId)
+      
       const resp = await fetch(`${BASE_URL}/fridge/receipt/${receiptId}`, {
         method: 'DELETE'
       })
       if (!resp.ok) throw new Error('Failed to delete receipt')
+      
+      // Store Ghost Metadata
+      if (receiptToDelete) {
+        globalGhostReceipts.value.push({
+          id: receiptId,
+          store_name: receiptToDelete.store_name,
+          scan_date: receiptToDelete.scan_date
+        })
+      }
+      
       // Reactivity: Refresh both synchronously
       await Promise.all([fetchFridge(), fetchHistory()])
       return true
@@ -117,7 +130,7 @@ export function useKitchenAPI() {
 
   return { 
     isLoading, error, 
-    inventory: globalInventory, history: globalHistory, 
+    inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
     fetchFridge, fetchHistory, getChefAdvice, scanReceipt, deleteReceipt 
   }

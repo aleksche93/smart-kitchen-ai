@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen w-screen bg-transparent text-slate-200 overflow-hidden font-sans relative">
+  <div class="h-screen w-screen bg-transparent text-slate-200 overflow-y-auto font-sans relative">
     
     <!-- Background overlay to tone down the svg pattern -->
     <div class="absolute inset-0 bg-slate-900/90 -z-10 pointer-events-none"></div>

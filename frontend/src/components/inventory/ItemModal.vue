@@ -19,16 +19,17 @@
              <h2 class="text-2xl font-bold text-slate-100 capitalize">{{ item.name }}</h2>
              <div class="mt-2 mb-4">
                <button 
-                 v-if="item.receipt_id && receiptDetails" 
-                 @click="navigateToReceipt"
-                 class="group inline-flex items-center text-xs px-3 py-1.5 bg-slate-800/80 hover:bg-neoBlue/20 text-slate-300 hover:text-neoBlue rounded-full border border-slate-700/50 hover:border-neoBlue/50 transition-all cursor-pointer"
-                 title="View Source Receipt"
+                 v-if="receiptDetails" 
+                 @click="!receiptDetails.isGhost && navigateToReceipt()"
+                 class="group inline-flex items-center text-xs px-3 py-1.5 rounded-full border transition-all"
+                 :class="[receiptDetails.isGhost ? 'bg-slate-800/40 border-slate-700/30 text-slate-500 cursor-default' : 'bg-slate-800/80 hover:bg-neoBlue/20 text-slate-300 hover:text-neoBlue border-slate-700/50 hover:border-neoBlue/50 cursor-pointer']"
+                 :title="receiptDetails.isGhost ? 'Original receipt has been deleted' : 'View Source Receipt'"
                >
-                 <span class="mr-2">🧾</span>
+                 <span class="mr-2">{{ receiptDetails.isGhost ? '👻' : '🧾' }}</span>
                  <span class="font-medium mr-1">{{ receiptDetails.store_name }}</span>
                  <span class="opacity-50 mx-1">•</span>
                  <span>{{ formatDate(receiptDetails.scan_date) }}</span>
-                 <svg class="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                 <svg v-if="!receiptDetails.isGhost" class="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity -rotate-45" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                </button>
              </div>
              
@@ -78,12 +79,25 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const { isLoading, history, getChefAdvice, activeTab, selectedReceipt } = useKitchenAPI()
+const { isLoading, history, ghostReceipts, getChefAdvice, activeTab, selectedReceipt } = useKitchenAPI()
 const { updateState } = useChefFSM()
 
 const receiptDetails = computed(() => {
-  if (!props.item.receipt_id) return null
-  return history.value.find(r => r.id === props.item.receipt_id) || null
+  if (props.item.receipt_id) {
+    return history.value.find(r => r.id === props.item.receipt_id) || null
+  }
+  
+  // Try to map a ghost receipt by checking added_date matching scan_date
+  if (props.item.added_date && ghostReceipts.value.length) {
+     const itemDate = new Date(props.item.added_date).toISOString().split('T')[0]
+     const ghost = ghostReceipts.value.find(g => {
+        const scanD = new Date(g.scan_date)
+        if (isNaN(scanD)) return false
+        return scanD.toISOString().split('T')[0] === itemDate
+     })
+     if (ghost) return { ...ghost, isGhost: true }
+  }
+  return null
 })
 
 const navigateToReceipt = () => {

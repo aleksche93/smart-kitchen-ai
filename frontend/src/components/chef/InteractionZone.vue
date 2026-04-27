@@ -107,9 +107,11 @@ import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
 import ThoughtTicker from './ThoughtTicker.vue'
 import { useI18n } from '../../plugins/i18n'
+import { useChefStore } from '../../stores/chefStore'
 
 const { t } = useI18n()
-const { isLoading, error, getChefAdvice, scanReceipt } = useKitchenAPI()
+const chefStore = useChefStore()
+const { isLoading, error, getChefAdvice, scanReceipt, fetchFridge } = useKitchenAPI()
 const { updateState, resetState } = useChefFSM()
 
 const localInput = ref('')
@@ -196,9 +198,15 @@ const handleCroppedImage = async (blob) => {
   // Package Blob explicitly as receipt.jpg per API requirement
   const fileToUpload = new File([blob], "receipt_cropped.jpg", { type: "image/jpeg" })
   
+  chefStore.logThought(t('ticker.checking_traps'))
+  chefStore.logThought(t('ticker.processing'))
+  
   try {
     const data = await scanReceipt(fileToUpload)
     if (data.items_added) {
+      chefStore.logThought(t('ticker.identified_shop', { shop: data.store_name || 'Unknown' }))
+      chefStore.logThought(t('ticker.extracted_items', { count: data.total_recognized }))
+      
       scannedItems.value = data.items_added 
       successMsg.value = t('scan.success', { store: data.store_name || 'Unknown', count: data.total_recognized })
       setTimeout(() => { successMsg.value = null }, 5000)
@@ -218,7 +226,14 @@ const handleCroppedImage = async (blob) => {
     }
     chefState.emotionDisplay = "FOCUSED"
   } catch (err) {
-    // API throws errors appropriately
+    // Check if error is Duplicate Receipt (409)
+    if (err.message && err.message.toLowerCase().includes('duplicate')) {
+       error.value = t('errors.duplicate_receipt')
+       chefState.emotionDisplay = "ANGRY"
+       fetchFridge() // Silent refresh of the fridge on duplicate
+    } else {
+       error.value = err.message || 'Connection lost.'
+    }
   }
 }
 </script>

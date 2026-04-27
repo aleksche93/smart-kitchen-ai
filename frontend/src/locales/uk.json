@@ -7,7 +7,14 @@
     "bag_detected": "Чек успішно оброблено. О, Шеф помітив пакет! Переміщую його до ваших запасів... Модуль розваг активовано!",
     "no_bag": "Чек успішно оброблено, холодильник оновлено! Погляньте на ліву панель. З чого ще бажаєте приготувати?"
   },
+  "ticker": {
+    "checking_traps": "Checking image for AI-traps...",
+    "processing": "Scanning image vectors...",
+    "identified_shop": "Identified {shop}. Nice taste in groceries!",
+    "extracted_items": "Extracting {count} items. Don't blink."
+  },
   "errors": {
-    "file_too_large": "Ой, це занадто велике фото навіть для мого зору! Спробуйте менший розмір (Макс 5MB)."
+    "file_too_large": "Ой, це занадто велике фото навіть для мого зору! Спробуйте менший розмір (Макс 5MB).",
+    "duplicate_receipt": "Гей! Цей чек вже був відсканований. Не намагайтеся мене надурити!"
   }
 }

@@ -7,7 +7,14 @@
     "bag_detected": "I have successfully processed your cropped receipt. Oh, Chef detected a bag! Moving it to your stash... Fun Module activated!",
     "no_bag": "I have successfully processed your cropped receipt and updated the fridge inventory! Check the Left Panel. Anything else you want to cook with?"
   },
+  "ticker": {
+    "checking_traps": "Checking image for AI-traps...",
+    "processing": "Scanning image vectors...",
+    "identified_shop": "Identified {shop}. Nice taste in groceries!",
+    "extracted_items": "Extracting {count} items. Don't blink."
+  },
   "errors": {
-    "file_too_large": "Oh, this photo is too big even for my eyes! Try a smaller size (Max 5MB)."
+    "file_too_large": "Oh, this photo is too big even for my eyes! Try a smaller size (Max 5MB).",
+    "duplicate_receipt": "Hey! This receipt has already been scanned. Stop trying to trick me!"
   }
 }

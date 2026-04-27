@@ -1,19 +1,19 @@
 <template>
-  <Card title="Chef's Advice" class="h-full min-h-[600px] mb-4 flex flex-col overflow-hidden">
-    <div v-if="chefState.adviceText || chefState.recipeText" class="flex-1 flex flex-col min-h-0 space-y-4">
+  <Card title="Chef's Advice" class="h-auto min-h-[400px] mb-4 flex flex-col">
+    <div v-if="chefState.adviceText || chefState.recipeText" class="flex-1 flex flex-col space-y-4">
       <div v-if="chefState.adviceText" class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shrink-0">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-2 border-b border-slate-700 pb-1">Contextual Advice</h4>
         <p class="text-slate-300 leading-relaxed font-sans text-sm">{{ chefState.adviceText }}</p>
       </div>
 
-      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col min-h-0 flex-1">
+      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col h-auto flex-1">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
         
         <!-- Multi-Option Structured Rendering -->
-        <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col min-h-0">
+        <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col h-auto">
           
           <!-- Interactive Recipe Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 shrink-0 min-w-0">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 shrink-0 h-auto">
             <button 
               v-for="(recipe, idx) in parsedRecipes" 
               :key="'card'+idx"
@@ -37,7 +37,7 @@
           </div>
 
           <!-- Accordion View - Active Recipe -->
-          <div :key="'accordion_view_' + selectedRecipeIndex" class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-3">
+          <div :key="'accordion_view_' + selectedRecipeIndex" class="pr-2 flex flex-col gap-3 h-auto">
             
             <!-- Ingredients Accordion (Open by default) -->
             <details v-if="activeRecipe.ingredients && activeRecipe.ingredients.length" open class="group bg-slate-800 rounded-lg border border-slate-700 overflow-hidden transition-all duration-300">

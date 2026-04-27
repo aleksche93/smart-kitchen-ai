@@ -6,10 +6,10 @@
       <!-- Terminal Body -->
       <div class="p-3 flex-1 overflow-y-auto relative flex flex-col justify-end">
         <transition-group name="slide-up" tag="div" class="flex flex-col space-y-1">
-          <div v-for="(log, idx) in chefStore.thoughts" :key="log.id" class="flex items-start">
+          <div v-for="(log, idx) in thoughts" :key="log.id" class="flex items-start">
              <span class="opacity-70 mr-2">$</span>
-             <span :class="{'opacity-50': idx !== chefStore.thoughts.length - 1}">{{ log.text }}</span>
-             <span v-if="idx === chefStore.thoughts.length - 1" class="blink-cursor ml-1">_</span>
+             <span :class="{'opacity-50': idx !== thoughts.length - 1}">{{ log.text }}</span>
+             <span v-if="idx === thoughts.length - 1" class="blink-cursor ml-1">_</span>
           </div>
         </transition-group>
       </div>
@@ -18,12 +18,14 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefStore } from '../../stores/chefStore'
 
 const { isLoading } = useKitchenAPI()
 const chefStore = useChefStore()
+const { thoughts } = storeToRefs(chefStore)
 
 const isVisible = ref(false)
 let hideTimer = null
@@ -40,7 +42,7 @@ watch(isLoading, (newVal) => {
 })
 
 // Keep ticker visible if new thoughts arrive
-watch(() => chefStore.thoughts.length, () => {
+watch(() => thoughts.value.length, () => {
   isVisible.value = true
   if (hideTimer) clearTimeout(hideTimer)
   hideTimer = setTimeout(() => {
@@ -48,8 +50,13 @@ watch(() => chefStore.thoughts.length, () => {
   }, 5000)
 })
 
+onMounted(() => {
+  chefStore.startSarcasticEngine()
+})
+
 onUnmounted(() => {
   clearTimeout(hideTimer)
+  chefStore.stopSarcasticEngine()
 })
 </script>
 

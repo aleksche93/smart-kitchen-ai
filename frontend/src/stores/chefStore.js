@@ -4,7 +4,8 @@ export const useChefStore = defineStore('chef', {
   state: () => ({
     emotionDisplay: 'IDLE',
     thoughts: [],
-    maxThoughts: 5
+    maxThoughts: 5,
+    _idleInterval: null
   }),
   actions: {
     setEmotion(emotion) {
@@ -21,6 +22,28 @@ export const useChefStore = defineStore('chef', {
       this.emotionDisplay = 'IDLE'
       this.thoughts = []
       this.logThought("System Reboot. Chef Memory Reset. [CLEAN]")
+    },
+    startSarcasticEngine() {
+      if (this._idleInterval) clearInterval(this._idleInterval)
+      this._idleInterval = setInterval(() => {
+        if (this.emotionDisplay === 'IDLE') {
+          const idleThoughts = [
+            'Polishing the virtual knives...',
+            'Humming a neo-Ukrainian tune...',
+            'Judging your fridge inventory...',
+            'Waiting for a culinary challenge...',
+            'Staring at a digital potato...'
+          ]
+          const randomThought = idleThoughts[Math.floor(Math.random() * idleThoughts.length)]
+          this.logThought(`[IDLE_PROCESS] ${randomThought}`)
+        }
+      }, 12000)
+    },
+    stopSarcasticEngine() {
+      if (this._idleInterval) {
+        clearInterval(this._idleInterval)
+        this._idleInterval = null
+      }
     }
   }
 })
