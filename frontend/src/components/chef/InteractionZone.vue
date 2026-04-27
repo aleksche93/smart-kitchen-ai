@@ -106,7 +106,9 @@ import { useChefFSM, chefState } from '../../composables/useChefFSM'
 import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
 import ThoughtTicker from './ThoughtTicker.vue'
+import { useI18n } from '../../plugins/i18n'
 
+const { t } = useI18n()
 const { isLoading, error, getChefAdvice, scanReceipt } = useKitchenAPI()
 const { updateState, resetState } = useChefFSM()
 
@@ -165,6 +167,13 @@ const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
   
+  if (file.size > 5 * 1024 * 1024) { // 5MB limit
+    error.value = t('errors.file_too_large')
+    event.target.value = ''
+    return
+  }
+  error.value = null
+  
   // Set up raw image for HybridCropper to process 
   rawImageObject.value = URL.createObjectURL(file)
   event.target.value = '' // Reset file input
@@ -191,14 +200,14 @@ const handleCroppedImage = async (blob) => {
     const data = await scanReceipt(fileToUpload)
     if (data.items_added) {
       scannedItems.value = data.items_added 
-      successMsg.value = `✅ Receipt processed! Store: ${data.store_name || 'Unknown'}. Added ${data.total_recognized} items.`
+      successMsg.value = t('scan.success', { store: data.store_name || 'Unknown', count: data.total_recognized })
       setTimeout(() => { successMsg.value = null }, 5000)
       
       const hasBag = data.items_added.some(item => item.is_bag)
       if (hasBag) {
-        chefState.adviceText = "I have successfully processed your cropped receipt. Oh, Chef detected a bag! Moving it to your stash... Fun Module activated!"
+        chefState.adviceText = t('scan.bag_detected')
       } else {
-        chefState.adviceText = "I have successfully processed your cropped receipt and updated the fridge inventory! Check the Left Panel. Anything else you want to cook with?"
+        chefState.adviceText = t('scan.no_bag')
       }
     } else if (data.items) {
       scannedItems.value = data.items

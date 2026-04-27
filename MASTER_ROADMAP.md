@@ -119,6 +119,7 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 ### Phase 10.4: Interaction Decoupling & Persona Sandbox
 - [x] **"Jules" Security & Observability (Batch 1):** Implemented FSM validation tests, Native XSS Shield in `AdviceDisplay.vue`, and added explicit `lifespan` initialization logging.
 - [x] **"Jules" Performance & Robustness (Batch 2):** Eradicated N+1 query bottlenecks via bulk SQLAlchemy deletion (`delete_receipt_and_sync_inventory`) and secured locales JSON parsing.
+- [x] **"AI Brigade" UX Sync & Strategic RAG Update (Batch 3):** Established FSM-Pinia reactivity, enforced strict i18n for scanning feedback, and added 5MB client-side constraints.
 - [ ] **Decoupled Input Logic:** Separation of the single input into "Chat" (communication with Brains) and "Generator" (calling a skill/worker).
 - [ ] **Chef as Orchestrator:** Transforming the Chef into a controlling model that asynchronously calls agents (Scanner, Generator, Inventory Analyst).
 - [ ] **Persona Hardening (Sarcastic Constraint):** 
@@ -127,6 +128,8 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [ ] **Logic Cleanup:** Complete elimination of text duplication between Chat messages and Advice blocks.
 
 ### Phase 11: Cognitive Brain & Agentic RAG
+- [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
+- [x] **Autonomous Knowledge Extraction:** Implemented specialized Python ETL scripts optimized by Gemini Code Assist for automated JSON knowledge extraction.
 - [ ] **Vector DB & Flavor Bible:** Creation of a vector knowledge base (e.g., Qdrant/Chroma) for dynamic flavor pairing search.
 - [ ] **Flavor Harmony Score:** Algorithm for evaluating ingredient compatibility (Weighting 1.0 - 4.0) based on RAG.
 - [ ] **Persona RAG:** Connecting the knowledge base to the Chef's Brains (Flavor Bible, personal preferences) to prevent hallucinations.

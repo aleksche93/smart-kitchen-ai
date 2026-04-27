@@ -11,7 +11,7 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 3. **Neo-Ukrainian Premium SPA:** A Vue 3 B2C Frontend utilizing Tailwind CSS and `<Teleport>` modals. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Terracotta, Wheat) to provide an immersive 3-panel user interface.
 4. **Dual-Mode Chat & Teleportation:** Interaction logic is cleanly divided. General chat runs via the main hub, while targeted ingredient recipes are triggered cleanly via isolated Item Modals utilizing Vue's Teleport feature.
 5. **Modular UI Architecture & Workspace Mobility:** Fully decouple widgets using a Stateful Draggable Grid powered by Pinia and SQLite. Users can drag and reorder their dashboard, with complete persistence saved between sessions.
-6. **Agentic RAG:** Asynchronously fetches "classic flavor pairings" from a local knowledge base (The Flavor Bible) to rescue expiring ingredients.
+6. **Agentic RAG (Local Inference):** Asynchronously fetches "classic flavor pairings" from a local knowledge base (such as The Flavor Bible) to rescue expiring ingredients. Driven by **Gemma 4 via Ollama**, ensuring 100% data privacy and offline capability through advanced Python ETL pipelines.
 
 ## 👁️ Advanced Vision Pipeline & Security (Phase 9 Integration)
 The ecosystem features a robust, enterprise-grade ingestion engine for digitizing physical grocery receipts:

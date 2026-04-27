@@ -1,34 +1,116 @@
 [
   {
-    "ingredient": "Chicken",
-    "category": "Meat",
+    "ingredient": "Almonds",
+    "category": "Nut",
+    "flavor_profile": [
+      "sweet",
+      "nutty",
+      "distinct"
+    ],
+    "techniques": [
+      "grinding",
+      "baking",
+      "making frangipane",
+      "biscotti",
+      "cake",
+      "ice cream"
+    ],
+    "tips": "When manufactured products (like Frangelico or marzipan) are used, the almond flavor is distinct. Grinding them allows use in puff pastry or biscotti.",
     "pairings": [
       {
-        "paired_with": "Basil",
+        "paired_with": "Chocolate",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Coconut",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Coffee",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Orange",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Green anise",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Figs",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Honey",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Orange zest",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Raisins",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Apples",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sweet",
+      "mild",
+      "savory",
+      "tart",
+      "astringent"
+    ],
+    "techniques": [
+      "bake",
+      "grill",
+      "poach",
+      "raw",
+      "stew",
+      "steam",
+      "caramelize",
+      "deep-fry",
+      "sauté",
+      "sautéing",
+      "pie-filling",
+      "puree"
+    ],
+    "tips": "Apricots are much better cooked than raw. It is rare that you find a fruit that reaches its full potential as cooked rather than raw, but an apricot is one. A so-so apricot poached will turn into heaven. Apples are versatile and pair well with various flavor combinations. Fuji, Gala, and Golden Delicious apples tend to be juicy, while Granny Smith apples are often drier. Choosing the right variety depends on the desired outcome. Use a variety of apples (e.g., Gala, Granny Smith) for different textures and sweetnesses in pies. For desserts, Granny Smith apples with tartness combined with sugar, lemon, and shiso work well.",
+    "pairings": [
+      {
+        "paired_with": "apricots",
         "affinity": "classic"
       },
       {
-        "paired_with": "Bay leaf",
+        "paired_with": "bacon",
         "affinity": "classic"
       },
       {
-        "paired_with": "Butter",
-        "affinity": "classic"
+        "paired_with": "goat cream",
+        "affinity": "good"
       },
       {
-        "paired_with": "Carrots",
-        "affinity": "classic"
+        "paired_with": "vinegar",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Celery",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Fennel",
+        "affinity": "good"
       },
       {
         "paired_with": "Cinnamon",
         "affinity": "classic"
       },
       {
-        "paired_with": "Garlic",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Ginger",
+        "paired_with": "Vanilla",
         "affinity": "classic"
       },
       {
@@ -36,149 +118,214 @@
         "affinity": "classic"
       },
       {
-        "paired_with": "Mushrooms",
+        "paired_with": "Quince",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Dates",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Sugar",
         "affinity": "classic"
       },
       {
-        "paired_with": "Olive oil",
+        "paired_with": "Apple juice",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Calvados",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Lemon juice",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Shiso",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Gingerbread",
         "affinity": "classic"
       }
     ]
   },
   {
-    "ingredient": "Beef",
-    "category": "Meat",
-    "pairings": [
-      {
-        "paired_with": "Garlic",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Onions",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Black pepper",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Mushrooms",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Rosemary",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Thyme",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Red wine",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Carrots",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Bacon",
-        "affinity": "good"
-      },
-      {
-        "paired_with": "Basil",
-        "affinity": "good"
-      }
-    ]
-  },
-  {
-    "ingredient": "Tomato",
+    "ingredient": "Artichokes",
     "category": "Vegetable",
+    "flavor_profile": [
+      "earthy",
+      "mild",
+      "savory"
+    ],
+    "techniques": [
+      "bake",
+      "boil",
+      "braise",
+      "broil",
+      "deep-fry",
+      "grill",
+      "raw",
+      "roast",
+      "sauté",
+      "steam",
+      "stew"
+    ],
+    "tips": "When making stuffed artichokes, Panko bread crumbs can be mixed with chopped mint, salted, and stuffed into the cavity.",
     "pairings": [
       {
-        "paired_with": "Basil",
+        "paired_with": "butter",
         "affinity": "classic"
       },
       {
-        "paired_with": "Bell peppers",
+        "paired_with": "garlic",
         "affinity": "classic"
       },
       {
-        "paired_with": "Cheese",
+        "paired_with": "lemon",
         "affinity": "classic"
       },
       {
-        "paired_with": "Garlic",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Lemon",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Olive oil",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Onions",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Black pepper",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Salt",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Thyme",
+        "paired_with": "parsley",
         "affinity": "classic"
       }
     ]
   },
   {
-    "ingredient": "Garlic",
-    "category": "Allium",
+    "ingredient": "Arugula",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "peppery",
+      "spicy",
+      "bitter"
+    ],
+    "techniques": [
+      "raw",
+      "raw (salads)",
+      "sauté",
+      "braise"
+    ],
+    "tips": "Use fresh, lightly dressed, or in salads. Good pairings include balsamic vinegar, lemon, olive oil, and Parmesan cheese, or Cabrales cheese, endive, and grapes.",
     "pairings": [
       {
         "paired_with": "Lemon",
-        "affinity": "classic"
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Balsamic vinegar",
+        "affinity": "good"
       },
       {
         "paired_with": "Olive oil",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Onions",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Tomatoes",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Vinegar",
-        "affinity": "classic"
-      },
-      {
-        "paired_with": "Basil",
         "affinity": "good"
       },
       {
-        "paired_with": "Beef",
+        "paired_with": "Parmesan cheese",
         "affinity": "good"
       },
       {
-        "paired_with": "Chicken",
+        "paired_with": "Cabrales cheese",
         "affinity": "good"
       },
       {
-        "paired_with": "Ginger",
+        "paired_with": "Endive",
         "affinity": "good"
       },
       {
-        "paired_with": "Rosemary",
+        "paired_with": "Grapes",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Cucumber",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Feta cheese",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Mint",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Radicchio",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Fennel",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Pears",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Prosciutto",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Avocado water",
+    "category": "Fruit/Beverage",
+    "flavor_profile": [
+      "fresh",
+      "mild"
+    ],
+    "techniques": [
+      "centrifuging",
+      "purifying"
+    ],
+    "tips": "Separating fat and water allows for the creation of a fundamentally different product and flavor experience.",
+    "pairings": [
+      {
+        "paired_with": "Brown butter",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "BLiS syrup (handcrafted aged maple syrup)",
+    "category": "Spice",
+    "flavor_profile": [
+      "sweet",
+      "aged",
+      "maple"
+    ],
+    "techniques": [
+      "aging in bourbon barrels"
+    ],
+    "tips": "It is aged in small bourbon barrels in Canada and is hand-stamped with wax.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Bananas",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sweet",
+      "tropical",
+      "mild"
+    ],
+    "techniques": [
+      "baking",
+      "caramelizing",
+      "pureeing",
+      "freezing",
+      "sautéing"
+    ],
+    "tips": "For best flavor in purees, let whole bananas thaw before use. Yellow and firm bananas are preferred for dishes like Bananas Foster.",
+    "pairings": [
+      {
+        "paired_with": "caramel",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "chocolate",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "citrus",
         "affinity": "good"
       }
     ]
@@ -226,6 +373,1040 @@
       {
         "paired_with": "Pine nuts",
         "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Bay leaf",
+    "category": "Spice",
+    "flavor_profile": [
+      "aromatic",
+      "herbaceous"
+    ],
+    "techniques": [
+      "braising",
+      "stewing"
+    ],
+    "tips": "Use sparingly to avoid overpowering the dish.",
+    "pairings": [
+      {
+        "paired_with": "beans",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Beef",
+    "category": "Meat",
+    "pairings": [
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Black pepper",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Mushrooms",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Rosemary",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Thyme",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Red wine",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Carrots",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Bacon",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Basil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "allspice",
+        "affinity": "classic"
+      }
+    ],
+    "flavor_profile": [
+      "savory",
+      "umami"
+    ],
+    "techniques": [
+      "braising",
+      "grilling",
+      "roasting",
+      "stewing",
+      "raw",
+      "corning",
+      "ground",
+      "stewed"
+    ],
+    "tips": "Allspice pairs well with beef. Best when braised, grilled, or roasted for deeper flavor."
+  },
+  {
+    "ingredient": "Black pepper",
+    "category": "Spice",
+    "flavor_profile": [
+      "peppery",
+      "spicy"
+    ],
+    "techniques": [
+      "sprinkling",
+      "seasoning"
+    ],
+    "tips": "Black pepper pairs well with spaghetti.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Cardamom",
+    "category": "Spice",
+    "flavor_profile": [
+      "aromatic",
+      "spicy"
+    ],
+    "techniques": [],
+    "tips": "Aromatic spice that cuts the fat of the dish.",
+    "pairings": [
+      {
+        "paired_with": "clove",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "coriander seed",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Carrots",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "sweet",
+      "mild"
+    ],
+    "techniques": [
+      "quartering",
+      "roasting",
+      "cooking",
+      "juicing"
+    ],
+    "tips": "Cooking methods can dull the bright flavor; try using fresh juice to maintain freshness.",
+    "pairings": [
+      {
+        "paired_with": "Tarragon leaves",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Orange",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Celery seeds",
+    "category": "Spice",
+    "flavor_profile": [
+      "mild",
+      "earthy"
+    ],
+    "techniques": [
+      "baking",
+      "stewing"
+    ],
+    "tips": "Use sparingly to avoid overpowering the dish.",
+    "pairings": [
+      {
+        "paired_with": "Cheese",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Chicken",
+    "category": "Meat",
+    "pairings": [
+      {
+        "paired_with": "Basil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Bay leaf",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Butter",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Carrots",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Cinnamon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Mushrooms",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Chives",
+    "category": "Herb",
+    "flavor_profile": [
+      "mild",
+      "savory"
+    ],
+    "techniques": [
+      "stir-fries",
+      "drizzled"
+    ],
+    "tips": "Always use fresh, not cooked.",
+    "pairings": [
+      {
+        "paired_with": "onion",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Coriander",
+    "category": "Spice",
+    "flavor_profile": [
+      "sour",
+      "pungent",
+      "astringent",
+      "fruity",
+      "mild"
+    ],
+    "techniques": [
+      "",
+      "sachets",
+      "soups"
+    ],
+    "tips": "Add near the end of cooking. Toast coriander seeds to release their flavor. Use coriander with peppercorns in a sachet for soups.",
+    "pairings": [
+      {
+        "paired_with": "Peppercorns",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Cumin",
+    "category": "Spice",
+    "flavor_profile": [
+      "savory"
+    ],
+    "techniques": [],
+    "tips": "",
+    "pairings": []
+  },
+  {
+    "ingredient": "Dried Apricots",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sweet",
+      "chewy"
+    ],
+    "techniques": [
+      "poach",
+      "stew"
+    ],
+    "tips": "Use with dried cherries and orange for Argentinean cuisine.",
+    "pairings": [
+      {
+        "paired_with": "Dried Cherries",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Orange",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Pistachios",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Dry white wine",
+    "category": "Beverage",
+    "flavor_profile": [],
+    "techniques": [],
+    "tips": null,
+    "pairings": []
+  },
+  {
+    "ingredient": "Eggplant",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "mild",
+      "earthy"
+    ],
+    "techniques": [
+      "baking",
+      "stewing"
+    ],
+    "tips": "Use it in Mediterranean or Middle Eastern cuisine dishes.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Feta cheese",
+    "category": "Dairy",
+    "flavor_profile": [
+      "salty",
+      "tangy",
+      "savory"
+    ],
+    "techniques": [
+      "serving",
+      "toppings"
+    ],
+    "tips": "Pair with strong herbs like oregano or mint.",
+    "pairings": [
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Mint",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Fig",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sweet"
+    ],
+    "techniques": [],
+    "tips": "Pair with raspberry or late summer fruit to increase customer acceptance.",
+    "pairings": [
+      {
+        "paired_with": "Raspberry",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Late summer fruit",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Garlic",
+    "category": "Allium",
+    "pairings": [
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Tomatoes",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Vinegar",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Basil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Beef",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Chicken",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Ginger",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Rosemary",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "snapper",
+        "affinity": "classic"
+      }
+    ],
+    "flavor_profile": [
+      "pungent",
+      "savory"
+    ],
+    "techniques": [
+      "sautéing",
+      "braising"
+    ],
+    "tips": "Use fresh garlic for the best flavor."
+  },
+  {
+    "ingredient": "Grapefruit",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sour",
+      "sweet",
+      "bitter",
+      "tart",
+      "citrus"
+    ],
+    "techniques": [
+      "raw"
+    ],
+    "tips": "Its sweet and a little bitter nature makes it fun to play with.",
+    "pairings": [
+      {
+        "paired_with": "avocado",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "caramel",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "meringue",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "crab",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "miso",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "seaweed",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "fromage blanc",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "pomegranate",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "mint",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "sugar",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Hickory chips",
+    "category": "Spice",
+    "flavor_profile": [
+      "smoky",
+      "woodsy"
+    ],
+    "techniques": [
+      "smoking"
+    ],
+    "tips": "Used in a 'wood stock' process to create a smoked sauce.",
+    "pairings": [
+      {
+        "paired_with": "Juniper berries",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Peppercorns",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Lemon",
+    "category": "Fruit",
+    "flavor_profile": [
+      "sour",
+      "bright",
+      "lemony",
+      "citrus",
+      "tangy"
+    ],
+    "techniques": [
+      "zesting",
+      "juicing",
+      "zest",
+      "juice"
+    ],
+    "tips": "Use lemon juice when you want the acid and lemony flavor of the juice. Use zest when combining with other flavors to get the essential oils and perfume. The zest provides intense aromatic oils.",
+    "pairings": [
+      {
+        "paired_with": "apple crisp",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "ice cream",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "custards",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "tarts",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "berries",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Mascarpone",
+    "category": "Dairy",
+    "flavor_profile": [
+      "mild",
+      "sweet"
+    ],
+    "techniques": [
+      "smeared in"
+    ],
+    "tips": null,
+    "pairings": []
+  },
+  {
+    "ingredient": "Mint",
+    "category": "Herb",
+    "flavor_profile": [
+      "fresh",
+      "mild",
+      "cooling"
+    ],
+    "techniques": [
+      "sprig (garnish)",
+      "adding to desserts/dishes"
+    ],
+    "tips": "Mint should be incorporated into the dish itself, not used as a nonfunctional garnish. The goal is balance, not just aesthetics.",
+    "pairings": [
+      {
+        "paired_with": "lamb",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "strawberry shortcake",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "lemon tart",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Pancetta",
+    "category": "Meat",
+    "flavor_profile": [
+      "savory",
+      "salty"
+    ],
+    "techniques": [
+      "sautéing",
+      "baking"
+    ],
+    "tips": "Use rendered fat for cooking other ingredients to enhance flavor.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Peas",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "fresh",
+      "sweet"
+    ],
+    "techniques": [
+      "raw"
+    ],
+    "tips": "Best enjoyed fresh in spring.",
+    "pairings": [
+      {
+        "paired_with": "bacon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "cream",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "shallots",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "basil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "potatoes",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "celery",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "olive oil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "onions",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "chicken stock",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "sugar",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "custard",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "Parmesan cheese",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "lobster",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "pasta",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "marjoram",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "mascarpone",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "mint",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Pecorino cheese",
+    "category": "Cheese",
+    "flavor_profile": [
+      "savory",
+      "mild"
+    ],
+    "techniques": [],
+    "tips": "Goes with every flavor.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Prosciutto",
+    "category": "Meat",
+    "flavor_profile": [
+      "salty"
+    ],
+    "techniques": [],
+    "tips": null,
+    "pairings": []
+  },
+  {
+    "ingredient": "Prosecco",
+    "category": "Wine",
+    "flavor_profile": [
+      "mild",
+      "sweet"
+    ],
+    "techniques": [
+      "cooking",
+      "liquid base"
+    ],
+    "tips": "Use in creamy dishes like risotto.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Rosemary",
+    "category": "Herb",
+    "flavor_profile": [
+      "pungent",
+      "strong",
+      "piney"
+    ],
+    "techniques": [
+      "skewering",
+      "pan-frying"
+    ],
+    "tips": "It is always the star; works well with strong, assertive fish like swordfish or tuna.",
+    "pairings": [
+      {
+        "paired_with": "lamb",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "apples",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "pears",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "octopus",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "mussels",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "citrus",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "honey",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Short ribs",
+    "category": "Meat",
+    "flavor_profile": [
+      "savory",
+      "rich"
+    ],
+    "techniques": [
+      "braising"
+    ],
+    "tips": "Adjust cooking time based on tenderness preference; braising is ideal for falling-apart texture.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Spring lamb",
+    "category": "Meat",
+    "flavor_profile": [
+      "mild",
+      "savory"
+    ],
+    "techniques": [
+      "roasting",
+      "brining",
+      "braising"
+    ],
+    "tips": "Lamb shoulder is highly recommended as it can 'take a beating' and still taste glorious. The hay-bedding technique can be adapted to lamb for intense, pleasant flavors.",
+    "pairings": [
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Summer savory",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "White wine",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Lavender",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Star anise",
+    "category": "Spice",
+    "flavor_profile": [
+      "anise",
+      "sweet"
+    ],
+    "techniques": [
+      "-"
+    ],
+    "tips": "Use sparingly as it has a strong, potent flavor.",
+    "pairings": []
+  },
+  {
+    "ingredient": "Steel-Cut Oats",
+    "category": "Grain",
+    "flavor_profile": [
+      "mild",
+      "savory"
+    ],
+    "techniques": [
+      "simmer"
+    ],
+    "tips": "Can be used in various breakfast preparations like oatmeal soufflé.",
+    "pairings": [
+      {
+        "paired_with": "Devon Cream",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Maple Syrup",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Swiss chervil",
+    "category": "Herb",
+    "flavor_profile": [
+      "mild",
+      "delicate"
+    ],
+    "techniques": [
+      "garnish",
+      "flavoring"
+    ],
+    "tips": "Can be used as a flavorful alternative to chives.",
+    "pairings": [
+      {
+        "paired_with": "chives",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "Tarragon",
+    "category": "Herb",
+    "flavor_profile": [
+      "mild",
+      "sweet"
+    ],
+    "techniques": [
+      "raw"
+    ],
+    "tips": "Fresh tarragon can be used in vinaigrettes or sauces.",
+    "pairings": [
+      {
+        "paired_with": "scallops",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "Tomato",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "acidic",
+      "sweet",
+      "umami"
+    ],
+    "techniques": [
+      "fresh",
+      "raw"
+    ],
+    "tips": "Pairing with basil is a classic combination, essential for summer dishes.",
+    "pairings": [
+      {
+        "paired_with": "Basil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Bell peppers",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Cheese",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Garlic",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Lemon",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Olive oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Onions",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Black pepper",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Salt",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Thyme",
+        "affinity": "classic"
+      }
+    ]
+  },
+  {
+    "ingredient": "White Asparagus",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "light",
+      "subtle"
+    ],
+    "techniques": [
+      "blanch",
+      "boil",
+      "sauté",
+      "steam"
+    ],
+    "tips": "Covered to deprive it of sunlight while growing, white asparagus is lighter in flavor and texture than green asparagus.",
+    "pairings": []
+  },
+  {
+    "ingredient": "asparagus",
+    "category": "Vegetable",
+    "flavor_profile": [
+      "earthy",
+      "mild"
+    ],
+    "techniques": [
+      "soup preparation",
+      "liquid concentration"
+    ],
+    "tips": "To enhance the flavor, add acid (like lime or lemon) and cayenne when finishing the soup.",
+    "pairings": [
+      {
+        "paired_with": "hazelnuts",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "Parmesan cheese",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "truffle oil",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "lemon",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "cepes mushrooms",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "parsley",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "mustard",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "olive oil",
+        "affinity": "good"
+      },
+      {
+        "paired_with": "vinegar",
+        "affinity": "good"
+      }
+    ]
+  },
+  {
+    "ingredient": "avocado",
+    "category": "Fruit",
+    "flavor_profile": [
+      "rich",
+      "mild",
+      "savory"
+    ],
+    "techniques": [
+      "toss",
+      "seasoning"
+    ],
+    "tips": "Avocados are so rich that we always season them with a lot of fleur de sel and lemon juice. Avocados need something bitter for balance.",
+    "pairings": [
+      {
+        "paired_with": "lemon juice",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "fleur de sel",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "frisée",
+        "affinity": "classic"
+      },
+      {
+        "paired_with": "endive",
+        "affinity": "classic"
       }
     ]
   }

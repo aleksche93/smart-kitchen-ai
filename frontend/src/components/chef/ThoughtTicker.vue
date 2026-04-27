@@ -6,10 +6,10 @@
       <!-- Terminal Body -->
       <div class="p-3 flex-1 overflow-y-auto relative flex flex-col justify-end">
         <transition-group name="slide-up" tag="div" class="flex flex-col space-y-1">
-          <div v-for="(log, idx) in visibleLogs" :key="log.id" class="flex items-start">
+          <div v-for="(log, idx) in chefStore.thoughts" :key="log.id" class="flex items-start">
              <span class="opacity-70 mr-2">$</span>
-             <span :class="{'opacity-50': idx !== visibleLogs.length - 1}">{{ log.text }}</span>
-             <span v-if="idx === visibleLogs.length - 1" class="blink-cursor ml-1">_</span>
+             <span :class="{'opacity-50': idx !== chefStore.thoughts.length - 1}">{{ log.text }}</span>
+             <span v-if="idx === chefStore.thoughts.length - 1" class="blink-cursor ml-1">_</span>
           </div>
         </transition-group>
       </div>
@@ -20,60 +20,35 @@
 <script setup>
 import { ref, watch, onUnmounted } from 'vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
+import { useChefStore } from '../../stores/chefStore'
 
 const { isLoading } = useKitchenAPI()
+const chefStore = useChefStore()
 
-const baseLogs = [
-  "Analyzing OCR Stream...",
-  "Checking for AI Agent Traps: [CLEAN]",
-  "Checking Store Identity: Native Store Profile Detected",
-  "Applying Native Language Rule...",
-  "Sanitizing Data...",
-  "Calculating Unit Prices..."
-]
-
-const visibleLogs = ref([])
 const isVisible = ref(false)
-let timer = null
 let hideTimer = null
-let logIndex = 0
-
-const startSimulation = () => {
-  isVisible.value = true
-  if (hideTimer) clearTimeout(hideTimer)
-  visibleLogs.value = []
-  logIndex = 0
-  
-  const tick = () => {
-    if (!isLoading.value) return
-    
-    visibleLogs.value.push({ id: Date.now(), text: baseLogs[logIndex] })
-    if (visibleLogs.value.length > 3) visibleLogs.value.shift()
-    
-    logIndex++
-    if (logIndex < baseLogs.length) {
-      timer = setTimeout(tick, 1000 + Math.random() * 800)
-    }
-  }
-  
-  timer = setTimeout(tick, 500)
-}
 
 watch(isLoading, (newVal) => {
   if (newVal) {    
-    
+    isVisible.value = true
     if (hideTimer) clearTimeout(hideTimer)
-    startSimulation()
   } else {
-    clearTimeout(timer)
     hideTimer = setTimeout(() => {
       isVisible.value = false
     }, 5000)
   }
 })
 
+// Keep ticker visible if new thoughts arrive
+watch(() => chefStore.thoughts.length, () => {
+  isVisible.value = true
+  if (hideTimer) clearTimeout(hideTimer)
+  hideTimer = setTimeout(() => {
+    if (!isLoading.value) isVisible.value = false
+  }, 5000)
+})
+
 onUnmounted(() => {
-  clearTimeout(timer)
   clearTimeout(hideTimer)
 })
 </script>

@@ -1,0 +1,13 @@
+{
+  "scan": {
+    "analyzing": "Chef is analyzing the receipt...",
+    "processing": "Processing ingredients...",
+    "stocking": "Stocking the fridge...",
+    "success": "✅ Receipt processed! Store: {store}. Added {count} items.",
+    "bag_detected": "I have successfully processed your cropped receipt. Oh, Chef detected a bag! Moving it to your stash... Fun Module activated!",
+    "no_bag": "I have successfully processed your cropped receipt and updated the fridge inventory! Check the Left Panel. Anything else you want to cook with?"
+  },
+  "errors": {
+    "file_too_large": "Oh, this photo is too big even for my eyes! Try a smaller size (Max 5MB)."
+  }
+}
