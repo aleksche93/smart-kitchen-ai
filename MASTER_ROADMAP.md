@@ -123,7 +123,14 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **"Sarcastic Reactivity & Ghost State" (Batch 3.1):** Created a Pinia Sarcastic Idle Engine, fixed global dimensional layout scrolling (CSS h-auto overrides), and developed frontend memory maps ("Ghost Metadata") for orphaned bulk-deleted receipts.
 - [x] **Layout Architecture & Logic Decoupling (Batch 4):** Refactored AI JSON payloads to separate `chat_message` from `technical_data`. Implemented Fullscreen Responsive Grid (`w-full`, `grid-cols-2`/`grid-cols-3`) and extracted Receipt Parsed Data to a floating Teleport overlay.
 - [x] **The "Living OS" Polish (Batch 5):** Added Kinetic Typography (`useTypewriter`) with randomized typos, integrated `@container` queries for dynamic density in `FridgeList.vue`, and implemented Intent Triage (Magic Trigger ✨) for heavy recipe queries.
+- [x] **Density & Chat Logic Fixes (Batch 5.1):** Separated `/api/v1/chef/chat` for plain lightweight conversation from heavy RAG recipe generation. Stabilized adaptive grids with pixel-perfect `@container` thresholds in both Fridge and Advice widgets.
 
+
+### Phase 11.1: Conversational Memory & Context Awareness
+- [ ] **Database Expansion:** Add `chat_history` JSON column to `ChefSessionModel` (via lightweight ALTER TABLE in lifespan).
+- [ ] **Stateful Gemini Chat:** Refactor `/api/v1/chef/chat` to retrieve, update, and pass full conversational history (`contents` array) to the Gemini client.
+- [ ] **Dynamic Chat UI:** Upgrade `InteractionZone.vue` to maintain an array of `messages`, use `v-for` to render continuous chat blocks, and implement auto-scroll.
+- [ ] **Memory Initialization:** Implement logic on frontend load to fetch existing session chat history from the backend.
 
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.

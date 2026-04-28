@@ -114,7 +114,7 @@ import { useChefStore } from '../../stores/chefStore'
 
 const { t } = useI18n()
 const chefStore = useChefStore()
-const { isLoading, error, getChefAdvice, scanReceipt, fetchFridge } = useKitchenAPI()
+const { isLoading, error, getChefAdvice, sendChat, scanReceipt, fetchFridge } = useKitchenAPI()
 const { updateState, resetState } = useChefFSM()
 
 const localInput = ref('')
@@ -162,7 +162,25 @@ const handleAdvice = async () => {
     return
   }
 
-  await executeMagic(localInput.value)
+  // Flow A: Plain Chat
+  btnState.value = BUTTON_STATES.ACTIVE
+  try {
+    lastQuery.value = localInput.value
+    const data = await sendChat(localInput.value)
+    
+    // Update FSM from Chat Response
+    const chefResp = data.chef_response || {}
+    chefState.chatMessage = chefResp.chat_message || ''
+    chefState.emotionDisplay = chefResp.emotion_displayed || 'IDLE'
+    chefStore.setEmotion(chefState.emotionDisplay)
+    
+    localInput.value = ''
+  } catch (err) {
+    error.value = "Сhef refused to chat: " + (err.message || 'Connection lost.')
+    chefState.emotionDisplay = 'ANGRY'
+  } finally {
+    btnState.value = BUTTON_STATES.IDLE
+  }
 }
 
 const executeMagic = async (query = lastQuery.value) => {

@@ -16,7 +16,7 @@
     </div>
 
     <div v-else class="@container w-full h-full">
-      <div class="grid grid-cols-1 @[500px]:grid-cols-2 @[800px]:grid-cols-3 gap-2">
+      <div class="grid grid-cols-1 @[350px]:grid-cols-2 @[700px]:grid-cols-3 gap-2">
         <div 
         v-for="item in inventory" 
         :key="item.name"

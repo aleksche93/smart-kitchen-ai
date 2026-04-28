@@ -560,6 +560,81 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/api/v1/chef/chat")
+async def get_chef_chat(payload: ChatRequest, session: AsyncSession = Depends(get_db)):
+    user_message = payload.message.strip()
+    if not user_message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+
+    try:
+        state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
+        memory_db = await session.get(ChefMemoryModel, DEFAULT_USER_ID)
+        session_db = await session.get(ChefSessionModel, DEFAULT_USER_ID)
+        
+        if not state_db or not memory_db or not session_db:
+            raise HTTPException(status_code=500, detail="State not found for default user.")
+
+        chef_fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
+        chef_persona = ChefPersona(fsm=chef_fsm)
+
+        chef_persona.update_preferences(user_message)
+
+        system_prompt = chef_persona.generate_system_prompt()
+        user_prompt = f"""
+        User says: {user_message}
+        
+        Respond briefly and sarcastically in character. 
+        Return ONLY a JSON object with this exact format:
+        {{
+            "chat_message": "your response here",
+            "emotion_displayed": "IDLE" // or PLAYFUL, ANGRY, etc.
+        }}
+        Do NOT wrap in markdown code blocks.
+        """
+
+        if not client:
+            raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
+
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=system_prompt + "\n\n" + user_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+
+        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+        try:
+            chat_data = json.loads(raw_text)
+        except json.JSONDecodeError:
+            chat_data = {
+                "chat_message": raw_text,
+                "emotion_displayed": chef_fsm.state_db.current_state
+            }
+
+        await session.commit()
+
+        return {
+            "status": "success",
+            "chef_response": {
+                "chat_message": chat_data.get("chat_message", "I have nothing to say."),
+                "emotion_displayed": chat_data.get("emotion_displayed", chef_fsm.state_db.current_state),
+                "technical_data": {
+                    "recipe_options": [],
+                    "tool_commands": []
+                }
+            }
+        }
+    except Exception as e:
+        import traceback
+        print(f"❌ Gemini Chat API Error: {e}")
+        traceback.print_exc()
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.delete("/api/v1/fridge/receipt/{receipt_id}")
 async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db)):
     # Phase 10.4: Wire UI to use our new Bulk Deletion Architecture

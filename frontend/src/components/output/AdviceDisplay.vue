@@ -1,6 +1,6 @@
 <template>
   <Card title="Chef's Advice" class="h-auto min-h-[400px] mb-4 flex flex-col">
-    <div v-if="chefState.recipeText" class="flex-1 flex flex-col space-y-4">
+    <div v-if="chefState.recipeText" class="@container flex-1 flex flex-col space-y-4 w-full h-full">
 
       <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col h-auto flex-1">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
@@ -9,7 +9,7 @@
         <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col h-auto">
           
           <!-- Interactive Recipe Cards -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 shrink-0 h-auto">
+          <div class="grid grid-cols-1 @[400px]:grid-cols-2 @[700px]:grid-cols-3 gap-3 mb-4 shrink-0 h-auto">
             <button 
               v-for="(recipe, idx) in parsedRecipes" 
               :key="'card'+idx"
@@ -44,7 +44,7 @@
                 </svg>
               </summary>
               <div class="px-4 pb-4 pt-1 bg-slate-800/50">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                <div class="grid grid-cols-1 @[400px]:grid-cols-2 gap-2 mt-2">
                   <div v-for="(ingObj, i) in normalizedIngredients" :key="'ing_g'+i" 
                        class="flex items-center gap-3 p-2 rounded-lg border transition-all"
                        :class="ingObj.inStock ? 'bg-emerald-900/20 border-emerald-800/40 text-emerald-100' : 'bg-slate-800/80 border-slate-700/50 hover:border-slate-600'">

@@ -71,6 +71,28 @@ export function useKitchenAPI() {
     }
   }
 
+  const sendChat = async (message) => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const resp = await fetch(`${BASE_URL}/chef/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      })
+      if (!resp.ok) {
+        const errData = await resp.json()
+        throw new Error(errData.detail || 'API Error')
+      }
+      return await resp.json()
+    } catch (err) {
+      error.value = err.message
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const deleteReceipt = async (receiptId) => {
     isLoading.value = true
     try {
@@ -132,6 +154,6 @@ export function useKitchenAPI() {
     isLoading, error, 
     inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
-    fetchFridge, fetchHistory, getChefAdvice, scanReceipt, deleteReceipt 
+    fetchFridge, fetchHistory, getChefAdvice, sendChat, scanReceipt, deleteReceipt 
   }
 }
