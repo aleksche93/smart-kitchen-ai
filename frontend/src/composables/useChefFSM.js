@@ -4,7 +4,7 @@ import { useChefStore } from '../stores/chefStore'
 // Centralized state shared across components
 export const chefState = reactive({
   emotionDisplay: 'IDLE', // fallback
-  adviceText: '',
+  chatMessage: '',
   recipeText: '',
   toolCommands: [],
   selectedIngredient: null
@@ -15,9 +15,9 @@ export function useChefFSM() {
     if (apiResponse && apiResponse.chef_response) {
       const chefResp = apiResponse.chef_response
       chefState.emotionDisplay = chefResp.emotion_displayed || 'IDLE'
-      chefState.adviceText = chefResp.advice_text || ''
-      chefState.recipeText = chefResp.recipe_options || chefResp.recipe || ''
-      chefState.toolCommands = chefResp.tool_commands || []
+      chefState.chatMessage = chefResp.chat_message || ''
+      chefState.recipeText = chefResp.technical_data?.recipe_options || ''
+      chefState.toolCommands = chefResp.technical_data?.tool_commands || []
       
       const chefStore = useChefStore()
       chefStore.setEmotion(chefState.emotionDisplay)
@@ -34,7 +34,7 @@ export function useChefFSM() {
 
   const resetState = () => {
     chefState.emotionDisplay = 'IDLE'
-    chefState.adviceText = ''
+    chefState.chatMessage = ''
     chefState.recipeText = ''
     chefState.toolCommands = []
     chefState.selectedIngredient = null

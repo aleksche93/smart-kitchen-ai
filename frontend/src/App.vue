@@ -5,7 +5,7 @@
     <div class="absolute inset-0 bg-slate-900/90 -z-10 pointer-events-none"></div>
 
     <!-- Main App Container -->
-    <div class="container mx-auto h-full max-w-7xl flex flex-col p-4 md:p-8 space-y-6">
+    <div class="w-full h-full flex flex-col p-4 md:p-8 space-y-6">
       
       <!-- Top Title Bar -->
       <header class="flex justify-between items-center text-slate-400">
@@ -65,7 +65,7 @@
           v-if="layoutStore.isLoaded"
           v-model="layoutStore.widgets"
           item-key="widget_id"
-          class="grid grid-cols-1 md:grid-cols-12 gap-6 h-full"
+          class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 h-full"
           handle=".drag-handle"
           ghost-class="opacity-50"
           :animation="200"
@@ -73,7 +73,7 @@
           @end="onDragEnd"
         >
           <template #item="{ element }">
-             <div :class="getColSpan(element.widget_id)" class="h-full flex flex-col justify-start">
+             <div class="col-span-1 h-full flex flex-col justify-start">
                 <WidgetWrapper 
                    :widget="element" 
                    :title="getWidgetTitle(element.widget_id)"
@@ -188,10 +188,7 @@ onUnmounted(() => {
 })
 
 const getColSpan = (widgetId) => {
-  if (widgetId === 'fridge') return 'md:col-span-3'
-  if (widgetId === 'chef_hub') return 'md:col-span-5'
-  if (widgetId === 'advice') return 'md:col-span-4'
-  return 'md:col-span-12'
+  return 'col-span-1'
 }
 
 const getWidgetTitle = (widgetId) => {

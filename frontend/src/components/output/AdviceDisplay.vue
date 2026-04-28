@@ -1,10 +1,6 @@
 <template>
   <Card title="Chef's Advice" class="h-auto min-h-[400px] mb-4 flex flex-col">
-    <div v-if="chefState.adviceText || chefState.recipeText" class="flex-1 flex flex-col space-y-4">
-      <div v-if="chefState.adviceText" class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shrink-0">
-        <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-2 border-b border-slate-700 pb-1">Contextual Advice</h4>
-        <p class="text-slate-300 leading-relaxed font-sans text-sm">{{ chefState.adviceText }}</p>
-      </div>
+    <div v-if="chefState.recipeText" class="flex-1 flex flex-col space-y-4">
 
       <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col h-auto flex-1">
         <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-3 pb-1 shrink-0">Recipe Options</h4>

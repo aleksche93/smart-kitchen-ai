@@ -42,15 +42,15 @@
        <div v-if="lastQuery" class="self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30">
           {{ lastQuery }}
        </div>
-       <div v-if="chefState.adviceText" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50">
-          {{ chefState.adviceText }}
+       <div v-if="chefState.chatMessage" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50">
+          {{ chefState.chatMessage }}
        </div>
     </div>
 
     <!-- Bottom Area: Chat Input Space -->
     <div class="flex flex-col flex-shrink-0 mt-auto space-y-2">
       <!-- Thought Ticker Terminal (Anchored directly above input when open) -->
-      <div v-show="isConsoleOpen" :class="[lastQuery || chefState.adviceText ? 'h-32' : 'flex-1 min-h-[120px]']" class="rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-md shadow-inner overflow-hidden relative transition-all duration-500 w-full shrink-0">
+      <div v-show="isConsoleOpen" :class="[lastQuery || chefState.chatMessage ? 'h-32' : 'flex-1 min-h-[120px]']" class="rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-md shadow-inner overflow-hidden relative transition-all duration-500 w-full shrink-0">
         <ThoughtTicker />
       </div>
 
@@ -213,9 +213,9 @@ const handleCroppedImage = async (blob) => {
       
       const hasBag = data.items_added.some(item => item.is_bag)
       if (hasBag) {
-        chefState.adviceText = t('scan.bag_detected')
+        chefState.chatMessage = t('scan.bag_detected')
       } else {
-        chefState.adviceText = t('scan.no_bag')
+        chefState.chatMessage = t('scan.no_bag')
       }
     } else if (data.items) {
       scannedItems.value = data.items

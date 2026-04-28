@@ -382,11 +382,14 @@ class RecipeOption(BaseModel):
     estimated_duration: int
     recipe_complexity: str
 
-class ChefResponse(BaseModel):
-    advice_text: str
+class TechnicalData(BaseModel):
     recipe_options: List[RecipeOption]
-    emotion_displayed: str
     tool_commands: List[str]
+
+class ChefResponse(BaseModel):
+    chat_message: str
+    technical_data: TechnicalData
+    emotion_displayed: str
 
 try:
     client = genai.Client()
@@ -460,13 +463,23 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
     system_prompt = chef_persona.generate_system_prompt()
     
     pairings_context = f"Relevant Flavor Pairs: {best_pairs}.\n" if best_pairs else ""
-    user_prompt = (
-        f"Available Fridge Items as context: {fridge_summary}\n"
-        f"User Input/Query: \"{user_query}\"\n"
-        f"{pairings_context}"
-        f"Provide compelling advice based on your persona, a structured recipe object if requested, and any tool_commands."
-    )
+    flavor_string = ", ".join(best_pairs) if best_pairs else "None"
+    user_prompt = f"""
+    You are the neoKitchen Chef FSM System.
+    Context:
+    - User Request: {user_query}
+    - Fridge Content: {fridge_summary}
+    - Found Classic Flavor Pairings: {flavor_string}
 
+    Instructions:
+    1. Acknowledge the user's request. Keep `chat_message` conversational and short (e.g. "I've analyzed the fridge. Here are some options."). DO NOT put the recipe details in `chat_message`.
+    2. Place all structured recipe data exclusively in `technical_data.recipe_options`.
+    3. Emotion should be one of: IDLE, FOCUSED, PLAYFUL, ANGRY, PANICKED, CHAOTIC, FURIOUS, CREATIVE.
+    4. If the user asks an impossible or toxic request, set Emotion to ANGRY and return a sarcastic `chat_message`, leaving `recipe_options` empty.
+    
+    You MUST output valid JSON conforming exactly to the defined schema.
+    """
+    
     try:
         # Structured output strictly returns valid JSON mapped to ChefResponse
         response = await client.aio.models.generate_content(
@@ -491,7 +504,24 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
                 chef_response_data = json.loads(raw_text)
             except json.JSONDecodeError as e:
                 chef_response_data = {
-                    "advice_text": f"System Error: Chef is too chaotic. {e}",
+                    "chat_message": f"System Error: Chef is too chaotic. {e}",
+                    "technical_data": {
+                        "recipe_options": [{
+                            "name": "Chef's Surprise",
+                            "ingredients": [],
+                            "instructions": ["Improvise!"],
+                            "estimated_duration": 15,
+                            "recipe_complexity": "Easy"
+                        }],
+                        "tool_commands": []
+                    },
+                    "emotion_displayed": "ANGRY"
+                }
+
+            if "chat_message" not in chef_response_data:
+                chef_response_data["chat_message"] = "I'm having trouble thinking of a recipe right now."
+            if "technical_data" not in chef_response_data:
+                chef_response_data["technical_data"] = {
                     "recipe_options": [{
                         "name": "Chef's Surprise",
                         "ingredients": [],
@@ -499,13 +529,14 @@ async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depend
                         "estimated_duration": 15,
                         "recipe_complexity": "Easy"
                     }],
-                    "emotion_displayed": "ANGRY",
                     "tool_commands": []
                 }
+            if "emotion_displayed" not in chef_response_data:
+                chef_response_data["emotion_displayed"] = "ANGRY"
             
         # Pydantic Fallback handling: enforce strict sub-schema format
-        if "recipe_options" not in chef_response_data or not chef_response_data.get("recipe_options"):
-            chef_response_data["recipe_options"] = [{
+        if "recipe_options" not in chef_response_data.get("technical_data", {}):
+            chef_response_data["technical_data"]["recipe_options"] = [{
                 "name": "Chef's Surprise",
                 "ingredients": [],
                 "instructions": ["Improvise!"],
