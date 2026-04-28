@@ -42,8 +42,11 @@
        <div v-if="lastQuery" class="self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30">
           {{ lastQuery }}
        </div>
-       <div v-if="chefState.chatMessage" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50">
-          {{ chefState.chatMessage }}
+       <div v-if="chefState.chatMessage" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2">
+          <span>{{ chefState.chatMessage }}</span>
+          <button v-if="chefState.showMagicTrigger" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
+             ✨ Generate Magic
+          </button>
        </div>
     </div>
 
@@ -144,20 +147,40 @@ const processingAction = computed(() => {
 // No longer used actively here, reset logic is in App.vue top header
 
 const handleAdvice = async () => {
-
   if (!localInput.value.trim() || btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
-  btnState.value = BUTTON_STATES.ACTIVE
-  try {
+
+  // Intent Triage
+  const lower = localInput.value.toLowerCase()
+  const intents = ['recipe', 'generate', 'ідеї', 'рецепт', 'cook', 'приготувати', 'смачне']
+  if (intents.some(i => lower.includes(i))) {
     lastQuery.value = localInput.value
-    const data = await getChefAdvice(localInput.value)
+    chefState.chatMessage = t('intents.magic_trigger_message')
+    chefState.showMagicTrigger = true
+    chefState.emotionDisplay = 'PLAYFUL'
+    localInput.value = ''
+    return
+  }
+
+  await executeMagic(localInput.value)
+}
+
+const executeMagic = async (query = lastQuery.value) => {
+  if (btnState.value === BUTTON_STATES.ACTIVE) return
+  error.value = null
+  btnState.value = BUTTON_STATES.ACTIVE
+  chefState.showMagicTrigger = false
+  
+  try {
+    if (query !== lastQuery.value) {
+      lastQuery.value = query
+    }
+    const data = await getChefAdvice(query)
     updateState(data)
-    localInput.value = '' // Clear input after successful send
+    localInput.value = ''
   } catch (err) {
-    // API failure handled gracefully
     error.value = "Сhef refused to answer: " + (err.message || 'Connection lost.')
     chefState.emotionDisplay = 'ANGRY'
-
   } finally {
     btnState.value = BUTTON_STATES.IDLE
   }

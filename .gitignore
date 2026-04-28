@@ -17,6 +17,7 @@ data/receipt_images/
 sources/
 archive/
 memory/
+knowledge/
 
 # Agents
 .agents/

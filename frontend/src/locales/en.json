@@ -16,5 +16,8 @@
   "errors": {
     "file_too_large": "Oh, this photo is too big even for my eyes! Try a smaller size (Max 5MB).",
     "duplicate_receipt": "Hey! This receipt has already been scanned. Stop trying to trick me!"
+  },
+  "intents": {
+    "magic_trigger_message": "I have some ideas. Want to see my magic module? ✨"
   }
 }

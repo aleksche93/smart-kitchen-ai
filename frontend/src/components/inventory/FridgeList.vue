@@ -15,8 +15,9 @@
       <p class="text-sm text-center">Scan a receipt to start adding inventory.</p>
     </div>
 
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
-      <div 
+    <div v-else class="@container w-full h-full">
+      <div class="grid grid-cols-1 @[500px]:grid-cols-2 @[800px]:grid-cols-3 gap-2">
+        <div 
         v-for="item in inventory" 
         :key="item.name"
         @click="selectItem(item)"
@@ -29,19 +30,22 @@
             v-if="item.days_left < 0" 
             class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-red-900 text-red-300 border border-red-700 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
           >
-            ☣️ Spoiled
+            <span class="inline @[300px]:hidden">☣️</span>
+            <span class="hidden @[300px]:inline">☣️ Spoiled</span>
           </span>
           <span 
             v-else-if="item.days_left <= 2" 
             class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-yellow-900/60 text-neoYellow border border-yellow-700/50 shadow-[0_0_8px_rgba(250,204,21,0.2)]"
           >
-            ⚠️ Expiring
+            <span class="inline @[300px]:hidden">⚠️</span>
+            <span class="hidden @[300px]:inline">⚠️ Expiring</span>
           </span>
           <span 
             v-else 
             class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-slate-700 text-slate-300 border border-slate-600"
           >
-            Fresh
+            <span class="inline @[300px]:hidden">✓</span>
+            <span class="hidden @[300px]:inline">Fresh</span>
           </span>
         </div>
         
@@ -53,6 +57,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
     
     <!-- Teleport Modal -->

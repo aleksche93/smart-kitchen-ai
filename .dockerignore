@@ -22,7 +22,8 @@ data/receipt_images/
 sources/
 archive/
 memory/
-Jules_sync/
+knowledge/
+
 
 # Agents
 .agents/

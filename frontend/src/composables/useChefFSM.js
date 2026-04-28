@@ -7,7 +7,8 @@ export const chefState = reactive({
   chatMessage: '',
   recipeText: '',
   toolCommands: [],
-  selectedIngredient: null
+  selectedIngredient: null,
+  showMagicTrigger: false
 })
 
 export function useChefFSM() {
@@ -18,6 +19,7 @@ export function useChefFSM() {
       chefState.chatMessage = chefResp.chat_message || ''
       chefState.recipeText = chefResp.technical_data?.recipe_options || ''
       chefState.toolCommands = chefResp.technical_data?.tool_commands || []
+      chefState.showMagicTrigger = false
       
       const chefStore = useChefStore()
       chefStore.setEmotion(chefState.emotionDisplay)
@@ -38,6 +40,7 @@ export function useChefFSM() {
     chefState.recipeText = ''
     chefState.toolCommands = []
     chefState.selectedIngredient = null
+    chefState.showMagicTrigger = false
     document.documentElement.classList.remove('danger-zone')
     
     const chefStore = useChefStore()
