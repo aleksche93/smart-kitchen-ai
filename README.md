@@ -131,7 +131,7 @@ The entire ecosystem is containerized. The AI's memory is safely persisted via D
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/aleksche93/smart-kitchen-ai.git](https://github.com/aleksche93/smart-kitchen-ai.git)
+git clone https://github.com/aleksche93/smart-kitchen-ai.git
 
 # 2. Set your API Key (Required)
 export GEMINI_API_KEY="your_api_key_here" (or $env:GEMINI_API_KEY="your_api_key_here" on Windows)
