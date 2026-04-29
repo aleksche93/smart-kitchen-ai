@@ -1,6 +1,6 @@
 # 🍳 Smart Kitchen AI Ecosystem (Stateful Autonomous Agent)
 
-An asynchronous, multimodal AI agent built to optimize kitchen inventory, reduce food waste, and provide real-time culinary orchestration using **Google Gemini Pro API**, **Agentic RAG**, and **FastAPI**.
+An asynchronous, multimodal AI agent built to optimize kitchen inventory, reduce food waste, and provide real-time culinary orchestration using **Latest Gemini Models (3.x / 2.x Series)**, **Agentic RAG**, and **FastAPI**.
 
 Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artificial Persona**. The AI "Chef" possesses memory, emotional states (managed via a Finite State Machine), and tracks user preferences across sessions.
 
@@ -20,8 +20,90 @@ The ecosystem features a robust, enterprise-grade ingestion engine for digitizin
 - **Semantic Grounding (UAH Anchor):** Context-aware heuristic logic that identifies Native Store Profiles (e.g., *Сільпо*, *АТБ*) directly from the image, preserving original Cyrillic scripts and automatically forcing the `UAH` currency standard to ensure financial precision.
 - **UX Mastery:** A seamless **Animated Split-View Modal** connects physical artifacts to digital inventory. A **Global Thought Ticker** simulates a live terminal, providing real-time AI transparency during ingestion, complemented by playful contextual animations (e.g., "Chopping veg 🔪") and interactive skill triggers like the *Bag Detection Module*.
 
-## 🏗 Architectural Governance
-Please see `.agents/rules/` for the strict architectural standards on databases, PKs, and UI rendering. All external subagents must respect these constraints.
+## 👨‍🍳 The Agentic Kitchen Brigade
+
+The development of **KitchenOS** is more than just coding; it is a masterclass in **Agentic Orchestration**. I have established a digital "Kitchen Brigade" where every agent follows a strict **Mise-en-place** protocol. This multi-agent ecosystem ensures that architectural integrity, security audits, and project management are automated and governed by a human-in-the-loop.
+
+### 🔄 Orchestration Workflow
+
+| Rank                   | Agent                       | Primary Responsibilities                                                                                   |
+| :--------------------- | :-------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| **Executive Director** | **Oleksandr (Human)**       | Strategic orchestration, final decision-making, and Human-in-the-loop validation.                          |
+| **Head-Chef**          | **Custom Gem-bot (PM)**     | Maintains the "Single Source of Truth," updates project status, analyzes plans, and vets upgraded prompts. |
+| **Sous-Chef**          | **Antigravity Agent**       | Core implementation (Coder). Executes technical specs and generates detailed work reports.                 |
+| **Station Chef**       | **Prompter Gem-Bot**        | Takes raw prompt drafts and refines them into structured directives for Antigravity.                       |
+| **Chef de Partie**     | **Gemini CLI (@subagents)** | Handles local RAG, bridges data to Jules, and creates audit summaries.                                     |
+| **Chef de Partie**     | **Gemini Code Assist**      | Real-time IDE refactoring and micro-task execution.                                                        |
+| **Consultant**         | **Brainstormer**            | High-level brainstorming, creative problem solving, and initial architectural filtering.                   |
+| **Auditor**            | **Jules**                   | Weekly independent security audits and automated stress testing.                                           |
+| **Inventory Analyst**  | **Gemma 4**                 | Building RAG-db via ollama.                                                                                |
+
+```mermaid
+graph TD
+
+    subgraph g_gems ["💭 Strategy & Design"]
+        PM(("Head-Chef[PM] - Gem"))
+        Brain("Brainstormer - Gem")
+    end
+
+    subgraph g_exec ["🛠 Execution Loop"]
+        Anti(("Antigravity[Sous-Chef]"))
+        Assist["Code Assist (IDE)"]
+    end
+
+    subgraph g_audit ["🛡️ Audit & Compliance"]
+        Jules{"Jules (Auditor)"}
+        CLI("Gemini CLI[Sous-chef]")
+        Weekly_Scan[["Weekly Scan"]]
+    end
+
+    subgraph g_prompt ["⌨️ Prompting"]
+        Prompt{"Prompter- Gem"}
+        RAW_prompt[["RAW prompt"]]
+        Improved_prompt[["Improved prompt"]]
+    end
+
+    subgraph g_rag ["🔍 RAG"]
+        Gemma_4[("Gemma 4")]
+    end
+
+    User((("Oleksandr (Director)")))
+
+    User <-->|"Strategy, Analysis"| PM
+    User -->|"Raw ideas"| Brain
+    Brain -->|"Filtered"| User
+    PM -->|"GIVE"| RAW_prompt
+    RAW_prompt <-->|"Check & forward"| User
+    RAW_prompt -->|"To improve/fix"| Prompt
+    Prompt -->|"Improving RAW"| Improved_prompt
+    Improved_prompt <-->|"Giving RAW prompt"| User
+    Improved_prompt -->|"To double check"| PM
+    Improved_prompt -->|"Start planning"| Anti
+    Prompt <-->|"Improving Prompts"| User
+    User <-->|"Tech Spec / Exec"| Anti
+    User -->|"Micro-tasks"| Assist
+    User <-->|"Audit & tasks"| Jules
+    Jules -->|"Async tests"| Weekly_Scan
+    Weekly_Scan -->|"Integrate test"| CLI
+    CLI -->|"Audit Summary"| User
+    User <-->|"Started with RAG"| Gemma_4
+
+    %% --- Styles ---
+    style PM fill:#164fa2,stroke:#3B82F6,stroke-width:4px
+    style Brain fill:#164fa2,stroke:#3B82F6,stroke-width:2px
+    style Anti fill:#192271,stroke:#164fa2,stroke-width:4px
+    style Assist fill:#151230,stroke:#22C55E,stroke-width:2px
+    style Jules fill:#6a119c,stroke:#A855F7,stroke-width:2px
+    style CLI fill:#151230,stroke:#A855F7,stroke-width:2px
+    style Weekly_Scan fill:#24232e,stroke:#A855F7,stroke-width:2px
+    style Prompt fill:#164fa2,stroke:#6B7280,stroke-width:2px
+    style RAW_prompt fill:#24232e,stroke:#6B7280,stroke-width:2px
+    style Improved_prompt fill:#24232e,stroke:#6B7280,stroke-width:2px
+    style Gemma_4 fill:#164fa2,stroke:#3B82F6,stroke-width:2px
+    style User fill:#815628,stroke:#24232e,stroke-width:5px
+```
+> **Architectural Governance:** KitchenOS is governed by a set of **Internal Design Standards** (covering database integrity, PK constraints, and UI rendering logic). These strict guardrails are programmatically enforced across all sub-agents to ensure total system stability and architectural consistency.
+
 
 ## 🛠 Tech Stack
 - **Backend:** Python 3.12+, FastAPI (Lifespan Context Architecture), Uvicorn, Asyncio
@@ -49,7 +131,7 @@ The entire ecosystem is containerized. The AI's memory is safely persisted via D
 
 ```bash
 # 1. Clone the repository
-git clone [https://github.com/your-username/smart-kitchen-ai.git](https://github.com/your-username/smart-kitchen-ai.git)
+git clone [https://github.com/aleksche93/smart-kitchen-ai.git](https://github.com/aleksche93/smart-kitchen-ai.git)
 
 # 2. Set your API Key (Required)
 export GEMINI_API_KEY="your_api_key_here" (or $env:GEMINI_API_KEY="your_api_key_here" on Windows)
