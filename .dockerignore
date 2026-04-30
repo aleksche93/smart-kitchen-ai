@@ -12,18 +12,18 @@ env/
 __pycache__/
 *.pyc
 .pytest_cache/
-test.db
-tests/
 
+# Tests
+tests/__pycache__/
+tests/.pytest_cache/
+test.db
 
 # Local Data 
 data/
 data/receipt_images/
-sources/
 archive/
 memory/
 knowledge/
-
 
 # Agents
 .agents/

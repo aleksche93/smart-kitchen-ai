@@ -9,7 +9,8 @@ __pycache__/
 *.pyc
 .pytest_cache/
 test.db
-tests/
+tests/__pycache__/
+tests/.pytest_cache/
 
 # Local data storage
 data/
