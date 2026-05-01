@@ -107,10 +107,10 @@ graph TD
 
 ## 🛠 Tech Stack
 - **Backend:** Python 3.12+, FastAPI (Lifespan Context Architecture), Uvicorn, Asyncio
-- **Database:** SQLite, `aiosqlite`, SQLAlchemy (Async)
+- **Database:** SQLite, `aiosqlite`, SQLAlchemy (Async), ChromaDB (Local Vector DB)
 - **Frontend:** Vue 3 (Composition API), Vite, Tailwind CSS (Typography Plugin), HTML5 Canvas (Vision Preprocessing)
-- **AI/LLM:** Google Gemini SDK (Function Calling, Structured Outputs, Multimodal Vision)
-- **DevOps:** Docker, Docker Compose, Volume Persistence
+- **AI/LLM:** Google Gemini SDK (Function Calling, Structured Outputs, Multimodal Vision), `sentence-transformers`
+- **DevOps:** Docker, Docker Compose, Volume Persistence (`chroma_data`)
 
 ## 🎮 Usage: Draggable OS Workspace & Chat-First Hub
 In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transitioned to a Global Shell structure:

@@ -126,11 +126,11 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Density & Chat Logic Fixes (Batch 5.1):** Separated `/api/v1/chef/chat` for plain lightweight conversation from heavy RAG recipe generation. Stabilized adaptive grids with pixel-perfect `@container` thresholds in both Fridge and Advice widgets.
 
 
-### Phase 11.1: Conversational Memory & Context Awareness
-- [ ] **Database Expansion:** Add `chat_history` JSON column to `ChefSessionModel` (via lightweight ALTER TABLE in lifespan).
-- [ ] **Stateful Gemini Chat:** Refactor `/api/v1/chef/chat` to retrieve, update, and pass full conversational history (`contents` array) to the Gemini client.
-- [ ] **Dynamic Chat UI:** Upgrade `InteractionZone.vue` to maintain an array of `messages`, use `v-for` to render continuous chat blocks, and implement auto-scroll.
-- [ ] **Memory Initialization:** Implement logic on frontend load to fetch existing session chat history from the backend.
+### Phase 11.1: Memory Infra & API Optimization [100% COMPLETED] ✅
+- [x] **Infrastructure Alignment:** Integrate ChromaDB (8001:8000) and `sentence-transformers` for local embeddings.
+- [x] **Persistence & Models:** Add spatial metadata (`z_index`, `rotation_angle`) to `UILayoutModel` and refactor `ChefSessionModel` (`id`, `user_id`, `topic`, `summary`, `created_at`, `recent_triggers`, `ui_events`).
+- [x] **API Modularization:** Migrate `get_chef_advice` into a dedicated `api/smart_fridge.py` router.
+- [x] **N+1 Optimization:** Implement `generate_batch_recipe` using a single Gemini 3.1 Flash LLM call to process all expiring items simultaneously.
 
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.

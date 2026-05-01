@@ -55,7 +55,13 @@ export const useLayoutStore = defineStore('layout', () => {
   const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice']
   const sanitizeLayout = (layoutArray) => {
     if (!Array.isArray(layoutArray)) return []
-    return layoutArray.filter(w => WIDGET_REGISTRY.includes(w.widget_id))
+    return layoutArray
+      .filter(w => WIDGET_REGISTRY.includes(w.widget_id))
+      .map(w => ({
+        ...w,
+        z_index: w.z_index ?? 1,
+        rotation_angle: w.rotation_angle ?? 0.0
+      }))
   }
 
   return { widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout }

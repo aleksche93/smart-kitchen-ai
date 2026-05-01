@@ -19,6 +19,15 @@ services:
     # Бажано переконатись, що локальні артефакти на кшталт .venv не заважають
     # (для цього використовуємо .dockerignore)
 
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+
+
   smart-kitchen-frontend:
     build:
       context: ./frontend
@@ -35,3 +44,6 @@ services:
       - smart-kitchen-api
     environment:
       - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  chroma_data:

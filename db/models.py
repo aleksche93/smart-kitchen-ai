@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, String, Float, JSON, Boolean, ForeignKey, Integer
+from sqlalchemy import Column, String, Float, JSON, Boolean, ForeignKey, Integer, Text, DateTime
 from sqlalchemy.orm import relationship, declarative_base
 import sqlalchemy.types as types
 
@@ -32,7 +32,11 @@ class ChefMemoryModel(Base):
 class ChefSessionModel(Base):
     """Contextual short-term memory loaded on request start."""
     __tablename__ = 'chef_session'
-    user_id = Column(String(36), primary_key=True)
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), nullable=False)
+    topic = Column(String, nullable=True)
+    summary = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow())
     recent_triggers = Column(JSON, default=list) # Short-term memory history
     ui_events = Column(JSON, default=list)       # UI session history
 
@@ -80,3 +84,5 @@ class UILayoutModel(Base):
     widget_id = Column(String, primary_key=True)   # interaction_zone, fridge_list, etc.
     order_index = Column(Integer, default=0)
     is_collapsed = Column(Boolean, default=False)
+    z_index = Column(Integer, default=1)
+    rotation_angle = Column(Float, default=0.0)

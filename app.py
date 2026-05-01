@@ -22,6 +22,7 @@ from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionMod
 from core.fsm import ChefFSM, ChefTrigger
 from core.persona import ChefPersona
 from core.locales import i18n
+from api.smart_fridge import router as smart_fridge_router
 
 # Gemini API setup for structured output
 from google import genai
@@ -96,6 +97,35 @@ async def lifespan(fastapi_app: FastAPI):
         except Exception:
             logging.info("Migration: ui_layout cleanup verified.")
     
+    # Phase 11.1 Migrations
+    async with async_session() as session:
+        try:
+            await session.execute(text("ALTER TABLE ui_layout ADD COLUMN z_index INTEGER DEFAULT 1"))
+            await session.execute(text("ALTER TABLE ui_layout ADD COLUMN rotation_angle FLOAT DEFAULT 0.0"))
+            await session.commit()
+            logging.info("Migration: ui_layout Spatial fields added.")
+        except Exception:
+            logging.info("Migration: ui_layout Spatial fields verified.")
+            
+        try:
+            # We recreate chef_session by dropping it and letting SQLAlchemy handle it or recreate it manually
+            await session.execute(text("DROP TABLE IF EXISTS chef_session"))
+            await session.execute(text('''
+                CREATE TABLE chef_session (
+                    id VARCHAR(36) PRIMARY KEY,
+                    user_id VARCHAR(36),
+                    topic VARCHAR,
+                    summary TEXT,
+                    created_at DATETIME,
+                    recent_triggers JSON,
+                    ui_events JSON
+                )
+            '''))
+            await session.commit()
+            logging.info("Migration: chef_session recreated for Phase 11.1.")
+        except Exception as e:
+            logging.error(f"Migration: chef_session error: {e}")
+
     async with async_session() as session:
         user = await session.get(UserModel, DEFAULT_USER_ID)
         if not user:
@@ -107,6 +137,12 @@ async def lifespan(fastapi_app: FastAPI):
             await session.commit()
             logging.info("DB Boot: Default User Context created.")
         else:
+            # Ensure at least one session exists
+            existing_session = await session.execute(select(ChefSessionModel).where(ChefSessionModel.user_id == DEFAULT_USER_ID))
+            if not existing_session.scalars().first():
+                chef_session_db = ChefSessionModel(user_id=DEFAULT_USER_ID)
+                session.add(chef_session_db)
+                await session.commit()
             logging.info("DB Boot: ChefMemoryModel verified.")
 
     yield
@@ -127,6 +163,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(smart_fridge_router, prefix="/api")
 
 # Static Storage setup
 from fastapi.staticfiles import StaticFiles
@@ -372,194 +410,6 @@ async def get_receipt_history(limit: int = 10, offset: int = 0, session: AsyncSe
         
     return {"status": "success", "history": history_data}
 
-class RecipeRequest(BaseModel):
-    ingredient: str
-
-class RecipeOption(BaseModel):
-    name: str
-    ingredients: List[str]
-    instructions: List[str]
-    estimated_duration: int
-    recipe_complexity: str
-
-class TechnicalData(BaseModel):
-    recipe_options: List[RecipeOption]
-    tool_commands: List[str]
-
-class ChefResponse(BaseModel):
-    chat_message: str
-    technical_data: TechnicalData
-    emotion_displayed: str
-
-try:
-    client = genai.Client()
-except Exception as e:
-    client = None
-
-@app.post("/api/v1/chef/advice")
-async def get_chef_recipe(request: RecipeRequest, session: AsyncSession = Depends(get_db)):
-    """
-    Generates a recipe from the Chef for a chosen critical ingredient,
-    using Flavor Bible combinations and integrating the Chef FSM.
-    """
-    if not client:
-        raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
-
-    user_query = request.ingredient.strip() if request.ingredient else ""
-    
-    # 1. Passive Context Generation from DB
-    fridge_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
-    all_items = fridge_query.scalars().all()
-    
-    fridge_summary_list = []
-    current_date = datetime.now()
-    
-    for item in all_items:
-        if item.expiry_date:
-            try:
-                days_left = (datetime.fromisoformat(item.expiry_date) - current_date).days
-                if days_left > 0:
-                    fridge_summary_list.append(f"{item.name} ({days_left}d left)")
-            except:
-                pass
-        else:
-            fridge_summary_list.append(f"{item.name}")
-            
-    fridge_summary = ", ".join(fridge_summary_list)
-    if not fridge_summary:
-        fridge_summary = "The fridge is completely empty."
-
-    # 1.1 Load Database state for default user
-    state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
-    memory_db = await session.get(ChefMemoryModel, DEFAULT_USER_ID)
-    session_db = await session.get(ChefSessionModel, DEFAULT_USER_ID)
-    
-    if not state_db or not memory_db or not session_db:
-        raise HTTPException(status_code=500, detail="State not found for default user.")
-
-    # 2. Initialize Core Wrappers
-    chef_fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
-    chef_persona = ChefPersona(fsm=chef_fsm)
-
-    # 3. Trigger the FSM
-    chef_fsm.trigger(ChefTrigger.COMPLEX_TASK)
-    chef_persona.update_preferences(user_query)
-
-    # Passive Flavor Bible Lookup (Only append if we find a direct hit for the query)
-    best_pairs = []
-    try:
-        async with aiofiles.open("knowledge/flavors.json", "r", encoding="utf-8") as f:
-            knowledge_data = json.loads(await f.read())
-            flavor_map = {item["ingredient"].lower(): item["pairings"] for item in knowledge_data}
-            if user_query.lower() in flavor_map:
-                best_pairs = [
-                    p["paired_with"] for p in flavor_map[user_query.lower()]
-                    if p.get("affinity") in ["classic", "highly recommended"]
-                ]
-    except Exception:
-        pass # Gracefully ignore KB missing in dual-mode
-
-    # 4. Generate Dynamic Prompt for Gemini & Structured Outputs
-    system_prompt = chef_persona.generate_system_prompt()
-    
-    pairings_context = f"Relevant Flavor Pairs: {best_pairs}.\n" if best_pairs else ""
-    flavor_string = ", ".join(best_pairs) if best_pairs else "None"
-    user_prompt = f"""
-    You are the neoKitchen Chef FSM System.
-    Context:
-    - User Request: {user_query}
-    - Fridge Content: {fridge_summary}
-    - Found Classic Flavor Pairings: {flavor_string}
-
-    Instructions:
-    1. Acknowledge the user's request. Keep `chat_message` conversational and short (e.g. "I've analyzed the fridge. Here are some options."). DO NOT put the recipe details in `chat_message`.
-    2. Place all structured recipe data exclusively in `technical_data.recipe_options`.
-    3. Emotion should be one of: IDLE, FOCUSED, PLAYFUL, ANGRY, PANICKED, CHAOTIC, FURIOUS, CREATIVE.
-    4. If the user asks an impossible or toxic request, set Emotion to ANGRY and return a sarcastic `chat_message`, leaving `recipe_options` empty.
-    
-    You MUST output valid JSON conforming exactly to the defined schema.
-    """
-    
-    try:
-        # Structured output strictly returns valid JSON mapped to ChefResponse
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=system_prompt + "\n\n" + user_prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=ChefResponse,
-                temperature=0.7
-            )
-        )
-        
-        if not response.text:
-            raise ValueError(f"Gemini returned empty text. Candidates: {response.candidates}")
-            
-        # Extract parsed object if provided natively by the SDK (google-genai)
-        if getattr(response, "parsed", None):
-            chef_response_data = response.parsed.model_dump()
-        else:
-            raw_text = response.text.replace("```json", "").replace("```", "").strip()
-            try:
-                chef_response_data = json.loads(raw_text)
-            except json.JSONDecodeError as e:
-                chef_response_data = {
-                    "chat_message": f"System Error: Chef is too chaotic. {e}",
-                    "technical_data": {
-                        "recipe_options": [{
-                            "name": "Chef's Surprise",
-                            "ingredients": [],
-                            "instructions": ["Improvise!"],
-                            "estimated_duration": 15,
-                            "recipe_complexity": "Easy"
-                        }],
-                        "tool_commands": []
-                    },
-                    "emotion_displayed": "ANGRY"
-                }
-
-            if "chat_message" not in chef_response_data:
-                chef_response_data["chat_message"] = "I'm having trouble thinking of a recipe right now."
-            if "technical_data" not in chef_response_data:
-                chef_response_data["technical_data"] = {
-                    "recipe_options": [{
-                        "name": "Chef's Surprise",
-                        "ingredients": [],
-                        "instructions": ["Improvise!"],
-                        "estimated_duration": 15,
-                        "recipe_complexity": "Easy"
-                    }],
-                    "tool_commands": []
-                }
-            if "emotion_displayed" not in chef_response_data:
-                chef_response_data["emotion_displayed"] = "ANGRY"
-            
-        # Pydantic Fallback handling: enforce strict sub-schema format
-        if "recipe_options" not in chef_response_data.get("technical_data", {}):
-            chef_response_data["technical_data"]["recipe_options"] = [{
-                "name": "Chef's Surprise",
-                "ingredients": [],
-                "instructions": ["Improvise!"],
-                "estimated_duration": 15,
-                "recipe_complexity": "Easy"
-            }]
-        
-        # 5. Save the updated emotional state
-        await session.commit()
-
-        # In Dual-Mode, ingredient parameter is just arbitrary user query
-        return {
-            "status": "success",
-            "ingredient_to_save": user_query,
-            "chef_response": chef_response_data
-        }
-    except Exception as e:
-        import traceback
-        print(f"❌ Gemini Chef API Error: {e}")
-        traceback.print_exc()
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-
 class ChatRequest(BaseModel):
     message: str
 
@@ -572,7 +422,8 @@ async def get_chef_chat(payload: ChatRequest, session: AsyncSession = Depends(ge
     try:
         state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
         memory_db = await session.get(ChefMemoryModel, DEFAULT_USER_ID)
-        session_db = await session.get(ChefSessionModel, DEFAULT_USER_ID)
+        session_db_q = await session.execute(select(ChefSessionModel).where(ChefSessionModel.user_id == DEFAULT_USER_ID).order_by(ChefSessionModel.created_at.desc()))
+        session_db = session_db_q.scalars().first()
         
         if not state_db or not memory_db or not session_db:
             raise HTTPException(status_code=500, detail="State not found for default user.")
@@ -691,16 +542,16 @@ async def get_ui_layout(session: AsyncSession = Depends(get_db)):
     if not results:
         # Default Chef's View Preset
         default_layout = [
-            {"widget_id": "fridge", "order_index": 0, "is_collapsed": False},
-            {"widget_id": "chef_hub", "order_index": 1, "is_collapsed": False},
-            {"widget_id": "advice", "order_index": 2, "is_collapsed": False}
+            {"widget_id": "fridge", "order_index": 0, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0},
+            {"widget_id": "chef_hub", "order_index": 1, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0},
+            {"widget_id": "advice", "order_index": 2, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0}
         ]
         for w in default_layout:
             session.add(UILayoutModel(user_id=DEFAULT_USER_ID, **w))
         await session.commit()
         return {"layout": default_layout}
         
-    layout_data = [{"widget_id": r.widget_id, "order_index": r.order_index, "is_collapsed": r.is_collapsed} for r in results]
+    layout_data = [{"widget_id": r.widget_id, "order_index": r.order_index, "is_collapsed": r.is_collapsed, "z_index": r.z_index, "rotation_angle": r.rotation_angle} for r in results]
     return {"layout": layout_data}
 
 @app.post("/api/v1/ui/layout")
@@ -717,7 +568,9 @@ async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends
             user_id=DEFAULT_USER_ID,
             widget_id=widget_id,
             order_index=idx,
-            is_collapsed=is_col
+            is_collapsed=is_col,
+            z_index=w.get("z_index", 1),
+            rotation_angle=w.get("rotation_angle", 0.0)
         )
         session.add(new_w)
         
