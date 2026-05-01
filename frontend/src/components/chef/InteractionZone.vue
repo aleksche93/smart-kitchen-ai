@@ -10,10 +10,10 @@
           Scan Receipt
           <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
         </label>
-        <!-- Reset Session -->
-        <button @click="resetState" class="text-xs uppercase tracking-wider font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center group">
+        <!-- Clear Session -->
+        <button @click="handleClearSession" class="text-xs uppercase tracking-wider font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center group">
           <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          Reset Session
+          Clear Session
         </button>
       </div>
 
@@ -38,13 +38,11 @@
     </div>
 
     <!-- Middle Area (Scrollable Message History) -->
-    <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3">
-       <div v-if="lastQuery" class="self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30">
-          {{ lastQuery }}
-       </div>
-       <div v-if="chefState.chatMessage" class="self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2">
-          <span>{{ chefState.chatMessage }}</span>
-          <button v-if="chefState.showMagicTrigger" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
+    <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3" ref="chatContainer">
+       <div v-for="(msg, index) in chatHistory" :key="index"
+            :class="msg.role === 'user' ? 'self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30' : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
+          <span>{{ msg.content }}</span>
+          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && chefState.showMagicTrigger" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
              ✨ Generate Magic
           </button>
        </div>
@@ -111,11 +109,30 @@ import HybridCropper from '../vision/HybridCropper.vue'
 import ThoughtTicker from './ThoughtTicker.vue'
 import { useI18n } from '../../plugins/i18n'
 import { useChefStore } from '../../stores/chefStore'
+import { onMounted, nextTick } from 'vue'
 
 const { t } = useI18n()
 const chefStore = useChefStore()
-const { isLoading, error, getChefAdvice, sendChat, scanReceipt, fetchFridge } = useKitchenAPI()
+const { isLoading, error, getChefAdvice, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
 const { updateState, resetState } = useChefFSM()
+
+const chatHistory = ref([])
+const chatContainer = ref(null)
+
+const scrollToBottom = async () => {
+  await nextTick()
+  if (chatContainer.value) {
+    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+  }
+}
+
+onMounted(async () => {
+  const historyData = await fetchSessionHistory()
+  if (historyData && historyData.messages) {
+    chatHistory.value = historyData.messages
+    scrollToBottom()
+  }
+})
 
 const localInput = ref('')
 const scannedItems = ref([])
@@ -144,7 +161,13 @@ const processingAction = computed(() => {
    return { text: "Heating pans", icon: "🍳" }
 })
 
-// No longer used actively here, reset logic is in App.vue top header
+const handleClearSession = async () => {
+  await clearSession()
+  chatHistory.value = []
+  lastQuery.value = null
+  chefState.chatMessage = ''
+  chefState.showMagicTrigger = false
+}
 
 const handleAdvice = async () => {
   if (!localInput.value.trim() || btnState.value === BUTTON_STATES.ACTIVE) return
@@ -164,17 +187,32 @@ const handleAdvice = async () => {
 
   // Flow A: Plain Chat
   btnState.value = BUTTON_STATES.ACTIVE
+  const queryToSent = localInput.value
+  lastQuery.value = queryToSent
+  localInput.value = ''
+
+  chatHistory.value.push({ role: 'user', content: queryToSent })
+  chatHistory.value.push({ role: 'assistant', content: '' }) // Empty placeholder for stream
+  scrollToBottom()
+
   try {
-    lastQuery.value = localInput.value
-    const data = await sendChat(localInput.value)
-    
-    // Update FSM from Chat Response
-    const chefResp = data.chef_response || {}
-    chefState.chatMessage = chefResp.chat_message || ''
-    chefState.emotionDisplay = chefResp.emotion_displayed || 'IDLE'
-    chefStore.setEmotion(chefState.emotionDisplay)
-    
-    localInput.value = ''
+    await sendChatStream(
+      queryToSent,
+      (textChunk) => {
+        // Append chunk to the last assistant message
+        const lastMsg = chatHistory.value[chatHistory.value.length - 1]
+        lastMsg.content += textChunk
+        scrollToBottom()
+      },
+      (emotion) => {
+        chefState.emotionDisplay = emotion
+        chefStore.setEmotion(emotion)
+      },
+      (errMsg) => {
+        error.value = "Сhef error: " + errMsg
+        chefState.emotionDisplay = 'ANGRY'
+      }
+    )
   } catch (err) {
     error.value = "Сhef refused to chat: " + (err.message || 'Connection lost.')
     chefState.emotionDisplay = 'ANGRY'

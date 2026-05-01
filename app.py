@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel, Field
@@ -18,9 +19,10 @@ from pathlib import Path
 
 # New database and core imports
 from db.database import get_db, init_db, async_session
-from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel
+from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel, ChatMessageModel
 from core.fsm import ChefFSM, ChefTrigger
 from core.persona import ChefPersona
+from core.memory import extract_and_store_traits
 from core.locales import i18n
 from api.smart_fridge import router as smart_fridge_router
 
@@ -410,81 +412,126 @@ async def get_receipt_history(limit: int = 10, offset: int = 0, session: AsyncSe
         
     return {"status": "success", "history": history_data}
 
+try:
+    client = genai.Client()
+except Exception as e:
+    client = None
+
 class ChatRequest(BaseModel):
     message: str
 
+@app.get("/api/v1/chef/session/{session_id}/history")
+async def get_session_history(session_id: str, session: AsyncSession = Depends(get_db)):
+    if session_id == "active":
+        session_db_q = await session.execute(
+            select(ChefSessionModel)
+            .where(ChefSessionModel.user_id == DEFAULT_USER_ID)
+            .order_by(ChefSessionModel.created_at.desc())
+        )
+        session_db = session_db_q.scalars().first()
+        if not session_db:
+            return {"messages": []}
+        session_id = session_db.id
+
+    messages_q = await session.execute(
+        select(ChatMessageModel)
+        .where(ChatMessageModel.session_id == session_id)
+        .order_by(ChatMessageModel.timestamp.asc())
+    )
+    messages = messages_q.scalars().all()
+    return {"messages": [{"role": m.role, "content": m.content, "timestamp": m.timestamp.isoformat()} for m in messages]}
+
+@app.post("/api/v1/chef/session/clear")
+async def clear_session(session: AsyncSession = Depends(get_db)):
+    new_session = ChefSessionModel(user_id=DEFAULT_USER_ID, topic="New Session")
+    session.add(new_session)
+    await session.commit()
+    return {"status": "success", "new_session_id": new_session.id}
+
+from fastapi import BackgroundTasks
+
 @app.post("/api/v1/chef/chat")
-async def get_chef_chat(payload: ChatRequest, session: AsyncSession = Depends(get_db)):
+async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)):
     user_message = payload.message.strip()
     if not user_message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    try:
-        state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
-        memory_db = await session.get(ChefMemoryModel, DEFAULT_USER_ID)
-        session_db_q = await session.execute(select(ChefSessionModel).where(ChefSessionModel.user_id == DEFAULT_USER_ID).order_by(ChefSessionModel.created_at.desc()))
-        session_db = session_db_q.scalars().first()
-        
-        if not state_db or not memory_db or not session_db:
-            raise HTTPException(status_code=500, detail="State not found for default user.")
+    if not client:
+        raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
+    session_db_q = await session.execute(select(ChefSessionModel).where(ChefSessionModel.user_id == DEFAULT_USER_ID).order_by(ChefSessionModel.created_at.desc()))
+    session_db = session_db_q.scalars().first()
+    if not session_db:
+        raise HTTPException(status_code=400, detail="No active session")
+    session_id_val = session_db.id
 
-        chef_fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
-        chef_persona = ChefPersona(fsm=chef_fsm)
+    if user_message.lower() != "/kinec":
+        background_tasks.add_task(extract_and_store_traits, user_message, session_id_val)
 
-        chef_persona.update_preferences(user_message)
-
-        system_prompt = chef_persona.generate_system_prompt()
-        user_prompt = f"""
-        User says: {user_message}
-        
-        Respond briefly and sarcastically in character. 
-        Return ONLY a JSON object with this exact format:
-        {{
-            "chat_message": "your response here",
-            "emotion_displayed": "IDLE" // or PLAYFUL, ANGRY, etc.
-        }}
-        Do NOT wrap in markdown code blocks.
-        """
-
-        if not client:
-            raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
-
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=system_prompt + "\n\n" + user_prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
-        )
-
-        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+    async def event_generator():
+        full_assistant_reply = ""
         try:
-            chat_data = json.loads(raw_text)
-        except json.JSONDecodeError:
-            chat_data = {
-                "chat_message": raw_text,
-                "emotion_displayed": chef_fsm.state_db.current_state
-            }
+            async with async_session() as async_sess:
+                state_db = await async_sess.get(ChefStateModel, DEFAULT_USER_ID)
+                memory_db = await async_sess.get(ChefMemoryModel, DEFAULT_USER_ID)
+                sess_db = await async_sess.get(ChefSessionModel, session_id_val)
+                
+                if not state_db or not memory_db or not sess_db:
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Ой-ой, немає стану бази даних для дефолтного юзера.'})}\n\n"
+                    return
 
-        await session.commit()
+                messages_q = await async_sess.execute(
+                    select(ChatMessageModel)
+                    .where(ChatMessageModel.session_id == session_id_val)
+                    .order_by(ChatMessageModel.timestamp.desc())
+                    .limit(15)
+                )
+                past_messages = list(reversed(messages_q.scalars().all()))
+                
+                history_text = "\n".join([f"{m.role.capitalize()}: {m.content}" for m in past_messages])
+                if history_text:
+                    history_text = f"Recent Conversation History:\n{history_text}\n\n"
 
-        return {
-            "status": "success",
-            "chef_response": {
-                "chat_message": chat_data.get("chat_message", "I have nothing to say."),
-                "emotion_displayed": chat_data.get("emotion_displayed", chef_fsm.state_db.current_state),
-                "technical_data": {
-                    "recipe_options": [],
-                    "tool_commands": []
-                }
-            }
-        }
-    except Exception as e:
-        import traceback
-        print(f"❌ Gemini Chat API Error: {e}")
-        traceback.print_exc()
-        await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+                user_msg_db = ChatMessageModel(session_id=session_id_val, role="user", content=user_message)
+                async_sess.add(user_msg_db)
+
+                chef_fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=sess_db)
+                chef_persona = ChefPersona(fsm=chef_fsm)
+
+                if user_message.lower() == "/kinec":
+                    emotion = "FOCUSED"
+                    yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
+                    
+                    system_prompt = "You are the KitchenOS Library Agent. Analyze the session history. Summarize traits updated, culinary sins recorded, and User-Chef memory graph status. Output only in Ukrainian. Keep it brief and structured."
+                    user_prompt = f"{history_text}\nGenerate the session summary report based on the chat history."
+                else:
+                    chef_persona.update_preferences(user_message)
+                    await async_sess.commit()
+
+                    emotion = state_db.current_state
+                    yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
+
+                    system_prompt = chef_persona.generate_system_prompt()
+                    user_prompt = f"{history_text}User says: {user_message}\n\nRespond briefly and sarcastically in character. Do NOT wrap in markdown code blocks."
+
+                response_stream = await client.aio.models.generate_content_stream(
+                    model='gemini-2.5-flash',
+                    contents=system_prompt + "\n\n" + user_prompt,
+                    config=types.GenerateContentConfig(temperature=0.7)
+                )
+
+                async for chunk in response_stream:
+                    if chunk.text:
+                        full_assistant_reply += chunk.text
+                        yield f"data: {json.dumps({'type': 'chunk', 'text': chunk.text})}\n\n"
+
+                if full_assistant_reply:
+                    assistant_msg_db = ChatMessageModel(session_id=session_id_val, role="assistant", content=full_assistant_reply)
+                    async_sess.add(assistant_msg_db)
+                    await async_sess.commit()
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Халепа, сталася системна помилка шефа: {str(e)}'})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.delete("/api/v1/fridge/receipt/{receipt_id}")
 async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db)):

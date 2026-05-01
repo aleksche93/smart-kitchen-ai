@@ -24,24 +24,35 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 router = APIRouter()
 
-class RecipeRequest(BaseModel):
-    ingredient: str
+from enum import Enum
+from typing import List, Dict, Any
 
-class RecipeOption(BaseModel):
-    name: str
-    ingredients: List[str]
-    instructions: List[str]
-    estimated_duration: int
-    recipe_complexity: str
+class ArtifactType(str, Enum):
+    RECIPE = "RECIPE"
+    SHOPPING_LIST = "SHOPPING_LIST"
+    PREP_SCHEDULE = "PREP_SCHEDULE"
+    TASK_LIST = "TASK_LIST"
+    WASTE_ALERT = "WASTE_ALERT"
+
+class ArtifactSummary(BaseModel):
+    title: str
+    short_desc: str
+    match_score: int
+    artifact_type: ArtifactType
 
 class TechnicalData(BaseModel):
-    recipe_options: List[RecipeOption]
+    artifact_summaries: List[ArtifactSummary]
     tool_commands: List[str]
 
 class ChefResponse(BaseModel):
     chat_message: str
     technical_data: TechnicalData
     emotion_displayed: str
+
+class ArtifactRequest(BaseModel):
+    title: str
+    artifact_type: ArtifactType
+    context_parameters: str = ""
 
 @router.post("/v1/chef/advice")
 async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = Depends(get_db)):
@@ -128,9 +139,9 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
     - Found Classic Flavor Pairings: {flavor_string}
 
     Instructions:
-    1. Design ONE cohesive recipe utilizing all provided expiring ingredients to prevent waste. Use professional terms (mise-en-place, deglaze).
-    2. Acknowledge the user's request conversationally in `chat_message`. DO NOT put the recipe details in `chat_message`.
-    3. Place all structured recipe data exclusively in `technical_data.recipe_options`.
+    1. Propose EXACTLY 3 helpful artifacts for the user to prevent waste. These can be recipes (RECIPE), shopping lists (SHOPPING_LIST), prep schedules (PREP_SCHEDULE), task lists (TASK_LIST), or waste alerts (WASTE_ALERT).
+    2. Acknowledge the user's request conversationally in `chat_message`. DO NOT put full artifact details in `chat_message`.
+    3. Place the 3 proposals in `technical_data.artifact_summaries`.
     4. Emotion should be one of: IDLE, FOCUSED, PLAYFUL, ANGRY, PANICKED, CHAOTIC, FURIOUS, CREATIVE.
     5. You MUST output valid JSON conforming exactly to the defined schema.
     """
@@ -139,7 +150,7 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
         # We explicitly request gemini-3.1-flash with thinking_level concept mapping.
         # Note: If the SDK is an older version, we pass it via raw config or just temperature.
         response = await client.aio.models.generate_content(
-            model='gemini-3.1-flash',
+            model='gemini-2.5-flash',
             contents=system_prompt + "\n\n" + user_prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -158,14 +169,14 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
                 chef_response_data = {
                     "chat_message": f"System Error: Parse fail. {e}",
                     "technical_data": {
-                        "recipe_options": [],
+                        "artifact_summaries": [],
                         "tool_commands": []
                     },
                     "emotion_displayed": "ANGRY"
                 }
                 
-        if "recipe_options" not in chef_response_data.get("technical_data", {}):
-            chef_response_data["technical_data"]["recipe_options"] = []
+        if "artifact_summaries" not in chef_response_data.get("technical_data", {}):
+            chef_response_data["technical_data"]["artifact_summaries"] = []
             
         await session.commit()
 
@@ -178,4 +189,49 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
         import traceback
         traceback.print_exc()
         await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/v1/chef/generate-artifact")
+async def generate_artifact(request: ArtifactRequest, session: AsyncSession = Depends(get_db)):
+    if not client:
+        raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
+
+    fridge_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    all_items = fridge_query.scalars().all()
+    fridge_summary = ", ".join([f"{i.name} ({i.quantity}{i.unit})" for i in all_items])
+
+    user_prompt = f"""
+    Generate the full detailed JSON payload for the requested artifact.
+    Artifact Title: {request.title}
+    Artifact Type: {request.artifact_type.value}
+    User Context/Parameters: {request.context_parameters}
+    Current Fridge Inventory: {fridge_summary}
+
+    Instructions:
+    1. You MUST generate the structured JSON for the `{request.artifact_type.value}`.
+    2. Since this is polymorphic, return a generic JSON object containing the relevant details (e.g. if RECIPE, include ingredients and steps; if SHOPPING_LIST, include categories and items).
+    3. Output ONLY valid JSON without markdown wrapping.
+    """
+
+    try:
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.7
+            )
+        )
+        
+        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+        try:
+            artifact_data = json.loads(raw_text)
+        except json.JSONDecodeError as e:
+            artifact_data = {"error": f"Parse fail: {e}", "raw": raw_text}
+
+        return {"status": "success", "artifact": artifact_data}
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

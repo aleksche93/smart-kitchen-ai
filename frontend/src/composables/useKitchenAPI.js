@@ -71,7 +71,28 @@ export function useKitchenAPI() {
     }
   }
 
-  const sendChat = async (message) => {
+  const fetchSessionHistory = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/chef/session/active/history`).catch(() => null)
+      if (response && response.ok) {
+        return await response.json()
+      }
+      return { messages: [] }
+    } catch (err) {
+      return { messages: [] }
+    }
+  }
+
+  const clearSession = async () => {
+    try {
+      const resp = await fetch(`${BASE_URL}/chef/session/clear`, { method: 'POST' })
+      if (resp.ok) return await resp.json()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const sendChatStream = async (message, onChunk, onMetadata, onError) => {
     isLoading.value = true
     error.value = null
     try {
@@ -81,13 +102,40 @@ export function useKitchenAPI() {
         body: JSON.stringify({ message })
       })
       if (!resp.ok) {
-        const errData = await resp.json()
-        throw new Error(errData.detail || 'API Error')
+         throw new Error('API Error')
       }
-      return await resp.json()
+      
+      const reader = resp.body.getReader()
+      const decoder = new TextDecoder('utf-8')
+      let buffer = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        
+        const parts = buffer.split('\n\n')
+        buffer = parts.pop() 
+        
+        for (const part of parts) {
+           if (part.startsWith('data: ')) {
+               const dataStr = part.replace('data: ', '')
+               try {
+                  const data = JSON.parse(dataStr)
+                  if (data.type === 'metadata') {
+                     onMetadata && onMetadata(data.emotion)
+                  } else if (data.type === 'chunk') {
+                     onChunk && onChunk(data.text)
+                  } else if (data.type === 'error') {
+                     onError && onError(data.message)
+                  }
+               } catch(e) { console.error("Parse error", e) }
+           }
+        }
+      }
     } catch (err) {
       error.value = err.message
-      throw err
+      onError && onError(err.message)
     } finally {
       isLoading.value = false
     }
@@ -154,6 +202,7 @@ export function useKitchenAPI() {
     isLoading, error, 
     inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
-    fetchFridge, fetchHistory, getChefAdvice, sendChat, scanReceipt, deleteReceipt 
+    fetchFridge, fetchHistory, getChefAdvice, sendChatStream, scanReceipt, deleteReceipt,
+    fetchSessionHistory, clearSession
   }
 }

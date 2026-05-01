@@ -40,6 +40,30 @@ class ChefSessionModel(Base):
     recent_triggers = Column(JSON, default=list) # Short-term memory history
     ui_events = Column(JSON, default=list)       # UI session history
 
+    messages = relationship("ChatMessageModel", back_populates="session", cascade="all, delete-orphan")
+    artifacts = relationship("ChefArtifactModel", back_populates="session", cascade="all, delete-orphan")
+
+class ChefArtifactModel(Base):
+    __tablename__ = 'chef_artifacts'
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String(36), ForeignKey('chef_session.id', ondelete="CASCADE"), nullable=False)
+    artifact_type = Column(String, nullable=False)
+    content = Column(JSON, nullable=False)
+    is_temporary = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=lambda: datetime.utcnow())
+
+    session = relationship("ChefSessionModel", back_populates="artifacts")
+
+class ChatMessageModel(Base):
+    __tablename__ = 'chat_messages'
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    session_id = Column(String(36), ForeignKey('chef_session.id', ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False) # user or assistant
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.utcnow())
+
+    session = relationship("ChefSessionModel", back_populates="messages")
+
 class InventoryItemModel(Base):
     """Stores all user inventory items with smart categorization and expiration logic."""
     __tablename__ = 'inventory_items'
