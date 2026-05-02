@@ -130,7 +130,7 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Infrastructure Alignment:** Integrate ChromaDB (8001:8000) and `sentence-transformers` for local embeddings.
 - [x] **Persistence & Models:** Add spatial metadata (`z_index`, `rotation_angle`) to `UILayoutModel` and refactor `ChefSessionModel` (`id`, `user_id`, `topic`, `summary`, `created_at`, `recent_triggers`, `ui_events`).
 - [x] **API Modularization:** Migrate `get_chef_advice` into a dedicated `api/smart_fridge.py` router.
-- [x] **N+1 Optimization:** Implement `generate_batch_recipe` using a single Gemini 2.0 Flash LLM call to process all expiring items simultaneously.
+- [x] **N+1 Optimization:** Implement `generate_batch_recipe` using a single Gemini 2.5 Flash LLM call to process all expiring items simultaneously.
 
 ### Phase 11.2: Spatial Memory & Streaming UX [100% COMPLETED] ✅
 #### Phase A: Backend Streaming & Intent Refinement

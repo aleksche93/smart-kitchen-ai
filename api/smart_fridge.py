@@ -150,10 +150,10 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
     """
     
     try:
-        # We explicitly request gemini-3.1-flash with thinking_level concept mapping.
+        # Gemini 2.5 Flash — balanced performance for batch recipe generation
         # Note: If the SDK is an older version, we pass it via raw config or just temperature.
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt,
@@ -219,7 +219,7 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
 
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

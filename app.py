@@ -240,7 +240,7 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
     
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-2.5-flash',
             contents=[
                 receipt_sys_prompt,
                 types.Part.from_bytes(data=content, mime_type=file.content_type)
@@ -474,7 +474,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                 sess_db = await async_sess.get(ChefSessionModel, session_id_val)
                 
                 if not state_db or not memory_db or not sess_db:
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'Ой-ой, немає стану бази даних для дефолтного юзера.'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'No database state found for default user.'})}\n\n"
                     return
 
                 messages_q = await async_sess.execute(
@@ -512,7 +512,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     user_prompt = f"{history_text}User says: {user_message}\n\nRespond briefly and sarcastically in character. Do NOT wrap in markdown code blocks."
 
                 response_stream = await client.aio.models.generate_content_stream(
-                    model='gemini-2.0-flash',
+                    model='gemini-2.5-flash',
                     contents=system_prompt + "\n\n" + user_prompt,
                     config=types.GenerateContentConfig(temperature=0.7)
                 )
@@ -530,7 +530,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
             logging.error(f"SSE Generator error: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': f'Халепа, сталася системна помилка шефа: {str(e)}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Chef system error: {str(e)}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

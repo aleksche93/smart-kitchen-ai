@@ -102,7 +102,8 @@ export function useKitchenAPI() {
         body: JSON.stringify({ message })
       })
       if (!resp.ok) {
-         throw new Error('API Error')
+         const errData = await resp.json().catch(() => ({}))
+         throw new Error(errData.detail || `API Error ${resp.status}`)
       }
       
       const reader = resp.body.getReader()
@@ -122,14 +123,17 @@ export function useKitchenAPI() {
                const dataStr = part.replace('data: ', '')
                try {
                   const data = JSON.parse(dataStr)
+                  console.debug('[SSE]', data.type, data.type === 'chunk' ? data.text?.substring(0, 30) + '...' : data)
                   if (data.type === 'metadata') {
                      onMetadata && onMetadata(data.emotion)
                   } else if (data.type === 'chunk') {
                      onChunk && onChunk(data.text)
                   } else if (data.type === 'error') {
                      onError && onError(data.message)
+                  } else if (data.type === 'done') {
+                     console.debug('[SSE] Stream complete')
                   }
-               } catch(e) { console.error("Parse error", e) }
+               } catch(e) { console.error("[SSE] Parse error:", dataStr, e) }
            }
         }
       }
