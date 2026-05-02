@@ -64,5 +64,25 @@ export const useLayoutStore = defineStore('layout', () => {
       }))
   }
 
-  return { widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout }
+  // Phase 12.1 Step C: Dynamic Resize & Focus Mode
+  const isAdviceMaximized = ref(false)
+  const focusedArtifact = ref(null)  // { artifact_type, title, data }
+
+  const toggleAdviceMaximized = () => {
+    isAdviceMaximized.value = !isAdviceMaximized.value
+  }
+
+  const setFocusedArtifact = (artifact) => {
+    focusedArtifact.value = artifact
+  }
+
+  const clearFocusedArtifact = () => {
+    focusedArtifact.value = null
+  }
+
+  return {
+    widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
+    isAdviceMaximized, focusedArtifact,
+    toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact
+  }
 })

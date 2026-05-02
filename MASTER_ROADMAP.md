@@ -174,6 +174,15 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **AdviceDisplay Integration:** `currentArtifact` prop received from `App.vue`, rendered above legacy recipe panel. Slide-in reveal transition on artifact arrival.
 - [x] **Two-phase executeMagic:** `/advice` (summary selection) → `/generate-artifact` (typed full artifact) → `emit('artifact')` to parent.
 
+#### Step C: The Spatial OS Transformation [COMPLETED] ✅
+- [x] **SSE Tail Buffer Pattern (CRITICAL FIX):** Implemented chunk-safe `[ACTION: MAGIC_TRIGGER]` stripping via tail buffer — last 24 chars are buffered during stream to prevent partial tag rendering. Finally block flushes full accumulated text with guaranteed tag cleanup.
+- [x] **Panel Rename:** "Culinary Advice" → "Chef's Advice" — reflects the panel's evolved role as artifact hub.
+- [x] **Dynamic Resize:** `isAdviceMaximized` in Pinia `layoutStore`. Maximize toggles `col-span-2` on Advice panel, hides Fridge via `v-show`. `maxHeight: 800px` when maximized.
+- [x] **Maximize/Minimize Toggle:** Expand/Compress button rendered via `Card.vue` `#header-actions` named slot in `AdviceDisplay.vue`.
+- [x] **Artifact Focus Mode:** `<Teleport to="body">` floating modal with `backdrop-blur-sm`, `bg-slate-950/70`, centered `max-w-2xl`. Triggered by clicking ArtifactCard in panel → `layoutStore.setFocusedArtifact()`. Closed by clicking backdrop or ✕.
+- [x] **Focus Overlay Transitions:** `focus-overlay` CSS transition with opacity fade in/out.
+- [x] **Pinia State:** `focusedArtifact`, `setFocusedArtifact()`, `clearFocusedArtifact()` in `layoutStore.js`.
+
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
 - [x] **Autonomous Knowledge Extraction:** Implemented specialized Python ETL scripts optimized by Gemini Code Assist for automated JSON knowledge extraction.

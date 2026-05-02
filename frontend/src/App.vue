@@ -73,7 +73,9 @@
           @end="onDragEnd"
         >
           <template #item="{ element }">
-             <div class="col-span-1 h-full flex flex-col justify-start">
+             <div v-show="!(element.widget_id === 'fridge' && layoutStore.isAdviceMaximized)"
+                  :class="getWidgetColSpan(element.widget_id)"
+                  class="h-full flex flex-col justify-start transition-all duration-300">
                 <WidgetWrapper 
                    :widget="element" 
                    :title="getWidgetTitle(element.widget_id)"
@@ -119,6 +121,29 @@
 
     <!-- Floating ThoughtTicker (Global, outside grid) -->
     <ThoughtTicker />
+
+    <!-- Phase 12.1 Step C: Focus Mode Overlay (Teleport) -->
+    <Teleport to="body">
+      <Transition name="focus-overlay">
+        <div v-if="layoutStore.focusedArtifact"
+             class="fixed inset-0 z-[9999] flex items-center justify-center"
+             @click.self="layoutStore.clearFocusedArtifact()">
+          <!-- Backdrop blur -->
+          <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300"></div>
+          <!-- Focused Artifact Card -->
+          <div class="relative z-10 w-full max-w-2xl max-h-[80vh] mx-4 overflow-y-auto custom-scrollbar">
+            <ArtifactCard
+              :artifact="layoutStore.focusedArtifact"
+              :isFocused="true"
+              :rotationAngle="0"
+              :zIndex="100"
+              @close="layoutStore.clearFocusedArtifact()"
+              @focus="() => {}"
+            />
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -134,6 +159,7 @@ import ChefAvatar from './components/chef/ChefAvatar.vue'
 import FridgeList from './components/inventory/FridgeList.vue'
 import InteractionZone from './components/chef/InteractionZone.vue'
 import AdviceDisplay from './components/output/AdviceDisplay.vue'
+import ArtifactCard from './components/output/ArtifactCard.vue'
 import ReceiptArchive from './views/ReceiptArchive.vue'
 import ThoughtTicker from './components/chef/ThoughtTicker.vue'
 import { useChefFSM, chefState } from './composables/useChefFSM'
@@ -208,7 +234,7 @@ const getColSpan = (widgetId) => {
 const getWidgetTitle = (widgetId) => {
   if (widgetId === 'fridge') return 'Inventory'
   if (widgetId === 'chef_hub') return 'Command Hub'
-  if (widgetId === 'advice') return 'Culinary Advice'
+  if (widgetId === 'advice') return "Chef's Advice"
   return 'Widget'
 }
 
@@ -219,8 +245,16 @@ const getMinHeight = (widgetId) => {
 
 const getMaxHeight = (widgetId) => {
   if (widgetId === 'fridge') return 500
-  if (widgetId === 'advice') return 300
+  if (widgetId === 'advice') return layoutStore.isAdviceMaximized ? 800 : 300
   return 500
+}
+
+// Phase 12.1 Step C: Dynamic Grid Column Span
+const getWidgetColSpan = (widgetId) => {
+  if (widgetId === 'advice' && layoutStore.isAdviceMaximized) {
+    return 'col-span-1 md:col-span-2'
+  }
+  return 'col-span-1'
 }
 </script>
 
@@ -232,5 +266,17 @@ html.danger-zone body {
 }
 html.danger-zone .bg-slate-900\/90 {
   background-color: rgba(30, 0, 0, 0.9) !important;
+}
+
+/* Focus Overlay transitions */
+.focus-overlay-enter-active {
+  transition: opacity 0.3s ease;
+}
+.focus-overlay-leave-active {
+  transition: opacity 0.2s ease;
+}
+.focus-overlay-enter-from,
+.focus-overlay-leave-to {
+  opacity: 0;
 }
 </style>

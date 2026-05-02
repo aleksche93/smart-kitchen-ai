@@ -202,38 +202,45 @@ const handleAdvice = async () => {
   scrollToBottom()
 
   try {
-    // Kinetic typing state: tracks accumulated text for typewriter rendering
+    // Phase 12.1 Step C: Tail Buffer Pattern for MAGIC_TAG
+    // Утримуємо останні TAG_LENGTH символів у буфері під час stream
+    // щоб запобігти рендерингу часткових фрагментів тегу
     let _accumulatedText = ''
-    // Small sleep for typewriter micro-delay between words (Variant A: 0-20ms)
+    const TAG_LENGTH = MAGIC_TAG.length  // 24 chars
     const _sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
     await sendChatStream(
       queryToSent,
       async (textChunk) => {
-        // Phase 12.1-B: SSE Magic Tag Interceptor
-        // Накопичуємо весь текст; тег може прийти розбитим на декілька chunks
         _accumulatedText += textChunk
 
-        const hasMagicTag = _accumulatedText.includes(MAGIC_TAG)
-        // Видаляємо тег з відображуваного тексту
-        const displayText = hasMagicTag
-          ? _accumulatedText.replace(MAGIC_TAG, '').trimEnd()
-          : _accumulatedText
-
-        // Guaranteed immutable spread update — triggers Vue 3 reactivity reliably
-        const idx = chatHistory.value.length - 1
-        const prev = chatHistory.value[idx]
-        chatHistory.value = [
-          ...chatHistory.value.slice(0, idx),
-          { ...prev, content: displayText }
-        ]
-
-        // Активуємо Magic Button якщо тег є
-        if (hasMagicTag && !showMagicButton.value) {
-          showMagicButton.value = true
+        // 1. Повний тег знайдено — strip і активуємо кнопку
+        if (_accumulatedText.includes(MAGIC_TAG)) {
+          _accumulatedText = _accumulatedText.replace(MAGIC_TAG, '')
+          if (!showMagicButton.value) showMagicButton.value = true
         }
 
-        // Micro-delay: simulate natural word-by-word cadence (0-20ms range)
+        // 2. Tail Buffer: відсікаємо хвіст що може бути початком тегу
+        //    "[ACTION" — суфікс, що потенційно стане повним тегом у наступному chunk
+        let safeText = _accumulatedText
+        const tail = _accumulatedText.slice(-TAG_LENGTH)
+        const bracketIdx = tail.lastIndexOf('[')
+        if (bracketIdx >= 0) {
+          const possiblePartial = tail.slice(bracketIdx)
+          // Якщо MAGIC_TAG починається з цього partial — буферизуємо хвіст
+          if (MAGIC_TAG.startsWith(possiblePartial) && possiblePartial !== _accumulatedText) {
+            safeText = _accumulatedText.slice(0, _accumulatedText.length - possiblePartial.length)
+          }
+        }
+
+        // 3. Рендеримо тільки "safe" частину (без хвоста-буфера)
+        const idx = chatHistory.value.length - 1
+        chatHistory.value = [
+          ...chatHistory.value.slice(0, idx),
+          { ...chatHistory.value[idx], content: safeText }
+        ]
+
+        // Micro-delay: kinetic typing cadence (0-20ms per word)
         const words = textChunk.trim().split(/\s+/)
         for (let i = 0; i < words.length; i++) {
           await _sleep(Math.random() * 20)
@@ -257,17 +264,26 @@ const handleAdvice = async () => {
     btnState.value = BUTTON_STATES.IDLE
     isStreaming.value = false
 
-    // Bug 1 Fix: фінальна гарантована очистка тегу після завершення stream
-    // Тег може прийти останнім chunk-ом і не встигнути пройти через replace вище
+    // Фінальний flush: рендеримо ВЕСЬ _accumulatedText (тег вже strip-нутий)
+    // Це гарантує що буферизований хвіст потрапить у фінальне повідомлення
     const lastIdx = chatHistory.value.length - 1
     const lastMsg = chatHistory.value[lastIdx]
-    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content.includes(MAGIC_TAG)) {
-      const cleaned = lastMsg.content.replace(MAGIC_TAG, '').trimEnd()
-      chatHistory.value = [
-        ...chatHistory.value.slice(0, lastIdx),
-        { ...lastMsg, content: cleaned }
-      ]
-      showMagicButton.value = true
+    if (lastMsg?.role === 'assistant') {
+      let finalText = lastMsg.content
+      // Подвійна перевірка: _accumulatedText може містити залишки
+      // якщо stream обірвався між chunks
+      if (finalText.includes(MAGIC_TAG)) {
+        finalText = finalText.replace(MAGIC_TAG, '')
+        showMagicButton.value = true
+      }
+      // Беремо повний accumulated text (без тегу) як фінальний
+      const fullClean = (_accumulatedText || '').replaceAll(MAGIC_TAG, '').trimEnd()
+      if (fullClean && fullClean !== finalText) {
+        chatHistory.value = [
+          ...chatHistory.value.slice(0, lastIdx),
+          { ...lastMsg, content: fullClean }
+        ]
+      }
     }
   }
 }

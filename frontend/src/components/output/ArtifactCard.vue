@@ -72,6 +72,9 @@ import RecipeArtifact from './artifacts/RecipeArtifact.vue'
 import ShoppingListArtifact from './artifacts/ShoppingListArtifact.vue'
 import WasteAlertArtifact from './artifacts/WasteAlertArtifact.vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
+import { useLayoutStore } from '../../stores/layoutStore'
+
+const layoutStore = useLayoutStore()
 
 const props = defineProps({
   artifact: { type: Object, required: true },   // { artifact_type, title, data: {...} }
@@ -105,11 +108,11 @@ const isDev = computed(() => import.meta.env.DEV)
 // --- Design tokens ---
 const typeConfig = computed(() => {
   const configs = {
-    RECIPE:        { icon: '🍽️', glow: 'shadow-[0_0_30px_rgba(250,204,21,0.15)]',   glowColor: 'rgba(250,204,21,0.2)' },
-    SHOPPING_LIST: { icon: '🛒', glow: 'shadow-[0_0_30px_rgba(52,211,153,0.15)]',   glowColor: 'rgba(52,211,153,0.2)' },
-    WASTE_ALERT:   { icon: '⚠️', glow: 'shadow-[0_0_30px_rgba(248,113,113,0.15)]',  glowColor: 'rgba(248,113,113,0.2)' },
-    PREP_SCHEDULE: { icon: '📋', glow: 'shadow-[0_0_30px_rgba(96,165,250,0.15)]',   glowColor: 'rgba(96,165,250,0.2)' },
-    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30px_rgba(192,132,252,0.15)]',  glowColor: 'rgba(192,132,252,0.2)' }
+    RECIPE:        { icon: '🍽️', glow: 'shadow-[0_0_30px_rgba(250,204,21,0.25)]',   glowColor: 'rgba(250,204,21,0.4)' },
+    SHOPPING_LIST: { icon: '🛒', glow: 'shadow-[0_0_30px_rgba(52,211,153,0.25)]',   glowColor: 'rgba(52,211,153,0.4)' },
+    WASTE_ALERT:   { icon: '⚠️', glow: 'shadow-[0_0_30px_rgba(248,113,113,0.25)]',  glowColor: 'rgba(248,113,113,0.4)' },
+    PREP_SCHEDULE: { icon: '📋', glow: 'shadow-[0_0_30px_rgba(96,165,250,0.25)]',   glowColor: 'rgba(96,165,250,0.4)' },
+    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30_rgba(192,132,252,0.25)]',  glowColor: 'rgba(192,132,252,0.4)' }
   }
   return configs[props.artifact?.artifact_type] || configs.RECIPE
 })
@@ -120,11 +123,13 @@ const glowClass = computed(() => typeConfig.value.glow)
 
 // --- Spatial 2.5D transform + Zoom-In mount animation ---
 const spatialStyle = computed(() => ({
-  transform: `perspective(800px) rotateY(${props.isFocused ? 0 : props.rotationAngle}deg)`,
+  transform: props.isFocused 
+    ? 'perspective(1200px) scale(1.1) rotateX(2deg)' 
+    : `perspective(800px) rotateY(${props.rotationAngle}deg) scale(1)`,
   zIndex: props.isFocused ? 100 : props.zIndex,
-  transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0.3s',
+  transition: 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0.3s',
   '--artifact-glow-color': typeConfig.value.glowColor,
-  animation: 'artifactZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both'
+  animation: props.isFocused ? 'none' : 'artifactZoomIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both'
 }))
 
 // --- Cook handler: calls API, then notifies child via defineExpose ---
