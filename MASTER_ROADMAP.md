@@ -151,6 +151,29 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Artifact UI (2.5D):** Polymorphic `ArtifactCard.vue` with `perspective(800px) rotateY()` spatial transforms.
 - [x] **Processing States:** `SkeletonArtifact.vue` with shimmer gradient animation.
 
+### Phase 12.1: Living Soul Evolution [PHASE A COMPLETED] ✅
+
+#### Phase A: The Living Soul (Humanized SSE + Kinetic Typing)
+- [x] **Conversational System Prompt:** Replaced `generate_system_prompt()` (JSON pipeline) in `/chat` endpoint with a lightweight conversational prompt. `generate_system_prompt()` retained intact for `/advice`.
+- [x] **Multilingual Intelligence:** LANGUAGE RULE embedded in system prompt — Chef auto-detects user language (UA/EN) and responds in kind. Anti-Russian protocol enforced.
+- [x] **Contextual Persona:** System prompt injects live DB data — user preferences, culinary sins, FSM emotional state — for personalized responses.
+- [x] **Natural Artifact Suggestion:** Chef organically suggests recipe/list at end of response when relevant; never forces JSON output in chat mode.
+- [x] **Kinetic Typing Variant A:** Integrated `useTypewriter` composable into `InteractionZone.vue` — real-time typewriter effect on every SSE chunk (0-20ms delay per word).
+- [x] **Immutable Vue Reactivity:** Replaced `chatHistory.value[idx] = {...}` with guaranteed spread `[...slice, newMsg]` pattern for reliable Vue 3 reactivity.
+- [x] **Kinetic Cursor:** Pulsing blue cursor bar visible during active streaming, disappears on completion.
+- [x] **Typing Dots Fix:** 3-dot indicator visible ONLY before first chunk arrives (`content === '' && isStreaming`).
+- [x] **Intent Triage Removed:** Eliminated keyword hijacking that bypassed SSE for recipe-related messages. All messages now flow through Living Soul `/chat` endpoint.
+
+#### Phase B: Polymorphic Artifacts & Magic Bridge [COMPLETED] ✅
+- [x] **Hidden Action Tag Protocol:** `[ACTION: MAGIC_TRIGGER]` embedded in `/chat` system_prompt. Chef appends it only when genuinely proposing an artifact. Frontend SSE interceptor strips tag from display text, shows "✨ Generate Magic" button.
+- [x] **Polymorphic ArtifactCard:** `<component :is>` dynamic rendering with `RecipeArtifact`, `ShoppingListArtifact`, `WasteAlertArtifact`. Type safety guard for malformed data + dev raw dump.
+- [x] **Typed Artifact Schemas:** `ARTIFACT_SCHEMAS` dict in `api/smart_fridge.py` ensures LLM returns schema-consistent JSON for each artifact type via `system_instruction`.
+- [x] **`POST /v1/fridge/cook` endpoint:** Fuzzy ingredient matching (ported from `legacy_smart_fridge.py :: Fridge.use_product()`). Deducts 1 unit MVP, deletes item if last unit.
+- [x] **"🍳 Cook It!" button:** `RecipeArtifact.vue` emits cook event → `ArtifactCard` calls `cookRecipe()` → `useKitchenAPI` → `fetchFridge()` (instant UI update, no reload).
+- [x] **Spatial 2.5D ArtifactCard:** Zoom-In mount animation (`artifactZoomIn`), Focus Mode glow overlay (`backdrop-blur`), `perspective(800px) rotateY()` spatial transform.
+- [x] **AdviceDisplay Integration:** `currentArtifact` prop received from `App.vue`, rendered above legacy recipe panel. Slide-in reveal transition on artifact arrival.
+- [x] **Two-phase executeMagic:** `/advice` (summary selection) → `/generate-artifact` (typed full artifact) → `emit('artifact')` to parent.
+
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
 - [x] **Autonomous Knowledge Extraction:** Implemented specialized Python ETL scripts optimized by Gemini Code Assist for automated JSON knowledge extraction.

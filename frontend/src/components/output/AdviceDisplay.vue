@@ -1,5 +1,20 @@
 <template>
   <Card title="Chef's Advice" class="h-auto min-h-[400px] mb-4 flex flex-col">
+
+    <!-- Phase 12.1-B: Polymorphic Artifact Panel (Magic Bridge Output) -->
+    <Transition name="artifact-reveal">
+      <div v-if="currentArtifact" class="mb-4">
+        <ArtifactCard
+          :artifact="currentArtifact"
+          :isFocused="true"
+          :rotationAngle="0"
+          :zIndex="10"
+          @close="$emit('clearArtifact')"
+          @focus="() => {}"
+        />
+      </div>
+    </Transition>
+
     <div v-if="chefState.recipeText" class="@container flex-1 flex flex-col space-y-4 w-full h-full">
 
       <div v-if="chefState.recipeText" class="bg-slate-900/80 p-4 rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col h-auto flex-1">
@@ -127,8 +142,15 @@
 <script setup>
 import { computed, ref } from 'vue'
 import Card from '../ui/Card.vue'
+import ArtifactCard from './ArtifactCard.vue'
 import { chefState } from '../../composables/useChefFSM'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
+
+const props = defineProps({
+  currentArtifact: { type: Object, default: null }  // { artifact_type, title, data }
+})
+
+defineEmits(['clearArtifact'])
 
 const { inventory } = useKitchenAPI()
 
@@ -257,5 +279,21 @@ const formatMarkdown = (text) => {
 }
 .toast-leave-to { 
   opacity: 0; transform: translate(-50%, -10px) scale(0.9); 
+}
+
+/* Artifact reveal transition */
+.artifact-reveal-enter-active {
+  animation: artifactSlideIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.artifact-reveal-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.artifact-reveal-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-8px);
+}
+@keyframes artifactSlideIn {
+  from { opacity: 0; transform: scale(0.9) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 </style>

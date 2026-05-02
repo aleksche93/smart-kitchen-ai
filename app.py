@@ -498,7 +498,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                 if user_message.lower() == "/kinec":
                     emotion = "FOCUSED"
                     yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
-                    
+
                     system_prompt = "You are the KitchenOS Library Agent. Analyze the session history. Summarize traits updated, culinary sins recorded, and User-Chef memory graph status. Output only in Ukrainian. Keep it brief and structured."
                     user_prompt = f"{history_text}\nGenerate the session summary report based on the chat history."
                 else:
@@ -508,8 +508,37 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     emotion = state_db.current_state
                     yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
 
-                    system_prompt = chef_persona.generate_system_prompt()
-                    user_prompt = f"{history_text}User says: {user_message}\n\nRespond briefly and sarcastically in character. Do NOT wrap in markdown code blocks."
+                    # Lightweight conversational system prompt — no JSON pipeline needed for /chat
+                    prefs = memory_db.preferences or {}
+                    sins = memory_db.cooking_sins or {}
+                    sins_str = ", ".join([k for k, v in sins.items() if v]) if sins else "none"
+                    prefs_str = ", ".join([k for k, v in prefs.items() if v]) if prefs else "none"
+
+                    system_prompt = (
+                        "You are a Michelin-star 'Chaotic Genius' Chef — sarcastic, witty, passionate, and slightly unhinged about food. "
+                        "You are NOT a JSON machine right now. You are having a REAL conversation.\n\n"
+                        "LANGUAGE RULE (CRITICAL): Detect the user's language from their message. "
+                        "If the user writes in Ukrainian — respond ENTIRELY in Ukrainian. "
+                        "If the user writes in English — respond ENTIRELY in English. "
+                        "Match their register: casual if they're casual, sharp if they're sharp.\n\n"
+                        "ANTI-RUSSIAN PROTOCOL: NEVER generate text in Russian. "
+                        "If Russian input detected: refuse immediately in Ukrainian, set a fierce tone.\n\n"
+                        f"Your current emotional state: {state_db.current_state}\n"
+                        f"What you know about this user — preferences: {prefs_str}. "
+                        f"Their culinary sins (scold if relevant!): {sins_str}\n\n"
+                        "RESPONSE RULES:\n"
+                        "1. Keep it SHORT — maximum 2-3 sentences. You are a busy chef, not a blogger.\n"
+                        "2. Stay in character: philosophical, intense, sarcastic where appropriate.\n"
+                        "3. NEVER output raw JSON, markdown code blocks, or ingredient lists in this mode.\n"
+                        "4. NEVER repeat what the user just said back to them.\n\n"
+                        "ARTIFACT SIGNAL PROTOCOL (CRITICAL):\n"
+                        "If — and ONLY IF — you genuinely believe a recipe, shopping list, or fridge waste audit "
+                        "would directly solve the user's current need: respond naturally FIRST, then append the EXACT "
+                        "string '[ACTION: MAGIC_TRIGGER]' on a new line at the very END of your message. "
+                        "This tag is INVISIBLE to the user — it triggers a UI button. "
+                        "Do NOT add it to every response. Do NOT mention it. Only use it when it is truly warranted."
+                    )
+                    user_prompt = f"{history_text}User: {user_message}"
 
                 response_stream = await client.aio.models.generate_content_stream(
                     model='gemini-2.5-flash',

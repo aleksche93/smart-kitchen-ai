@@ -89,11 +89,16 @@
                    <div class="h-full">
                      <FridgeList v-if="element.widget_id === 'fridge'" />
                      
-                     <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
-                        <InteractionZone />
-                     </div>
-                     
-                     <AdviceDisplay v-else-if="element.widget_id === 'advice'" class="pr-2" />
+                      <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
+                         <InteractionZone @artifact="onArtifact" />
+                      </div>
+                      
+                      <AdviceDisplay
+                        v-else-if="element.widget_id === 'advice'"
+                        class="pr-2"
+                        :currentArtifact="currentArtifact"
+                        @clearArtifact="currentArtifact = null"
+                      />
                    </div>
                 </WidgetWrapper>
              </div>
@@ -137,6 +142,11 @@ const { activeTab } = useKitchenAPI()
 const { resetState } = useChefFSM()
 
 const isMenuOpen = ref(false)
+const currentArtifact = ref(null)
+
+const onArtifact = (artifactData) => {
+  currentArtifact.value = artifactData
+}
 
 const handleReset = () => {
     resetState()

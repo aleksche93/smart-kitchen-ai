@@ -31,15 +31,22 @@
     <!-- Middle Area (Scrollable Message History) -->
     <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3" ref="chatContainer">
        <div v-for="(msg, index) in chatHistory" :key="msg._id || index"
-            :class="msg.role === 'user' ? 'self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30' : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
-          <!-- Typing indicator -->
-          <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1">
+            :class="msg.role === 'user'
+              ? 'self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30'
+              : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
+          <!-- Typing indicator: 3 dots — visible ONLY before first chunk arrives -->
+          <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1 py-0.5">
             <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
             <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 150ms"></span>
             <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
           </span>
-          <span v-else>{{ msg.content }}</span>
-          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && chefState.showMagicTrigger" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
+          <!-- Content: renders as text arrives chunk by chunk (kinetic typing via SSE) -->
+          <span v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}<span
+            v-if="msg.role === 'assistant' && isStreaming && index === chatHistory.length - 1 && msg.content !== ''"
+            class="inline-block w-0.5 h-3.5 bg-neoBlue ml-0.5 align-middle animate-pulse"
+          ></span></span>
+          <!-- Magic artifact trigger button — з'являється коли Шеф додає [ACTION: MAGIC_TRIGGER] -->
+          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
              ✨ Generate Magic
           </button>
        </div>
@@ -95,19 +102,23 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefFSM, chefState } from '../../composables/useChefFSM'
+import { useTypewriter } from '../../composables/useTypewriter'
 import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
 import { useI18n } from '../../plugins/i18n'
 import { useChefStore } from '../../stores/chefStore'
-import { onMounted, nextTick } from 'vue'
 
 const { t } = useI18n()
 const chefStore = useChefStore()
-const { isLoading, error, getChefAdvice, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
-const { updateState, resetState } = useChefFSM()
+const { isLoading, error, getChefAdvice, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession, generateArtifact } = useKitchenAPI()
+const { updateState } = useChefFSM()
+
+// Typewriter composable — Variant A (real-time per-chunk typing)
+const { type: typeWord } = useTypewriter()
 
 const chatHistory = ref([])
 const chatContainer = ref(null)
@@ -138,6 +149,11 @@ const successMsg = ref(null)
 const lastQuery = ref(null)
 let _msgCounter = 0
 
+// --- Phase 12.1-B: Magic Trigger Bridge ---
+const MAGIC_TAG = '[ACTION: MAGIC_TRIGGER]'
+const showMagicButton = ref(false)
+const emit = defineEmits(['artifact'])
+
 
 const BUTTON_STATES = {
   IDLE: 'IDLE',
@@ -165,23 +181,12 @@ const handleClearSession = async () => {
   lastQuery.value = null
   chefState.chatMessage = ''
   chefState.showMagicTrigger = false
+  showMagicButton.value = false
 }
 
 const handleAdvice = async () => {
   if (!localInput.value.trim() || btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
-
-  // Intent Triage
-  const lower = localInput.value.toLowerCase()
-  const intents = ['recipe', 'generate', 'ідеї', 'рецепт', 'cook', 'приготувати', 'смачне']
-  if (intents.some(i => lower.includes(i))) {
-    lastQuery.value = localInput.value
-    chefState.chatMessage = t('intents.magic_trigger_message')
-    chefState.showMagicTrigger = true
-    chefState.emotionDisplay = 'PLAYFUL'
-    localInput.value = ''
-    return
-  }
 
   // Flow A: Plain Chat
   btnState.value = BUTTON_STATES.ACTIVE
@@ -197,13 +202,43 @@ const handleAdvice = async () => {
   scrollToBottom()
 
   try {
+    // Kinetic typing state: tracks accumulated text for typewriter rendering
+    let _accumulatedText = ''
+    // Small sleep for typewriter micro-delay between words (Variant A: 0-20ms)
+    const _sleep = (ms) => new Promise(r => setTimeout(r, ms))
+
     await sendChatStream(
       queryToSent,
-      (textChunk) => {
-        // Immutable update: replace last element to trigger Vue reactivity
+      async (textChunk) => {
+        // Phase 12.1-B: SSE Magic Tag Interceptor
+        // Накопичуємо весь текст; тег може прийти розбитим на декілька chunks
+        _accumulatedText += textChunk
+
+        const hasMagicTag = _accumulatedText.includes(MAGIC_TAG)
+        // Видаляємо тег з відображуваного тексту
+        const displayText = hasMagicTag
+          ? _accumulatedText.replace(MAGIC_TAG, '').trimEnd()
+          : _accumulatedText
+
+        // Guaranteed immutable spread update — triggers Vue 3 reactivity reliably
         const idx = chatHistory.value.length - 1
         const prev = chatHistory.value[idx]
-        chatHistory.value[idx] = { ...prev, content: prev.content + textChunk }
+        chatHistory.value = [
+          ...chatHistory.value.slice(0, idx),
+          { ...prev, content: displayText }
+        ]
+
+        // Активуємо Magic Button якщо тег є
+        if (hasMagicTag && !showMagicButton.value) {
+          showMagicButton.value = true
+        }
+
+        // Micro-delay: simulate natural word-by-word cadence (0-20ms range)
+        const words = textChunk.trim().split(/\s+/)
+        for (let i = 0; i < words.length; i++) {
+          await _sleep(Math.random() * 20)
+        }
+
         scrollToBottom()
       },
       (emotion) => {
@@ -211,16 +246,29 @@ const handleAdvice = async () => {
         chefStore.setEmotion(emotion)
       },
       (errMsg) => {
-        error.value = "Сhef error: " + errMsg
+        error.value = "Chef error: " + errMsg
         chefState.emotionDisplay = 'ANGRY'
       }
     )
   } catch (err) {
-    error.value = "Сhef refused to chat: " + (err.message || 'Connection lost.')
+    error.value = "Chef refused to chat: " + (err.message || 'Connection lost.')
     chefState.emotionDisplay = 'ANGRY'
   } finally {
     btnState.value = BUTTON_STATES.IDLE
     isStreaming.value = false
+
+    // Bug 1 Fix: фінальна гарантована очистка тегу після завершення stream
+    // Тег може прийти останнім chunk-ом і не встигнути пройти через replace вище
+    const lastIdx = chatHistory.value.length - 1
+    const lastMsg = chatHistory.value[lastIdx]
+    if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content.includes(MAGIC_TAG)) {
+      const cleaned = lastMsg.content.replace(MAGIC_TAG, '').trimEnd()
+      chatHistory.value = [
+        ...chatHistory.value.slice(0, lastIdx),
+        { ...lastMsg, content: cleaned }
+      ]
+      showMagicButton.value = true
+    }
   }
 }
 
@@ -228,17 +276,58 @@ const executeMagic = async (query = lastQuery.value) => {
   if (btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
   btnState.value = BUTTON_STATES.ACTIVE
+  showMagicButton.value = false
   chefState.showMagicTrigger = false
-  
+
   try {
-    if (query !== lastQuery.value) {
-      lastQuery.value = query
+    if (query !== lastQuery.value) lastQuery.value = query
+
+    // Bug 2 Fix: Спрощений flow — прямо до /generate-artifact без проміжного /advice
+    // /advice часто повертає порожній summaries якщо запит нечіткий
+    // Натомість: Chef вже сказав що потрібно — генеруємо RECIPE як default
+    let artifactType = 'RECIPE'
+    let artifactTitle = 'Chef\'s Recipe'
+
+    // Спробуємо фазу 1 (/advice) як best-effort; якщо фейль — fallback на RECIPE
+    try {
+      const data = await getChefAdvice(query)
+      const summaries = data?.chef_response?.technical_data?.artifact_summaries || []
+      if (summaries.length > 0) {
+        artifactType = summaries[0].artifact_type
+        artifactTitle = summaries[0].title || artifactTitle
+        console.debug('[Magic] Phase 1 OK — type:', artifactType, 'title:', artifactTitle)
+      } else {
+        console.warn('[Magic] Phase 1: no summaries, falling back to RECIPE')
+      }
+    } catch (adviceErr) {
+      console.warn('[Magic] Phase 1 /advice failed, falling back to RECIPE:', adviceErr.message)
     }
-    const data = await getChefAdvice(query)
-    updateState(data)
+
+    // Фаза 2: /generate-artifact — typed full artifact (ЗАВЖДИ виконується)
+    console.debug('[Magic] Phase 2: generating', artifactType, 'for query:', query)
+    const fullArtifact = await generateArtifact({
+      title: artifactTitle,
+      artifact_type: artifactType,
+      context_parameters: query
+    })
+
+    console.debug('[Magic] Phase 2 result:', fullArtifact)
+
+    if (!fullArtifact?.artifact || fullArtifact.artifact?.error) {
+      throw new Error('Artifact data is empty or malformed: ' + JSON.stringify(fullArtifact?.artifact))
+    }
+
+    // Emit до App.vue → AdviceDisplay
+    emit('artifact', {
+      artifact_type: fullArtifact.artifact_type || artifactType,
+      title: artifactTitle,
+      data: fullArtifact.artifact
+    })
+
     localInput.value = ''
   } catch (err) {
-    error.value = "Сhef refused to answer: " + (err.message || 'Connection lost.')
+    console.error('[Magic] executeMagic failed:', err)
+    error.value = 'Chef magic failed: ' + (err.message || 'Connection lost.')
     chefState.emotionDisplay = 'ANGRY'
   } finally {
     btnState.value = BUTTON_STATES.IDLE

@@ -1,9 +1,10 @@
 import json
+import re
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete, update
 from datetime import datetime
 import aiofiles
 
@@ -56,6 +57,40 @@ class ArtifactRequest(BaseModel):
     title: str
     artifact_type: ArtifactType
     context_parameters: str = ""
+
+class CookRequest(BaseModel):
+    ingredients: List[str]  # e.g. ["2 eggs", "100g butter", "1 cup flour"]
+
+# Typed JSON schemas for each artifact — instruct LLM to produce consistent structure
+ARTIFACT_SCHEMAS: Dict[str, str] = {
+    "RECIPE": (
+        "You are a culinary data API. Return ONLY a valid JSON object with EXACTLY these fields: "
+        "{\"name\": string, \"time\": string (e.g. '30 minutes'), \"difficulty\": string (Easy/Medium/Hard), "
+        "\"ingredients\": array of strings (each: quantity + name, e.g. '2 large eggs'), "
+        "\"instructions\": array of strings (each a numbered step), \"notes\": string}. "
+        "No markdown, no extra text, no wrapper keys. Pure JSON only."
+    ),
+    "SHOPPING_LIST": (
+        "You are a culinary data API. Return ONLY a valid JSON object with EXACTLY: "
+        "{\"title\": string, \"categories\": [{\"name\": string, \"items\": [{\"name\": string, \"quantity\": string}]}]}. "
+        "No markdown, no extra text. Pure JSON only."
+    ),
+    "WASTE_ALERT": (
+        "You are a culinary data API. Return ONLY a valid JSON object with EXACTLY: "
+        "{\"severity\": string (HIGH/MEDIUM/LOW), "
+        "\"expiring_items\": [{\"name\": string, \"days_left\": integer, \"action\": string}], "
+        "\"total_value_at_risk\": string, \"recommended_action\": string}. "
+        "No markdown, no extra text. Pure JSON only."
+    ),
+    "PREP_SCHEDULE": (
+        "You are a culinary data API. Return ONLY a valid JSON object with: "
+        "{\"title\": string, \"steps\": [{\"time\": string, \"task\": string}]}. Pure JSON only."
+    ),
+    "TASK_LIST": (
+        "You are a culinary data API. Return ONLY a valid JSON object with: "
+        "{\"title\": string, \"tasks\": [{\"label\": string, \"done\": false}]}. Pure JSON only."
+    ),
+}
 
 @router.post("/v1/chef/advice")
 async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = Depends(get_db)):
@@ -204,17 +239,15 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
     all_items = fridge_query.scalars().all()
     fridge_summary = ", ".join([f"{i.name} ({i.quantity}{i.unit})" for i in all_items])
 
+    artifact_type_key = request.artifact_type.value
+    schema_instruction = ARTIFACT_SCHEMAS.get(artifact_type_key, ARTIFACT_SCHEMAS["RECIPE"])
+
     user_prompt = f"""
     Generate the full detailed JSON payload for the requested artifact.
     Artifact Title: {request.title}
-    Artifact Type: {request.artifact_type.value}
+    Artifact Type: {artifact_type_key}
     User Context/Parameters: {request.context_parameters}
     Current Fridge Inventory: {fridge_summary}
-
-    Instructions:
-    1. You MUST generate the structured JSON for the `{request.artifact_type.value}`.
-    2. Since this is polymorphic, return a generic JSON object containing the relevant details (e.g. if RECIPE, include ingredients and steps; if SHOPPING_LIST, include categories and items).
-    3. Output ONLY valid JSON without markdown wrapping.
     """
 
     try:
@@ -222,20 +255,72 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
             model='gemini-2.5-flash',
             contents=user_prompt,
             config=types.GenerateContentConfig(
+                system_instruction=schema_instruction,
                 response_mime_type="application/json",
-                temperature=0.7
+                temperature=0.65
             )
         )
-        
-        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+
+        raw_text = response.text.replace("```json", "").replace("```", "").strip() if response.text else "{}"
         try:
             artifact_data = json.loads(raw_text)
         except json.JSONDecodeError as e:
-            artifact_data = {"error": f"Parse fail: {e}", "raw": raw_text}
+            artifact_data = {"error": f"Parse fail: {e}", "raw": raw_text[:500]}
 
-        return {"status": "success", "artifact": artifact_data}
+        return {
+            "status": "success",
+            "artifact_type": artifact_type_key,
+            "artifact": artifact_data
+        }
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/v1/fridge/cook")
+async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession = Depends(get_db)):
+    """
+    Phase 12.1-B: Legacy fridge logic ported from Fridge.use_product().
+    Fuzzy-matches ingredient strings against InventoryItemModel.
+    Deducts 1 unit (MVP) from each matched item; removes item if quantity reaches 0.
+    Inspired by: memory/legacy_smart_fridge.py :: Fridge.use_product()
+    """
+    deducted: List[str] = []
+    not_found: List[str] = []
+
+    for ingredient_str in request.ingredients:
+        # Витягуємо ключове слово: прибираємо числа та одиниці виміру на початку
+        # e.g. "2 large eggs" -> "eggs", "100g butter" -> "butter"
+        clean = re.sub(r'^[\d.,/½¼¾]+\s*(?:g|kg|ml|l|oz|lb|cups?|tbsp|tsp|pcs|cloves?|slices?|large|medium|small)?\s*', '', ingredient_str, flags=re.IGNORECASE).strip()
+        keyword = clean.lower() if clean else ingredient_str.lower()
+
+        # Fuzzy match: InventoryItem name contains keyword OR keyword contains item name
+        items_q = await session.execute(select(InventoryItemModel))
+        all_inv = items_q.scalars().all()
+
+        matched = next(
+            (item for item in all_inv
+             if keyword in item.name.lower() or item.name.lower() in keyword),
+            None
+        )
+
+        if matched:
+            if matched.quantity <= 1:
+                # Видаляємо повністю
+                await session.delete(matched)
+                deducted.append(f"{matched.name} (removed — last unit used)")
+            else:
+                matched.quantity -= 1
+                deducted.append(f"{matched.name} ({matched.quantity} left)")
+        else:
+            not_found.append(ingredient_str)
+
+    await session.commit()
+
+    return {
+        "status": "success",
+        "deducted": deducted,
+        "not_found": not_found
+    }

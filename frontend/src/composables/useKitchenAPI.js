@@ -202,11 +202,50 @@ export function useKitchenAPI() {
     }
   }
 
+  const generateArtifact = async ({ title, artifact_type, context_parameters = '' }) => {
+    try {
+      const resp = await fetch(`${BASE_URL}/chef/generate-artifact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, artifact_type, context_parameters })
+      })
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Artifact generation failed')
+      }
+      return await resp.json()  // { status, artifact_type, artifact: {...} }
+    } catch (err) {
+      error.value = err.message
+      throw err
+    }
+  }
+
+  const cookRecipe = async (ingredients) => {
+    try {
+      const resp = await fetch(`${BASE_URL}/fridge/cook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredients })
+      })
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Cook deduction failed')
+      }
+      const result = await resp.json()
+      // Миттєве оновлення UI без page reload
+      await fetchFridge()
+      return result  // { status, deducted: [...], not_found: [...] }
+    } catch (err) {
+      error.value = err.message
+      throw err
+    }
+  }
+
   return { 
     isLoading, error, 
     inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
     fetchFridge, fetchHistory, getChefAdvice, sendChatStream, scanReceipt, deleteReceipt,
-    fetchSessionHistory, clearSession
+    fetchSessionHistory, clearSession, generateArtifact, cookRecipe
   }
 }
