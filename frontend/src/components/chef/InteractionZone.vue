@@ -3,7 +3,7 @@
     
     <!-- Top Area: Actions Bar -->
     <div class="flex justify-between items-center bg-slate-800/80 px-4 py-2 flex-shrink-0 border border-slate-700/50 rounded-lg mb-3">
-      <div class="flex items-center gap-4">
+     <div v-if="activeTab === 'kitchen'" class="flex items-center gap-4">
         <!-- Scan Receipt File Picker -->
         <label class="cursor-pointer text-xs uppercase tracking-wider font-bold text-slate-300 hover:text-neoYellow transition-colors flex items-center group" title="Scan Receipt / Vision">
           <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
@@ -16,15 +16,6 @@
           Clear Session
         </button>
       </div>
-
-      <!-- Toggle HUD -->
-      <button 
-        @click="isConsoleOpen = !isConsoleOpen"
-        class="text-slate-500 hover:text-neoBlue transition-colors block"
-        title="Toggle HUD Console"
-      >
-        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-      </button>
     </div>
 
     <!-- Error Banner -->
@@ -39,9 +30,15 @@
 
     <!-- Middle Area (Scrollable Message History) -->
     <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3" ref="chatContainer">
-       <div v-for="(msg, index) in chatHistory" :key="index"
+       <div v-for="(msg, index) in chatHistory" :key="msg._id || index"
             :class="msg.role === 'user' ? 'self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30' : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
-          <span>{{ msg.content }}</span>
+          <!-- Typing indicator -->
+          <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1">
+            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+          </span>
+          <span v-else>{{ msg.content }}</span>
           <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && chefState.showMagicTrigger" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
              ✨ Generate Magic
           </button>
@@ -50,10 +47,7 @@
 
     <!-- Bottom Area: Chat Input Space -->
     <div class="flex flex-col flex-shrink-0 mt-auto space-y-2">
-      <!-- Thought Ticker Terminal (Anchored directly above input when open) -->
-      <div v-show="isConsoleOpen" :class="[lastQuery || chefState.chatMessage ? 'h-32' : 'flex-1 min-h-[120px]']" class="rounded-xl border border-slate-700/50 bg-slate-900/60 backdrop-blur-md shadow-inner overflow-hidden relative transition-all duration-500 w-full shrink-0">
-        <ThoughtTicker />
-      </div>
+
 
       <div class="flex space-x-2">
         <div class="relative flex-1">
@@ -106,7 +100,6 @@ import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefFSM, chefState } from '../../composables/useChefFSM'
 import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
-import ThoughtTicker from './ThoughtTicker.vue'
 import { useI18n } from '../../plugins/i18n'
 import { useChefStore } from '../../stores/chefStore'
 import { onMounted, nextTick } from 'vue'
@@ -118,18 +111,23 @@ const { updateState, resetState } = useChefFSM()
 
 const chatHistory = ref([])
 const chatContainer = ref(null)
+const isStreaming = ref(false)
+let _scrollRAF = null
 
-const scrollToBottom = async () => {
-  await nextTick()
-  if (chatContainer.value) {
-    chatContainer.value.scrollTop = chatContainer.value.scrollHeight
-  }
+const scrollToBottom = () => {
+  if (_scrollRAF) cancelAnimationFrame(_scrollRAF)
+  _scrollRAF = requestAnimationFrame(() => {
+    if (chatContainer.value) {
+      chatContainer.value.scrollTop = chatContainer.value.scrollHeight
+    }
+  })
 }
 
 onMounted(async () => {
   const historyData = await fetchSessionHistory()
   if (historyData && historyData.messages) {
-    chatHistory.value = historyData.messages
+    chatHistory.value = historyData.messages.map((m, i) => ({ ...m, _id: 'h_' + i }))
+    await nextTick()
     scrollToBottom()
   }
 })
@@ -137,8 +135,8 @@ onMounted(async () => {
 const localInput = ref('')
 const scannedItems = ref([])
 const successMsg = ref(null)
-const isConsoleOpen = ref(true)
 const lastQuery = ref(null)
+let _msgCounter = 0
 
 
 const BUTTON_STATES = {
@@ -187,21 +185,25 @@ const handleAdvice = async () => {
 
   // Flow A: Plain Chat
   btnState.value = BUTTON_STATES.ACTIVE
+  isStreaming.value = true
   const queryToSent = localInput.value
   lastQuery.value = queryToSent
   localInput.value = ''
 
-  chatHistory.value.push({ role: 'user', content: queryToSent })
-  chatHistory.value.push({ role: 'assistant', content: '' }) // Empty placeholder for stream
+  const userMsgId = 'msg_' + (++_msgCounter)
+  const assistantMsgId = 'msg_' + (++_msgCounter)
+  chatHistory.value = [...chatHistory.value, { role: 'user', content: queryToSent, _id: userMsgId }]
+  chatHistory.value = [...chatHistory.value, { role: 'assistant', content: '', _id: assistantMsgId }]
   scrollToBottom()
 
   try {
     await sendChatStream(
       queryToSent,
       (textChunk) => {
-        // Append chunk to the last assistant message
-        const lastMsg = chatHistory.value[chatHistory.value.length - 1]
-        lastMsg.content += textChunk
+        // Immutable update: replace last element to trigger Vue reactivity
+        const idx = chatHistory.value.length - 1
+        const prev = chatHistory.value[idx]
+        chatHistory.value[idx] = { ...prev, content: prev.content + textChunk }
         scrollToBottom()
       },
       (emotion) => {
@@ -218,6 +220,7 @@ const handleAdvice = async () => {
     chefState.emotionDisplay = 'ANGRY'
   } finally {
     btnState.value = BUTTON_STATES.IDLE
+    isStreaming.value = false
   }
 }
 

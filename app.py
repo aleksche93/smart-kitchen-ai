@@ -8,7 +8,7 @@ import uuid
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -240,7 +240,7 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
     
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=[
                 receipt_sys_prompt,
                 types.Part.from_bytes(data=content, mime_type=file.content_type)
@@ -448,8 +448,6 @@ async def clear_session(session: AsyncSession = Depends(get_db)):
     await session.commit()
     return {"status": "success", "new_session_id": new_session.id}
 
-from fastapi import BackgroundTasks
-
 @app.post("/api/v1/chef/chat")
 async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks, session: AsyncSession = Depends(get_db)):
     user_message = payload.message.strip()
@@ -514,7 +512,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     user_prompt = f"{history_text}User says: {user_message}\n\nRespond briefly and sarcastically in character. Do NOT wrap in markdown code blocks."
 
                 response_stream = await client.aio.models.generate_content_stream(
-                    model='gemini-2.5-flash',
+                    model='gemini-2.0-flash',
                     contents=system_prompt + "\n\n" + user_prompt,
                     config=types.GenerateContentConfig(temperature=0.7)
                 )
@@ -528,7 +526,10 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     assistant_msg_db = ChatMessageModel(session_id=session_id_val, role="assistant", content=full_assistant_reply)
                     async_sess.add(assistant_msg_db)
                     await async_sess.commit()
+
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
+            logging.error(f"SSE Generator error: {e}")
             yield f"data: {json.dumps({'type': 'error', 'message': f'Халепа, сталася системна помилка шефа: {str(e)}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

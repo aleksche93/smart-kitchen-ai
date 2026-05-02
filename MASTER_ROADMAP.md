@@ -130,7 +130,26 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Infrastructure Alignment:** Integrate ChromaDB (8001:8000) and `sentence-transformers` for local embeddings.
 - [x] **Persistence & Models:** Add spatial metadata (`z_index`, `rotation_angle`) to `UILayoutModel` and refactor `ChefSessionModel` (`id`, `user_id`, `topic`, `summary`, `created_at`, `recent_triggers`, `ui_events`).
 - [x] **API Modularization:** Migrate `get_chef_advice` into a dedicated `api/smart_fridge.py` router.
-- [x] **N+1 Optimization:** Implement `generate_batch_recipe` using a single Gemini 3.1 Flash LLM call to process all expiring items simultaneously.
+- [x] **N+1 Optimization:** Implement `generate_batch_recipe` using a single Gemini 2.0 Flash LLM call to process all expiring items simultaneously.
+
+### Phase 11.2: Spatial Memory & Streaming UX [100% COMPLETED] ✅
+#### Phase A: Backend Streaming & Intent Refinement
+- [x] **SSE Streaming:** Refactored `/chat` endpoint to use Server-Sent Events with emotion metadata and word-by-word streaming.
+- [x] **API Decoupling:** Moved recipe/artifact logic to `api/smart_fridge.py` with polymorphic `ArtifactType` support.
+- [x] **Gemini Model Upgrade:** Migrated all API calls from `gemini-1.5-flash` to `gemini-2.0-flash`.
+
+#### Phase B: Spatial Memory Implementation (STM & LTM)
+- [x] **STM Persistence:** Implemented `ChatMessageModel` for persistent chat history with Context Hydration (15-message window).
+- [x] **LTM Observer:** Background `extract_and_store_traits` via `paraphrase-multilingual-MiniLM-L12-v2` embeddings in ChromaDB.
+- [x] **Session Management:** `GET /session/history`, `POST /session/clear` with session archiving.
+- [x] **Frontend Hydration:** Chat history survives F5 reloads. Immutable Vue reactivity updates for SSE chunks.
+- [x] **`/kinec` Protocol:** Library Agent for session audit reports in Ukrainian.
+
+#### Phase C: Spatial UI Evolution
+- [x] **SSE Bug Fix:** Fixed empty chat bubble (reverted `system_instruction` to prompt concatenation, immutable Vue array updates).
+- [x] **Floating ThoughtTicker:** Standalone draggable Teleport component (z-index: 1000, minimize to icon, backdrop-blur).
+- [x] **Artifact UI (2.5D):** Polymorphic `ArtifactCard.vue` with `perspective(800px) rotateY()` spatial transforms.
+- [x] **Processing States:** `SkeletonArtifact.vue` with shimmer gradient animation.
 
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
@@ -151,12 +170,12 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
 	- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
 - [ ] **Persistent Persona State:** Saving the Chef's emotional state and context between page reloads (Redis/LocalStorage).
-- [ ] **Live Thought Ticker 2.0:**
-	- [ ] Relocation of the ticker to the upper zone (closer to the avatar, but without rigid attachment to the header).
-    - [ ] Visualization of asynchronous agent work (status-stream: "Chef is thinking...", "Scanner Agent is working...", "Generator is forming a response...").
-    - [ ] Global "thoughts" terminal widget for the Chef (FSM state log + Zen Mode).
+- [x] **Live Thought Ticker 2.0:**
+	- [x] Extraction of ThoughtTicker into a standalone floating draggable component (bottom-right, z-index: 1000).
+    - [x] Visualization of asynchronous agent work (SSE streaming states, typing indicators).
+    - [x] Global "thoughts" terminal widget for the Chef (FSM state log + minimize to icon).
 - [ ] **Visual Polish:** Strengthening color indication of states and updating animations (preparation for 3D-Kozak implementation).
-- [ ] **Processing Feedback:** Contextual animations (🔪 for slicing, 🥘 for cooking) instead of standard spinners.
+- [x] **Processing Feedback:** Contextual animations (typing dots for chat, shimmer skeletons for artifacts) instead of standard spinners.
 
 ---
 

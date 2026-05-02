@@ -24,6 +24,9 @@ DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000001"
 
 router = APIRouter()
 
+class RecipeRequest(BaseModel):
+    ingredient: str
+
 from enum import Enum
 from typing import List, Dict, Any
 
@@ -150,9 +153,10 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
         # We explicitly request gemini-3.1-flash with thinking_level concept mapping.
         # Note: If the SDK is an older version, we pass it via raw config or just temperature.
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=system_prompt + "\n\n" + user_prompt,
+            model='gemini-2.0-flash',
+            contents=user_prompt,
             config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
                 response_mime_type="application/json",
                 response_schema=ChefResponse,
                 temperature=0.7
@@ -215,7 +219,7 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
 
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",

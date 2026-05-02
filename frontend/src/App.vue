@@ -111,6 +111,9 @@
       </main>
 
     </div>
+
+    <!-- Floating ThoughtTicker (Global, outside grid) -->
+    <ThoughtTicker />
   </div>
 </template>
 
@@ -127,6 +130,7 @@ import FridgeList from './components/inventory/FridgeList.vue'
 import InteractionZone from './components/chef/InteractionZone.vue'
 import AdviceDisplay from './components/output/AdviceDisplay.vue'
 import ReceiptArchive from './views/ReceiptArchive.vue'
+import ThoughtTicker from './components/chef/ThoughtTicker.vue'
 import { useChefFSM, chefState } from './composables/useChefFSM'
 
 const { activeTab } = useKitchenAPI()

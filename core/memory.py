@@ -47,7 +47,7 @@ async def extract_and_store_traits(user_message: str, session_id: str):
     """
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
             config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.2)
         )
