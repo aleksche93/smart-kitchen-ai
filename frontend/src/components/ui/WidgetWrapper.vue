@@ -17,6 +17,7 @@
       
       <!-- Collapse toggle and optional Close -->
       <div class="flex items-center space-x-2">
+        <slot name="header-actions"></slot>
         <button v-if="showClose" @click.stop="emit('close')" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="Close Widget">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>

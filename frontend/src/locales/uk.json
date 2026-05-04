@@ -19,5 +19,21 @@
   },
   "intents": {
     "magic_trigger_message": "У мене є кілька ідей. Хочеш побачити магію? ✨"
+  },
+  "artifact": {
+    "types": {
+      "RECIPE": "Рецепт",
+      "SHOPPING_LIST": "Список покупок",
+      "PREP_SCHEDULE": "План підготовки",
+      "TASK_LIST": "Список завдань",
+      "WASTE_ALERT": "Попередження"
+    },
+    "keys": {
+      "ingredients": "Інгредієнти",
+      "instructions": "Інструкції",
+      "notes": "Нотатки",
+      "time": "Час",
+      "difficulty": "Складність"
+    }
   }
 }

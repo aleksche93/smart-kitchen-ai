@@ -234,6 +234,7 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 *Future of the project: 3D, Edge Computing, total privacy, full autonomy, and immersion*
 
 - [ ] **Digital Twin (3D Kitchen):** Kitchen visualization via Three.js/Rive. Animated 3D-Chef moves between modules depending on system state.
+- [ ] **2.5-5D Draggable Workspace:** Fluid, floating desktop-like OS environment where widgets (windows) can be freely rotated, resized by their corners, minimized, pinned, and summoned from the background for auto-centering with 2.5D/3D physics. *(Complete abandonment of rigid Flex/Grid columns in favor of absolute positioning; x/y/zIndex management is fully delegated to the layoutStore).*
 - [ ] **Edge Computing (Local AI):** Migration of analytics to **Gemma 4** (via WebGPU/AI Edge) to ensure 100% data privacy (Local Privacy First).
 - [ ] **Vision Mentor:** Video stream analysis of cooking (Computer Vision) for real-time user training in slicing techniques.
 - [ ] **Imagen 3 Integration:** Generation of photorealistic food images based on recipes created by the Chef.

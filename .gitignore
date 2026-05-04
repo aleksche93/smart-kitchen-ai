@@ -19,6 +19,8 @@ sources/
 archive/
 memory/
 knowledge/
+graphify-out/
+.graphifyignore
 
 # Agents
 .agents/

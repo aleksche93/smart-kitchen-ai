@@ -27,7 +27,7 @@
           <span class="text-lg">{{ typeIcon }}</span>
           <div>
             <h3 class="text-sm font-bold text-slate-200 truncate">{{ artifact.title || 'Artifact' }}</h3>
-            <span class="text-[10px] uppercase tracking-widest font-bold text-slate-400/80">{{ artifact.artifact_type }}</span>
+            <span class="text-[10px] uppercase tracking-widest font-bold text-slate-400/80">{{ localizedType }}</span>
           </div>
         </div>
         <button v-if="isFocused" @click.stop="$emit('close')"
@@ -67,14 +67,16 @@
 </template>
 
 <script setup>
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, provide } from 'vue'
 import RecipeArtifact from './artifacts/RecipeArtifact.vue'
 import ShoppingListArtifact from './artifacts/ShoppingListArtifact.vue'
 import WasteAlertArtifact from './artifacts/WasteAlertArtifact.vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useLayoutStore } from '../../stores/layoutStore'
+import { useI18n } from '../../plugins/i18n'
 
 const layoutStore = useLayoutStore()
+const { t } = useI18n()
 
 const props = defineProps({
   artifact: { type: Object, required: true },   // { artifact_type, title, data: {...} }
@@ -96,6 +98,20 @@ const artifactComponent = computed(() => ARTIFACT_MAP[props.artifact?.artifact_t
 
 // Ref до дочірнього компонента (для виклику onCookResult)
 const artifactComponentRef = shallowRef(null)
+
+// --- Localization Helpers ---
+const localizedType = computed(() => {
+  const i18nKey = `artifact.types.${props.artifact?.artifact_type}`
+  const translation = t(i18nKey)
+  return translation !== i18nKey ? translation : props.artifact?.artifact_type
+})
+
+provide('localizeKey', (key) => {
+  if (!key) return ''
+  const i18nKey = `artifact.keys.${key.toLowerCase()}`
+  const translation = t(i18nKey)
+  return translation !== i18nKey ? translation : key
+})
 
 // --- Type safety guard ---
 const isDataMalformed = computed(() => {

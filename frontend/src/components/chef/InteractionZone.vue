@@ -200,13 +200,10 @@ const handleAdvice = async () => {
   chatHistory.value = [...chatHistory.value, { role: 'user', content: queryToSent, _id: userMsgId }]
   chatHistory.value = [...chatHistory.value, { role: 'assistant', content: '', _id: assistantMsgId }]
   scrollToBottom()
+  let _accumulatedText = ''
 
   try {
-    // Phase 12.1 Step C: Tail Buffer Pattern for MAGIC_TAG
-    // Утримуємо останні TAG_LENGTH символів у буфері під час stream
-    // щоб запобігти рендерингу часткових фрагментів тегу
-    let _accumulatedText = ''
-    const TAG_LENGTH = MAGIC_TAG.length  // 24 chars
+    const TAG_LENGTH = MAGIC_TAG.length
     const _sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
     await sendChatStream(

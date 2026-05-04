@@ -122,6 +122,11 @@ In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transit
 - **Data Integrity & Security**: All UI manipulation endpoints are fortified against SQL injection using boundary parametrization. Receipt parsing features an ORM-decoupled engine (The Jules Fix), allowing item persistence when scan history is cleared.
 - **Zero-Build Sandbox**: A native ES6 Node test suite is integrated allowing instant validation of component states (`node tests/run.js`) without compiling Webpack/Vite bundles.
 - **Lifespan Architecture**: Safe API backend initialization and teardown controlled by modern `@asynccontextmanager`, isolating database logic from UI routing processes.
+- **Phase 12.1: Spatial OS Transformation & Living Soul**:
+    - **Living Soul SSE Engine**: The Chef now communicates via a custom SSE stream with a word-by-word kinetic typing effect. A robust **Tail Buffer Pattern** ensures that internal control tags (`[ACTION: MAGIC_TRIGGER]`) are intercepted and stripped before rendering, maintaining a clean conversational interface.
+    - **Polymorphic Artifact Hub**: A new "Chef's Advice" hub dynamically renders different artifact types (Recipes, Shopping Lists, Waste Alerts) using a polymorphic component bridge.
+    - **2.5D Spatial Focus Mode**: Leveraging Vue `<Teleport>`, artifacts can be "zoomed in" to the center of the screen with a `backdrop-blur` overlay, enhanced 2.5D CSS transforms, and dynamic glow effects based on artifact type.
+    - **Dynamic Grid Expansion**: The workspace layout engine supports "Maximize" mode for the Chef's Advice panel, automatically reconfiguring the CSS grid to provide a focused culinary research environment while hiding non-essential widgets.
 - **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
 - Upon page refresh, all your custom layout preferences are restored automatically!
 

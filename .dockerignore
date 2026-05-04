@@ -24,6 +24,9 @@ data/receipt_images/
 archive/
 memory/
 knowledge/
+graphify-out/
+.graphifyignore
+
 
 # Agents
 .agents/
