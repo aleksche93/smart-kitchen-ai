@@ -210,24 +210,19 @@ const handleAdvice = async () => {
       queryToSent,
       async (textChunk) => {
         _accumulatedText += textChunk
-
-        // 1. Повний тег знайдено — strip і активуємо кнопку
-        if (_accumulatedText.includes(MAGIC_TAG)) {
-          _accumulatedText = _accumulatedText.replace(MAGIC_TAG, '')
+        // 1. Regex interception for MAGIC_TRIGGER
+        const regex = /\[ACTION: MAGIC_TRIGGER\]/g
+        if (regex.test(_accumulatedText)) {
+          _accumulatedText = _accumulatedText.replace(regex, '')
           if (!showMagicButton.value) showMagicButton.value = true
         }
 
-        // 2. Tail Buffer: відсікаємо хвіст що може бути початком тегу
-        //    "[ACTION" — суфікс, що потенційно стане повним тегом у наступному chunk
+        // 2. Safe Render Buffer
+        // Check if the current accumulated text ends with a partial tag
         let safeText = _accumulatedText
-        const tail = _accumulatedText.slice(-TAG_LENGTH)
-        const bracketIdx = tail.lastIndexOf('[')
-        if (bracketIdx >= 0) {
-          const possiblePartial = tail.slice(bracketIdx)
-          // Якщо MAGIC_TAG починається з цього partial — буферизуємо хвіст
-          if (MAGIC_TAG.startsWith(possiblePartial) && possiblePartial !== _accumulatedText) {
-            safeText = _accumulatedText.slice(0, _accumulatedText.length - possiblePartial.length)
-          }
+        const matchPartial = _accumulatedText.match(/\[A?C?T?I?O?N?:?\s?M?A?G?I?C?_?T?R?I?G?G?E?R?]?$/)
+        if (matchPartial && MAGIC_TAG.startsWith(matchPartial[0])) {
+          safeText = _accumulatedText.slice(0, _accumulatedText.length - matchPartial[0].length)
         }
 
         // 3. Рендеримо тільки "safe" частину (без хвоста-буфера)

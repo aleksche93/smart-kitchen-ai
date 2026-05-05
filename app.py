@@ -499,7 +499,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     emotion = "FOCUSED"
                     yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
 
-                    system_prompt = "You are the KitchenOS Library Agent. Analyze the session history. Summarize traits updated, culinary sins recorded, and User-Chef memory graph status. Output only in Ukrainian. Keep it brief and structured."
+                    system_prompt = "You are the KitchenOS Library Agent. Analyze the session history. Summarize traits updated, culinary sins recorded, and User-Chef memory graph status. LANGUAGE RULE: Detect the language of the recent conversation history. Output the summary report strictly in that same language (Ukrainian or English). Keep it brief and structured."
                     user_prompt = f"{history_text}\nGenerate the session summary report based on the chat history."
                 else:
                     chef_persona.update_preferences(user_message)
@@ -536,7 +536,8 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                         "would directly solve the user's current need: respond naturally FIRST, then append the EXACT "
                         "string '[ACTION: MAGIC_TRIGGER]' on a new line at the very END of your message. "
                         "This tag is INVISIBLE to the user — it triggers a UI button. "
-                        "Do NOT add it to every response. Do NOT mention it. Only use it when it is truly warranted."
+                        "Do NOT add it to every response. Do NOT mention it. Only use it when it is truly warranted.\n"
+                        "WASTE ALARM TRIGGER (CRITICAL): If the user asks 'What is spoiling?', 'Check expiration', or anything similar, you MUST append [ACTION: MAGIC_TRIGGER] to propose a WASTE_ALERT."
                     )
                     user_prompt = f"{history_text}User: {user_message}"
 

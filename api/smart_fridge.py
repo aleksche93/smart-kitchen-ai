@@ -249,31 +249,42 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.delete("/v1/fridge/item/{name}")
+async def remove_fridge_item(name: str, session: AsyncSession = Depends(get_db)):
+    """
+    Phase 12.1-B: Legacy fridge logic ported from Fridge.remove_product().
+    """
+    items_q = await session.execute(select(InventoryItemModel).where(InventoryItemModel.name == name))
+    item = items_q.scalars().first()
+    
+    if item:
+        await session.delete(item)
+        await session.commit()
+        return {"status": "success", "message": f"Removed: {name}"}
+    
+    raise HTTPException(status_code=404, detail=f"Product {name} is not in the fridge, can't take it out.")
+
 @router.post("/v1/fridge/cook")
 async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession = Depends(get_db)):
     """
     Phase 12.1-B: Legacy fridge logic ported from Fridge.use_product().
-    Fuzzy-matches ingredient strings against InventoryItemModel.
-    Deducts 1 unit (MVP) from each matched item; removes item if quantity reaches 0.
-    Inspired by: memory/legacy_smart_fridge.py :: Fridge.use_product()
+    Strict validation: if ANY non-ignored ingredient is missing, the operation aborts.
     """
     deducted: List[str] = []
     not_found: List[str] = []
+    matched_items = []
 
     IGNORED_SPICES = {"salt", "black pepper", "pepper", "water", "сіль", "перець", "вода", "цукор", "sugar"}
 
+    items_q = await session.execute(select(InventoryItemModel))
+    all_inv = items_q.scalars().all()
+
     for ingredient_str in request.ingredients:
-        # Витягуємо ключове слово: прибираємо числа та одиниці виміру на початку
-        # e.g. "2 large eggs" -> "eggs", "100g butter" -> "butter"
         clean = re.sub(r'^[\d.,/½¼¾]+\s*(?:g|kg|ml|l|oz|lb|cups?|tbsp|tsp|pcs|cloves?|slices?|large|medium|small)?\s*', '', ingredient_str, flags=re.IGNORECASE).strip()
         keyword = clean.lower() if clean else ingredient_str.lower()
         
         if keyword in IGNORED_SPICES:
             continue
-
-        # Fuzzy match: InventoryItem name contains keyword OR keyword contains item name
-        items_q = await session.execute(select(InventoryItemModel))
-        all_inv = items_q.scalars().all()
 
         matched = next(
             (item for item in all_inv
@@ -282,20 +293,32 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
         )
 
         if matched:
-            if matched.quantity <= 1:
-                # Видаляємо повністю
-                await session.delete(matched)
-                deducted.append(f"{matched.name} (removed — last unit used)")
-            else:
-                matched.quantity -= 1
-                deducted.append(f"{matched.name} ({matched.quantity} left)")
+            matched_items.append((matched, ingredient_str))
         else:
             not_found.append(ingredient_str)
+
+    if not_found:
+        # Strict validation failed: abort cook
+        return {
+            "status": "error",
+            "missing": not_found,
+            "deducted": [],
+            "not_found": not_found
+        }
+
+    # All required items present, proceed with deduction
+    for matched, ingredient_str in matched_items:
+        if matched.quantity <= 1:
+            await session.delete(matched)
+            deducted.append(f"{matched.name} (removed — last unit used)")
+        else:
+            matched.quantity -= 1
+            deducted.append(f"{matched.name} ({matched.quantity} left)")
 
     await session.commit()
 
     return {
         "status": "success",
         "deducted": deducted,
-        "not_found": not_found
+        "not_found": []
     }

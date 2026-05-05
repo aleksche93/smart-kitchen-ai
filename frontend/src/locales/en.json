@@ -19,5 +19,10 @@
   },
   "intents": {
     "magic_trigger_message": "I have some ideas. Want to see my magic module? ✨"
+  },
+  "chef": {
+    "troll": {
+      "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
+    }
   }
 }

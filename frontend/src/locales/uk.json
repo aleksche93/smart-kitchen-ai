@@ -35,5 +35,10 @@
       "time": "Час",
       "difficulty": "Складність"
     }
+  },
+  "chef": {
+    "troll": {
+      "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
+    }
   }
 }
