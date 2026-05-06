@@ -33,6 +33,18 @@
            </div>
         </div>
         
+        <!-- Phase 12.2: The Dock (Top Header) -->
+        <div class="flex items-center gap-3">
+          <template v-for="w in minimizedWidgets" :key="w.widget_id">
+             <button @click="restoreWidget(w)"
+                     class="p-2 px-3 bg-slate-800/50 hover:bg-slate-700/80 rounded-xl border border-slate-600/50 transition-all shadow-lg hover:shadow-neoBlue/20 hover:border-neoBlue/50 group flex items-center gap-2"
+                     :title="`Restore ${getWidgetTitle(w.widget_id)}`">
+               <svg class="w-4 h-4 text-neoBlue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+               <span class="text-xs uppercase font-bold text-slate-300 group-hover:text-neoBlue">{{ getWidgetTitle(w.widget_id) }}</span>
+             </button>
+          </template>
+        </div>
+        
         <!-- Sliding Pill Navigation -->
         <div class="relative flex p-1 bg-slate-900/50 backdrop-blur-md rounded-full border border-slate-700/50 w-64 shadow-inner">
            <!-- The Sliding Background -->
@@ -59,66 +71,36 @@
       </header>
 
 
-      <!-- 3-Panel Layout Grid for Kitchen (Draggable) -->
-      <main v-if="activeTab === 'kitchen'" class="flex-1 min-h-0">
-        <draggable
-          v-if="layoutStore.isLoaded"
-          v-model="layoutStore.widgets"
-          item-key="widget_id"
-          class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 h-full"
-          handle=".drag-handle"
-          ghost-class="opacity-50"
-          :animation="200"
-          @start="onDragStart"
-          @end="onDragEnd"
-        >
-          <template #item="{ element }">
-             <div v-show="!(element.widget_id === 'fridge' && layoutStore.isAdviceMaximized)"
-                  :class="getWidgetColSpan(element.widget_id)"
-                  class="h-full flex flex-col justify-start transition-all duration-300">
-                <WidgetWrapper 
-                   :widget="element" 
-                   :title="getWidgetTitle(element.widget_id)"
-                   :isFocused="activeWidget === element.widget_id"
-                   :min-height="getMinHeight(element.widget_id)"
-                   :max-height="getMaxHeight(element.widget_id)"
-                   :isDragged="draggedWidgetId === element.widget_id"
-                   :showClose="element.widget_id === 'thought_ticker'"
-                   @focus="activeWidget = element.widget_id"
-                   @close="() => { element.is_collapsed = true; layoutStore.saveLayout() }"
-                   @update:collapse="(val) => { element.is_collapsed = val; layoutStore.saveLayout() }"
-                >
-                   <template #header-actions v-if="element.widget_id === 'advice'">
-                     <button @click.stop="layoutStore.toggleAdviceMaximized()"
-                             class="text-slate-500 hover:text-neoBlue transition-colors p-1"
-                             :title="layoutStore.isAdviceMaximized ? 'Minimize' : 'Maximize'">
-                       <svg v-if="!layoutStore.isAdviceMaximized" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                       </svg>
-                       <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-                       </svg>
-                     </button>
-                   </template>
-
-                   <div class="h-full">
-                     <FridgeList v-if="element.widget_id === 'fridge'" />
-                     
-                      <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
-                         <InteractionZone @artifact="onArtifact" />
-                      </div>
-                      
-                      <AdviceDisplay
-                        v-else-if="element.widget_id === 'advice'"
-                        class="pr-2"
-                        :currentArtifact="currentArtifact"
-                        @clearArtifact="currentArtifact = null"
-                      />
-                   </div>
-                </WidgetWrapper>
-             </div>
-          </template>
-        </draggable>
+      <!-- Phase 12.2: Spatial OS Workspace (Absolute Positioning) -->
+      <main v-if="activeTab === 'kitchen'" class="flex-1 min-h-0 relative w-full h-full overflow-hidden">
+        <template v-if="layoutStore.isLoaded">
+           <WidgetWrapper 
+              v-for="element in layoutStore.widgets"
+              :key="element.widget_id"
+              :widget="element" 
+              :title="getWidgetTitle(element.widget_id)"
+              :isFocused="activeWidget === element.widget_id"
+              :showClose="element.widget_id === 'thought_ticker'"
+              @focus="activeWidget = element.widget_id"
+              @close="() => { element.is_collapsed = true; layoutStore.saveLayout() }"
+              @update:collapse="(val) => { element.is_collapsed = val; layoutStore.saveLayout() }"
+           >
+              <div class="h-full flex flex-col">
+                <FridgeList v-if="element.widget_id === 'fridge'" />
+                
+                <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
+                   <InteractionZone @artifact="onArtifact" />
+                </div>
+                
+                <AdviceDisplay
+                  v-else-if="element.widget_id === 'advice'"
+                  class="pr-2"
+                  :currentArtifact="currentArtifact"
+                  @clearArtifact="currentArtifact = null"
+                />
+              </div>
+           </WidgetWrapper>
+        </template>
         
         <div v-else class="h-full flex items-center justify-center text-slate-500 animate-pulse">
            Loading Workspace...
@@ -139,10 +121,10 @@
     <Teleport to="body">
       <Transition name="focus-overlay">
         <div v-if="layoutStore.focusedArtifact"
-             class="fixed inset-0 z-[9999] flex items-center justify-center"
-             @click.self="layoutStore.clearFocusedArtifact()">
+             class="fixed inset-0 z-[9999] flex items-center justify-center">
           <!-- Backdrop blur -->
-          <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300"></div>
+          <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity duration-300"
+               @click="layoutStore.clearFocusedArtifact()"></div>
           <!-- Focused Artifact Card -->
           <div class="relative z-10 w-full max-w-2xl max-h-[80vh] mx-4 overflow-y-auto custom-scrollbar">
             <ArtifactCard
@@ -165,7 +147,6 @@
 import { computed, ref, onMounted } from 'vue'
 import { useKitchenAPI } from './composables/useKitchenAPI'
 import { useLayoutStore } from './stores/layoutStore'
-import draggable from 'vuedraggable'
 import WidgetWrapper from './components/ui/WidgetWrapper.vue'
 
 import ChefAvatar from './components/chef/ChefAvatar.vue'
@@ -207,13 +188,18 @@ const emotionTextStyles = computed(() => {
 
 const layoutStore = useLayoutStore()
 const activeWidget = ref(null)
-const draggedWidgetId = ref(null)
 
-const onDragStart = (e) => {
-  draggedWidgetId.value = layoutStore.widgets[e.oldIndex]?.widget_id
-}
-const onDragEnd = () => {
-  draggedWidgetId.value = null
+const minimizedWidgets = computed(() => {
+  return layoutStore.widgets.filter(w => w.isMinimized)
+})
+
+const restoreWidget = (widget) => {
+  if (activeTab.value !== 'kitchen') {
+    activeTab.value = 'kitchen'
+  }
+  widget.isMinimized = false
+  layoutStore.bringToFront(widget.widget_id)
+  layoutStore.saveLayout()
 }
 
 const serverStatus = ref('Checking...')
@@ -239,10 +225,6 @@ import { onUnmounted } from 'vue'
 onUnmounted(() => {
   if (pingInterval) clearInterval(pingInterval)
 })
-
-const getColSpan = (widgetId) => {
-  return 'col-span-1'
-}
 
 const getWidgetTitle = (widgetId) => {
   if (widgetId === 'fridge') return 'Inventory'

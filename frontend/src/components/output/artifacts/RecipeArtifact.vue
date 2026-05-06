@@ -141,22 +141,21 @@ const handleButtonHover = () => {
   const containerRect = containerRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
   
-  // Calculate relative bounds within container
-  const maxX = containerRect.width - btnRect.width
-  const maxY = containerRect.height - btnRect.height
+  // Calculate relative bounds within container, adding padding margins
+  const padding = 16
+  const maxX = Math.max(0, containerRect.width - btnRect.width - (padding * 2))
+  const maxY = Math.max(0, containerRect.height - btnRect.height - (padding * 2))
   
   // Target random position within container
-  const targetX = Math.random() * maxX
-  const targetY = Math.random() * maxY
+  const targetX = padding + Math.random() * maxX
+  const targetY = padding + Math.random() * maxY
   
-  // Calculate offset from button's original un-transformed DOM position
-  // btnRect includes current transform, so we need original offset
-  // buttonRef.value.offsetLeft/offsetTop give position relative to offsetParent
-  const originalX = buttonRef.value.offsetLeft
-  const originalY = buttonRef.value.offsetTop
+  // To get the untransformed position, subtract the current translation from the clientRect
+  const currentUnTransformedX = btnRect.left - buttonTranslateX.value - containerRect.left
+  const currentUnTransformedY = btnRect.top - buttonTranslateY.value - containerRect.top
   
-  buttonTranslateX.value = targetX - originalX
-  buttonTranslateY.value = targetY - originalY
+  buttonTranslateX.value = targetX - currentUnTransformedX
+  buttonTranslateY.value = targetY - currentUnTransformedY
 }
 
 const handleCook = () => {

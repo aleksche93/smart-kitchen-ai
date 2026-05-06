@@ -183,6 +183,15 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Focus Overlay Transitions:** `focus-overlay` CSS transition with opacity fade in/out.
 - [x] **Pinia State:** `focusedArtifact`, `setFocusedArtifact()`, `clearFocusedArtifact()` in `layoutStore.js`.
 
+### Phase 12.2: Spatial OS & Troll Chef Refinement [COMPLETED] ✅
+- [x] **Grid Destruction:** Completely removed `vuedraggable` grid layout from `App.vue`, replacing it with `position: absolute` widgets in a true 2.5D Spatial Desktop.
+- [x] **Docking Subsystem:** Implemented The Dock in the Top Header for minimizing/restoring widgets across OS navigation tabs (`KITCHEN` / `ARCHIVE`).
+- [x] **Drag & Resize Physics:** Custom lightweight `useDraggable.js` composable with viewport constraint math, plus CSS `resize-x/y/both` corners.
+- [x] **State Integrity:** SSE Tag Stripping of `[ACTION: MAGIC_TRIGGER]` explicitly at the backend database commit step in `app.py`.
+- [x] **Troll UX Bounding Box:** Enhanced Fleeing Button math in `RecipeArtifact.vue` using exact `getBoundingClientRect()` constraints.
+- [x] **Focus Mode Lockdown:** Prevented accidental background clicks from closing the modal via `@click.stop` event propagation shields.
+- [x] **Inventory Deletion:** Upgraded API with `DELETE /v1/fridge/item/{name}` and added a contextual trash icon to `InventoryItem` with instant Pinia state reactivity.
+
 ### Phase 11: Cognitive Brain & Agentic Orchestrator
 - [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
 - [x] **Autonomous Knowledge Extraction:** Implemented specialized Python ETL scripts optimized by Gemini Code Assist for automated JSON knowledge extraction.
@@ -234,7 +243,6 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 *Future of the project: 3D, Edge Computing, total privacy, full autonomy, and immersion*
 
 - [ ] **Digital Twin (3D Kitchen):** Kitchen visualization via Three.js/Rive. Animated 3D-Chef moves between modules depending on system state.
-- [ ] **2.5-5D Draggable Workspace:** Fluid, floating desktop-like OS environment where widgets (windows) can be freely rotated, resized by their corners, minimized, pinned, and summoned from the background for auto-centering with 2.5D/3D physics. *(Complete abandonment of rigid Flex/Grid columns in favor of absolute positioning; x/y/zIndex management is fully delegated to the layoutStore).*
 - [ ] **Edge Computing (Local AI):** Migration of analytics to **Gemma 4** (via WebGPU/AI Edge) to ensure 100% data privacy (Local Privacy First).
 - [ ] **Vision Mentor:** Video stream analysis of cooking (Computer Vision) for real-time user training in slicing techniques.
 - [ ] **Imagen 3 Integration:** Generation of photorealistic food images based on recipes created by the Chef.

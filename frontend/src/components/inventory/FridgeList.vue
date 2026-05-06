@@ -24,7 +24,12 @@
         class="group px-3 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-neoGray hover:border-neoBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
       >
         <div class="flex justify-between items-start mb-1">
-          <span class="block font-bold text-slate-100 group-hover:text-neoBlue transition-colors text-base capitalize">{{ item.name }}</span>
+          <div class="flex items-center gap-2">
+            <span class="block font-bold text-slate-100 group-hover:text-neoBlue transition-colors text-base capitalize">{{ item.name }}</span>
+            <button @click.stop="handleDeleteItem(item.name)" class="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" title="Delete Item">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </button>
+          </div>
           <!-- Status Badges -->
           <span 
             v-if="item.days_left < 0" 
@@ -74,7 +79,13 @@ import { useKitchenAPI } from '../../composables/useKitchenAPI'
 const showModal = ref(false)
 const activeItem = ref({})
 
-const { isLoading, error, inventory, fetchFridge, fetchHistory } = useKitchenAPI()
+const { isLoading, error, inventory, fetchFridge, fetchHistory, deleteItem } = useKitchenAPI()
+
+const handleDeleteItem = async (itemName) => {
+  if (confirm(`Are you sure you want to delete ${itemName}?`)) {
+    await deleteItem(itemName)
+  }
+}
 
 const loadData = async () => {
   await Promise.all([fetchFridge(), fetchHistory()])

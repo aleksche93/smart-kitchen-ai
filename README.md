@@ -126,9 +126,10 @@ In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transit
     - **Living Soul SSE Engine**: The Chef now communicates via a custom SSE stream with a word-by-word kinetic typing effect. A robust **Tail Buffer Pattern** ensures that internal control tags (`[ACTION: MAGIC_TRIGGER]`) are intercepted and stripped before rendering, maintaining a clean conversational interface.
     - **Polymorphic Artifact Hub**: A new "Chef's Advice" hub dynamically renders different artifact types (Recipes, Shopping Lists, Waste Alerts) using a polymorphic component bridge.
     - **2.5D Spatial Focus Mode**: Leveraging Vue `<Teleport>`, artifacts can be "zoomed in" to the center of the screen with a `backdrop-blur` overlay, enhanced 2.5D CSS transforms, and dynamic glow effects based on artifact type.
-    - **Dynamic Grid Expansion**: The workspace layout engine supports "Maximize" mode for the Chef's Advice panel, automatically reconfiguring the CSS grid to provide a focused culinary research environment while hiding non-essential widgets.
-- **Collapse Panel**: Click the arrow in the top right corner of a widget to collapse it, freeing up screen real estate.
-- Upon page refresh, all your custom layout preferences are restored automatically!
+    - **Spatial OS Paradigm**: The workspace completely ditches rigid CSS grids in favor of a fluid, absolute-positioned 2.5D desktop environment using the custom `useDraggable` compositor.
+    - **Window Resizing & The Dock**: Widgets can be freely dragged, resized via their bottom corners, and minimized directly to the top-header "Dock" for an uncluttered workspace.
+    - **Z-Index Physics**: Clicking any widget automatically brings it to the forefront, mimicking native desktop window management.
+- **Persistent Memory**: Upon page refresh, all your custom layout preferences (X/Y coordinates, width, height, z-index, and minimized states) are restored automatically via SQLite!
 
 ## 🐳 Deployment (Dockerized)
 

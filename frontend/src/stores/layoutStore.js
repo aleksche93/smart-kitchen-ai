@@ -46,22 +46,53 @@ export const useLayoutStore = defineStore('layout', () => {
     if (isLoaded.value) saveLayout()
   }, { deep: true })
 
-  // Focus functionality (Z-Index elevation simulator)
-  const focusWidget = (widgetId) => {
-    // Basic array reorder could work, but we are using vuedraggable.
+  // Phase 12.2: Spatial OS Grid Destruction
+  const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice']
+  
+  // Default coordinates for a 1920x1080 screen roughly
+  const defaultCoords = {
+    'fridge': { x: 20, y: 80, w: 400, h: 600 },
+    'chef_hub': { x: 440, y: 80, w: 400, h: 700 },
+    'advice': { x: 860, y: 80, w: 500, h: 800 }
   }
 
-  // Phase 10.2: Ghost Eradication & Strict State Registry
-  const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice']
   const sanitizeLayout = (layoutArray) => {
-    if (!Array.isArray(layoutArray)) return []
-    return layoutArray
+    if (!Array.isArray(layoutArray)) layoutArray = []
+    
+    // Ensure all required widgets exist
+    const currentIds = layoutArray.map(w => w.widget_id)
+    const missing = WIDGET_REGISTRY.filter(id => !currentIds.includes(id))
+    
+    const augmented = [...layoutArray, ...missing.map(id => ({ widget_id: id }))]
+
+    return augmented
       .filter(w => WIDGET_REGISTRY.includes(w.widget_id))
-      .map(w => ({
-        ...w,
-        z_index: w.z_index ?? 1,
-        rotation_angle: w.rotation_angle ?? 0.0
-      }))
+      .map(w => {
+        const def = defaultCoords[w.widget_id] || { x: 100, y: 100, w: 300, h: 400 }
+        return {
+          ...w,
+          x: typeof w.x === 'number' ? w.x : def.x,
+          y: typeof w.y === 'number' ? w.y : def.y,
+          w: typeof w.w === 'number' ? w.w : def.w,
+          h: typeof w.h === 'number' ? w.h : def.h,
+          isMinimized: w.isMinimized || false,
+          is_collapsed: w.is_collapsed || false,
+          z_index: w.z_index ?? 10,
+          rotation_angle: w.rotation_angle ?? 0.0
+        }
+      })
+  }
+
+  // Focus functionality (Z-Index elevation simulator)
+  const focusWidget = (widgetId) => bringToFront(widgetId)
+  
+  const bringToFront = (widgetId) => {
+    const maxZ = Math.max(0, ...widgets.value.map(w => w.z_index || 0))
+    const widget = widgets.value.find(w => w.widget_id === widgetId)
+    if (widget && widget.z_index < maxZ) {
+      widget.z_index = maxZ + 1
+      saveLayout()
+    }
   }
 
   // Phase 12.1 Step C: Dynamic Resize & Focus Mode
@@ -83,6 +114,6 @@ export const useLayoutStore = defineStore('layout', () => {
   return {
     widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
     isAdviceMaximized, focusedArtifact,
-    toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact
+    toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront
   }
 })

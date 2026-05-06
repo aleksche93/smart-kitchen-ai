@@ -19,6 +19,7 @@
 
     <!-- Card Body -->
     <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300"
+         @click.stop
          :class="isFocused ? `border-slate-500/60 shadow-2xl` : 'border-slate-700/50 shadow-lg'">
 
       <!-- Header -->

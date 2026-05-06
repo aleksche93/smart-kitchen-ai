@@ -241,11 +241,28 @@ export function useKitchenAPI() {
     }
   }
 
+  const deleteItem = async (itemName) => {
+    try {
+      const resp = await fetch(`${BASE_URL}/fridge/item/${encodeURIComponent(itemName)}`, {
+        method: 'DELETE'
+      })
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}))
+        throw new Error(errData.detail || 'Delete failed')
+      }
+      await fetchFridge()
+      return true
+    } catch (err) {
+      error.value = err.message
+      throw err
+    }
+  }
+
   return { 
     isLoading, error, 
     inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
-    fetchFridge, fetchHistory, getChefAdvice, sendChatStream, scanReceipt, deleteReceipt,
+    fetchFridge, fetchHistory, getChefAdvice, sendChatStream, scanReceipt, deleteReceipt, deleteItem,
     fetchSessionHistory, clearSession, generateArtifact, cookRecipe
   }
 }

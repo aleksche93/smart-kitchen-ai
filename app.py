@@ -112,18 +112,28 @@ async def lifespan(fastapi_app: FastAPI):
         try:
             # We recreate chef_session by dropping it and letting SQLAlchemy handle it or recreate it manually
             await session.execute(text("DROP TABLE IF EXISTS chef_session"))
-            await session.execute(text('''
-                CREATE TABLE chef_session (
-                    id VARCHAR(36) PRIMARY KEY,
-                    user_id VARCHAR(36),
-                    topic VARCHAR,
-                    summary TEXT,
-                    created_at DATETIME,
-                    recent_triggers JSON,
-                    ui_events JSON
-                )
-            '''))
-            await session.commit()
+            async with engine.connect() as conn:
+                await conn.execute(text("""
+                    CREATE TABLE IF NOT EXISTS chef_session (
+                        id VARCHAR(36) PRIMARY KEY,
+                        user_id VARCHAR(36) NOT NULL,
+                        topic VARCHAR,
+                        summary TEXT,
+                        created_at DATETIME,
+                        recent_triggers JSON,
+                        ui_events JSON
+                    )
+                """))
+                # Phase 12.2: Add Spatial attributes
+                try:
+                    await conn.execute(text("ALTER TABLE ui_layout ADD COLUMN x INTEGER"))
+                    await conn.execute(text("ALTER TABLE ui_layout ADD COLUMN y INTEGER"))
+                    await conn.execute(text("ALTER TABLE ui_layout ADD COLUMN w INTEGER"))
+                    await conn.execute(text("ALTER TABLE ui_layout ADD COLUMN h INTEGER"))
+                    await conn.execute(text("ALTER TABLE ui_layout ADD COLUMN is_minimized BOOLEAN DEFAULT 0"))
+                except Exception:
+                    pass # columns already exist
+                await conn.commit()
             logging.info("Migration: chef_session recreated for Phase 11.1.")
         except Exception as e:
             logging.error(f"Migration: chef_session error: {e}")
@@ -553,7 +563,9 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                         yield f"data: {json.dumps({'type': 'chunk', 'text': chunk.text})}\n\n"
 
                 if full_assistant_reply:
-                    assistant_msg_db = ChatMessageModel(session_id=session_id_val, role="assistant", content=full_assistant_reply)
+                    # Strip MAGIC_TRIGGER before persisting to avoid leaking into history
+                    clean_reply = full_assistant_reply.replace("[ACTION: MAGIC_TRIGGER]", "").strip()
+                    assistant_msg_db = ChatMessageModel(session_id=session_id_val, role="assistant", content=clean_reply)
                     async_sess.add(assistant_msg_db)
                     await async_sess.commit()
 
@@ -620,16 +632,30 @@ async def get_ui_layout(session: AsyncSession = Depends(get_db)):
     if not results:
         # Default Chef's View Preset
         default_layout = [
-            {"widget_id": "fridge", "order_index": 0, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0},
-            {"widget_id": "chef_hub", "order_index": 1, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0},
-            {"widget_id": "advice", "order_index": 2, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0}
+            {"widget_id": "fridge", "order_index": 0, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0, "x": 100, "y": 100, "w": 300, "h": 500, "is_minimized": False},
+            {"widget_id": "chef_hub", "order_index": 1, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0, "x": 420, "y": 100, "w": 400, "h": 600, "is_minimized": False},
+            {"widget_id": "advice", "order_index": 2, "is_collapsed": False, "z_index": 1, "rotation_angle": 0.0, "x": 840, "y": 100, "w": 400, "h": 700, "is_minimized": False}
         ]
         for w in default_layout:
-            session.add(UILayoutModel(user_id=DEFAULT_USER_ID, **w))
+            session.add(UILayoutModel(
+                user_id=DEFAULT_USER_ID, 
+                widget_id=w["widget_id"],
+                order_index=w["order_index"],
+                is_collapsed=w["is_collapsed"],
+                z_index=w["z_index"],
+                rotation_angle=w["rotation_angle"],
+                x=w["x"], y=w["y"], w=w["w"], h=w["h"],
+                is_minimized=w["is_minimized"]
+            ))
         await session.commit()
         return {"layout": default_layout}
         
-    layout_data = [{"widget_id": r.widget_id, "order_index": r.order_index, "is_collapsed": r.is_collapsed, "z_index": r.z_index, "rotation_angle": r.rotation_angle} for r in results]
+    layout_data = [{
+        "widget_id": r.widget_id, "order_index": r.order_index, 
+        "is_collapsed": r.is_collapsed, "z_index": r.z_index, 
+        "rotation_angle": r.rotation_angle,
+        "x": r.x, "y": r.y, "w": r.w, "h": r.h, "isMinimized": r.is_minimized
+    } for r in results]
     return {"layout": layout_data}
 
 @app.post("/api/v1/ui/layout")
@@ -648,7 +674,12 @@ async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends
             order_index=idx,
             is_collapsed=is_col,
             z_index=w.get("z_index", 1),
-            rotation_angle=w.get("rotation_angle", 0.0)
+            rotation_angle=w.get("rotation_angle", 0.0),
+            x=w.get("x"),
+            y=w.get("y"),
+            w=w.get("w"),
+            h=w.get("h"),
+            is_minimized=w.get("isMinimized", False)
         )
         session.add(new_w)
         

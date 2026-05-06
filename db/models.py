@@ -110,3 +110,8 @@ class UILayoutModel(Base):
     is_collapsed = Column(Boolean, default=False)
     z_index = Column(Integer, default=1)
     rotation_angle = Column(Float, default=0.0)
+    x = Column(Integer, nullable=True)
+    y = Column(Integer, nullable=True)
+    w = Column(Integer, nullable=True)
+    h = Column(Integer, nullable=True)
+    is_minimized = Column(Boolean, default=False)
