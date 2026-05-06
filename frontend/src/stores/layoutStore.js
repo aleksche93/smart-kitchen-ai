@@ -98,6 +98,22 @@ export const useLayoutStore = defineStore('layout', () => {
   // Phase 12.1 Step C: Dynamic Resize & Focus Mode
   const isAdviceMaximized = ref(false)
   const focusedArtifact = ref(null)  // { artifact_type, title, data }
+  
+  // Phase C: Persistence of active artifacts
+  const activeArtifacts = ref(JSON.parse(localStorage.getItem('kozak_active_artifacts')) || [])
+
+  watch(activeArtifacts, (newVal) => {
+    localStorage.setItem('kozak_active_artifacts', JSON.stringify(newVal))
+  }, { deep: true })
+
+  const addArtifact = (artifact) => {
+    const newArtifact = { ...artifact, id: Date.now() + Math.random().toString() }
+    activeArtifacts.value.push(newArtifact)
+  }
+
+  const removeArtifact = (id) => {
+    activeArtifacts.value = activeArtifacts.value.filter(a => a.id !== id)
+  }
 
   const toggleAdviceMaximized = () => {
     isAdviceMaximized.value = !isAdviceMaximized.value
@@ -113,7 +129,8 @@ export const useLayoutStore = defineStore('layout', () => {
 
   return {
     widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
-    isAdviceMaximized, focusedArtifact,
-    toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront
+    isAdviceMaximized, focusedArtifact, activeArtifacts,
+    toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront,
+    addArtifact, removeArtifact
   }
 })

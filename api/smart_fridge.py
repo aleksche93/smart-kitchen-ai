@@ -140,7 +140,7 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
     
     # 5. EXACTLY ONE Call Context
     user_prompt = f"""
-    You are the neoKitchen Chef FSM System.
+    You are the KozakEye Chef FSM System.
     Context:
     - User Request: {user_query}
     - Expiring Ingredients Batch: {expiring_summary}
@@ -195,10 +195,10 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
             "chef_response": chef_response_data
         }
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        import logging
+        logging.error("Batch recipe generation error", exc_info=True)
         await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.post("/v1/chef/generate-artifact")
 async def generate_artifact(request: ArtifactRequest, session: AsyncSession = Depends(get_db)):
@@ -244,9 +244,9 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
         }
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.error("Artifact generation error", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @router.delete("/v1/fridge/item/{name}")
@@ -279,6 +279,8 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
     items_q = await session.execute(select(InventoryItemModel))
     all_inv = items_q.scalars().all()
 
+    inv_name_map = {item.name.lower(): item for item in all_inv}
+
     for ingredient_str in request.ingredients:
         clean = re.sub(r'^[\d.,/½¼¾]+\s*(?:g|kg|ml|l|oz|lb|cups?|tbsp|tsp|pcs|cloves?|slices?|large|medium|small)?\s*', '', ingredient_str, flags=re.IGNORECASE).strip()
         keyword = clean.lower() if clean else ingredient_str.lower()
@@ -286,11 +288,13 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
         if keyword in IGNORED_SPICES:
             continue
 
-        matched = next(
-            (item for item in all_inv
-             if keyword in item.name.lower() or item.name.lower() in keyword),
-            None
-        )
+        matched = inv_name_map.get(keyword)
+        if not matched:
+            matched = next(
+                (item for name_lower, item in inv_name_map.items()
+                 if keyword in name_lower or name_lower in keyword),
+                None
+            )
 
         if matched:
             matched_items.append((matched, ingredient_str))
@@ -307,13 +311,23 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
         }
 
     # All required items present, proceed with deduction
+    items_to_delete = []
+    items_to_update = []
     for matched, ingredient_str in matched_items:
         if matched.quantity <= 1:
-            await session.delete(matched)
+            items_to_delete.append(matched.id)
             deducted.append(f"{matched.name} (removed — last unit used)")
         else:
-            matched.quantity -= 1
-            deducted.append(f"{matched.name} ({matched.quantity} left)")
+            items_to_update.append({"id": matched.id, "quantity": matched.quantity - 1})
+            deducted.append(f"{matched.name} ({matched.quantity - 1} left)")
+
+    if items_to_delete:
+        await session.execute(delete(InventoryItemModel).where(InventoryItemModel.id.in_(items_to_delete)))
+    
+    if items_to_update:
+        from sqlalchemy import bindparam
+        stmt = update(InventoryItemModel).where(InventoryItemModel.id == bindparam("id")).values(quantity=bindparam("quantity"))
+        await session.execute(stmt, items_to_update)
 
     await session.commit()
 

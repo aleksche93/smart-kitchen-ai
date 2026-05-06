@@ -1,7 +1,4 @@
 import os
-import shutil
-import tempfile
-import asyncio
 import json
 import aiofiles
 import uuid
@@ -23,7 +20,6 @@ from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionMod
 from core.fsm import ChefFSM, ChefTrigger
 from core.persona import ChefPersona
 from core.memory import extract_and_store_traits
-from core.locales import i18n
 from api.smart_fridge import router as smart_fridge_router
 
 # Gemini API setup for structured output
@@ -341,7 +337,15 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
         except Exception as inner_e:
             await session.rollback()
             if os.path.exists(file_path):
-                os.remove(file_path)
+                try:
+                    base_dir = os.path.abspath("data/receipt_images")
+                    target_path = os.path.abspath(file_path)
+                    if target_path.startswith(base_dir):
+                        os.remove(target_path)
+                    else:
+                        logging.warning(f"Directory traversal attempt detected: {file_path}")
+                except Exception:
+                    pass
             raise inner_e
             
         return {
@@ -351,10 +355,9 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
             "items_added": added_items
         }
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logging.error("Error parsing receipt", exc_info=True)
         await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.get("/api/v1/fridge")
 async def get_fridge_inventory(session: AsyncSession = Depends(get_db)):
@@ -449,7 +452,7 @@ async def get_session_history(session_id: str, session: AsyncSession = Depends(g
         .order_by(ChatMessageModel.timestamp.asc())
     )
     messages = messages_q.scalars().all()
-    return {"messages": [{"role": m.role, "content": m.content, "timestamp": m.timestamp.isoformat()} for m in messages]}
+    return {"messages": [{"role": m.role, "content": str(m.content).replace("[ACTION: MAGIC_TRIGGER]", "").strip(), "timestamp": m.timestamp.isoformat()} for m in messages]}
 
 @app.post("/api/v1/chef/session/clear")
 async def clear_session(session: AsyncSession = Depends(get_db)):
@@ -571,8 +574,8 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
 
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
         except Exception as e:
-            logging.error(f"SSE Generator error: {e}")
-            yield f"data: {json.dumps({'type': 'error', 'message': f'Chef system error: {str(e)}'})}\n\n"
+            logging.error("SSE Generator error", exc_info=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Internal server error'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -600,7 +603,12 @@ async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool 
             
         if receipt.image_path and os.path.exists(receipt.image_path):
             try:
-                os.remove(receipt.image_path)
+                base_dir = os.path.abspath("data/receipt_images")
+                target_path = os.path.abspath(receipt.image_path)
+                if target_path.startswith(base_dir):
+                    os.remove(target_path)
+                else:
+                    logging.warning(f"Directory traversal attempt detected: {receipt.image_path}")
             except Exception:
                 pass
                 

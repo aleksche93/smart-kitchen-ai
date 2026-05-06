@@ -16,7 +16,12 @@
                  {{ formatDate(item.expiration_date) }}
                </div>
              </div>
-             <h2 class="text-2xl font-bold text-slate-100 capitalize">{{ item.name }}</h2>
+             <div class="flex items-start justify-between">
+               <h2 class="text-2xl font-bold text-slate-100 capitalize">{{ item.name }}</h2>
+               <button @click="confirmDelete" class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-md transition-colors" title="Delete Item">
+                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+               </button>
+             </div>
              <div class="mt-2 mb-4">
                <button 
                  v-if="receiptDetails" 
@@ -79,7 +84,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-const { isLoading, history, ghostReceipts, getChefAdvice, activeTab, selectedReceipt } = useKitchenAPI()
+const { isLoading, history, ghostReceipts, getChefAdvice, activeTab, selectedReceipt, deleteItem, fetchFridge, fetchHistory } = useKitchenAPI()
 const { updateState } = useChefFSM()
 
 const receiptDetails = computed(() => {
@@ -104,6 +109,14 @@ const navigateToReceipt = () => {
   if (receiptDetails.value) {
     selectedReceipt.value = receiptDetails.value
     activeTab.value = 'archive'
+    close()
+  }
+}
+
+const confirmDelete = async () => {
+  if (confirm(`Are you sure you want to delete ${props.item.name}?`)) {
+    await deleteItem(props.item.name)
+    await Promise.all([fetchFridge(), fetchHistory()])
     close()
   }
 }

@@ -11,7 +11,7 @@
 
     <!-- Ingredients -->
     <div v-if="ingredients.length" class="space-y-2">
-      <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Інгредієнти</h5>
+      <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Ingredients</h5>
       <div class="grid grid-cols-2 gap-1.5">
         <div v-for="(ing, i) in ingredients" :key="i"
              class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/40 text-sm text-slate-300">
@@ -23,7 +23,7 @@
 
     <!-- Instructions -->
     <div v-if="instructions.length" class="space-y-2">
-      <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Кроки приготування</h5>
+      <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Instructions</h5>
       <ol class="space-y-1.5 list-decimal list-inside text-sm text-slate-300">
         <li v-for="(step, i) in instructions" :key="i" class="leading-relaxed pl-1">{{ step }}</li>
       </ol>
@@ -38,25 +38,27 @@
       <Transition name="cook-result">
         <div v-if="cookResult" class="mb-2 px-3 py-2 rounded-lg text-xs space-y-0.5"
              :class="cookResult.type === 'success' ? 'bg-emerald-900/30 border border-emerald-700/40 text-emerald-300' : 'bg-amber-900/30 border border-amber-700/40 text-amber-300'">
-          <p v-if="cookResult.deducted?.length" class="font-semibold">✅ Відраховано: {{ cookResult.deducted.join(', ') }}</p>
-          <p v-if="cookResult.notFound?.length" class="opacity-70">⚠️ Не знайдено в холодильнику: {{ cookResult.notFound.join(', ') }}</p>
+          <p v-if="cookResult.deducted?.length" class="font-semibold">✅ Deducted: {{ cookResult.deducted.join(', ') }}</p>
+          <p v-if="cookResult.notFound?.length" class="opacity-70">⚠️ Missing in fridge: {{ cookResult.notFound.join(', ') }}</p>
           <p v-if="cookResult.trollMessage" class="font-bold text-red-400 mt-1">{{ cookResult.trollMessage }}</p>
         </div>
       </Transition>
 
-      <button
-        ref="buttonRef"
-        @click="handleCook"
-        @mouseover="handleButtonHover"
-        :disabled="cookLoading || cookDone"
-        class="w-full py-2.5 px-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-colors"
-        :style="buttonStyle"
-        :class="buttonClasses"
-      >
-        <span v-if="cookLoading" class="animate-spin text-base">⏳</span>
-        <span v-else-if="cookDone">🍽️ Приготовлено!</span>
-        <span v-else>🍳 Cook It! — Відрахувати інгредієнти</span>
-      </button>
+      <div class="flex justify-end">
+        <button
+          ref="buttonRef"
+          @click="handleCook"
+          @mouseover="handleButtonHover"
+          :disabled="cookLoading || cookDone"
+          class="w-auto py-1.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+          :style="buttonStyle"
+          :class="buttonClasses"
+        >
+          <span v-if="cookLoading" class="animate-spin text-sm">⏳</span>
+          <span v-else-if="cookDone">🍽️ Cooked!</span>
+          <span v-else>🍳 Cook It!</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -143,8 +145,8 @@ const handleButtonHover = () => {
   
   // Calculate relative bounds within container, adding padding margins
   const padding = 16
-  const maxX = Math.max(0, containerRect.width - btnRect.width - (padding * 2))
-  const maxY = Math.max(0, containerRect.height - btnRect.height - (padding * 2))
+  const maxX = Math.max(0, (containerRect.width - btnRect.width - (padding * 2)) / 2)
+  const maxY = Math.max(0, (containerRect.height - btnRect.height - (padding * 2)) / 2)
   
   // Target random position within container
   const targetX = padding + Math.random() * maxX

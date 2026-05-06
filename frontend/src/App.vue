@@ -11,7 +11,7 @@
       <header class="flex justify-between items-center text-slate-400">
         <div class="flex items-center gap-6">
            <h1 class="text-2xl font-bold tracking-widest text-slate-100 flex items-center">
-             <span class="text-neoBlue mr-2">neo</span>KITCHEN<span class="text-neoYellow text-xs align-top ml-1">OS</span>
+             <span class="text-neoBlue mr-1">Kozak</span><span class="text-neoYellow">EYE</span><span class="text-yellow-300 text-sm -mt-1">OS</span>
            </h1>
            <!-- Identity Dropdown Header Module -->
            <div class="relative z-50">
@@ -95,8 +95,6 @@
                 <AdviceDisplay
                   v-else-if="element.widget_id === 'advice'"
                   class="pr-2"
-                  :currentArtifact="currentArtifact"
-                  @clearArtifact="currentArtifact = null"
                 />
               </div>
            </WidgetWrapper>
@@ -162,10 +160,9 @@ const { activeTab } = useKitchenAPI()
 const { resetState } = useChefFSM()
 
 const isMenuOpen = ref(false)
-const currentArtifact = ref(null)
 
 const onArtifact = (artifactData) => {
-  currentArtifact.value = artifactData
+  layoutStore.addArtifact(artifactData)
 }
 
 const handleReset = () => {

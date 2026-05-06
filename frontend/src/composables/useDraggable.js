@@ -26,10 +26,10 @@ export function useDraggable() {
 
       // Viewport constraints
       // Allow dragging but keep at least 100px visible horizontally and 40px vertically
-      const minX = -(rect.width - 100)
-      const maxX = window.innerWidth - 100
+      const minX = 0
+      const maxX = window.innerWidth - rect.width
       const minY = 60 // Below top header
-      const maxY = window.innerHeight - 100
+      const maxY = window.innerHeight - rect.height
 
       newX = Math.max(minX, Math.min(newX, maxX))
       newY = Math.max(minY, Math.min(newY, maxY))

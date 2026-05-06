@@ -2,18 +2,18 @@
   <Card class="h-auto min-h-[400px] mb-4 flex flex-col">
 
     <!-- Phase 12.1-B: Polymorphic Artifact Panel (Magic Bridge Output) -->
-    <Transition name="artifact-reveal">
-      <div v-if="currentArtifact" class="mb-4">
+    <TransitionGroup name="artifact-reveal" tag="div" class="relative">
+      <div v-for="(artifact, index) in layoutStore.activeArtifacts" :key="artifact.id" class="mb-4 relative">
         <ArtifactCard
-          :artifact="currentArtifact"
-          :isFocused="false"
+          :artifact="artifact"
+          :isFocused="layoutStore.focusedArtifact?.id === artifact.id"
           :rotationAngle="0"
-          :zIndex="10"
-          @close="$emit('clearArtifact')"
-          @focus="layoutStore.setFocusedArtifact(currentArtifact)"
+          :zIndex="10 + index"
+          @close="layoutStore.removeArtifact(artifact.id)"
+          @focus="layoutStore.setFocusedArtifact(artifact)"
         />
       </div>
-    </Transition>
+    </TransitionGroup>
 
     <div v-if="chefState.recipeText" class="@container flex-1 flex flex-col space-y-4 w-full h-full">
 
@@ -131,10 +131,11 @@
       </div>
     </div>
     <div v-else class="h-full flex flex-col items-center justify-center text-slate-500 opacity-50 space-y-3">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-      <p>Awaiting operations...</p>
+      <div class="flex gap-2">
+        <span class="w-2 h-2 rounded-full bg-slate-600 animate-pulse"></span>
+        <span class="w-2 h-2 rounded-full bg-slate-600 animate-pulse" style="animation-delay: 0.2s"></span>
+        <span class="w-2 h-2 rounded-full bg-slate-600 animate-pulse" style="animation-delay: 0.4s"></span>
+      </div>
     </div>
   </Card>
 </template>
@@ -149,11 +150,7 @@ import { useLayoutStore } from '../../stores/layoutStore'
 
 const layoutStore = useLayoutStore()
 
-const props = defineProps({
-  currentArtifact: { type: Object, default: null }  // { artifact_type, title, data }
-})
 
-defineEmits(['clearArtifact'])
 
 const { inventory } = useKitchenAPI()
 
