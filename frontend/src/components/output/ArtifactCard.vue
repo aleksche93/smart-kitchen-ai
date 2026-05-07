@@ -23,7 +23,7 @@
          :class="isFocused ? `border-slate-500/60 shadow-2xl` : 'border-slate-700/50 shadow-lg'">
 
       <!-- Header -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700/40">
+      <div class="flex items-center justify-between px-3 py-2 border-b border-slate-700/40">
         <div class="flex items-center gap-2">
           <span class="text-lg">{{ typeIcon }}</span>
           <div>
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Dynamic Polymorphic Content -->
-      <div class="p-4 max-h-[420px] overflow-y-auto custom-scrollbar">
+      <div class="p-3 max-h-[420px] overflow-y-auto custom-scrollbar max-w-full break-words">
         <!-- Typed artifact component -->
         <component
           v-if="artifactComponent && artifact.data && !isDataMalformed"

@@ -142,6 +142,15 @@ const startResize = (e, corner) => {
       if (newH > minHeight) newY = startObjY + dy
     }
     
+    // Enforce 1440px canvas bounds
+    const canvasWidth = Math.max(window.innerWidth, 1440)
+    const canvasHeight = Math.max(window.innerHeight, 800)
+    
+    newX = Math.max(0, Math.min(newX, canvasWidth - minWidth))
+    newY = Math.max(60, Math.min(newY, canvasHeight - minHeight))
+    newW = Math.max(minWidth, Math.min(newW, canvasWidth - newX))
+    newH = Math.max(minHeight, Math.min(newH, canvasHeight - newY))
+
     props.widget.w = newW
     props.widget.h = newH
     props.widget.x = newX

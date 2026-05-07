@@ -8,8 +8,8 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 
 1. **Stateful AI Memory (SQLite + SQLAlchemy):** User habits, "cooking sins", and the Chef's emotional state (FSM) are persisted locally via async database sessions, mapped against safe backend cascade purges (The "Jules" Architecture).
 2. **Structured Tool Calling:** Forces the LLM to return strictly typed JSON responses (`ChefResponse`), including actionable stubs (`tool_commands`) designed for future IoT Smart Home integration.
-3. **Neo-Ukrainian Premium SPA:** A Vue 3 B2C Frontend utilizing Tailwind CSS and `<Teleport>` modals. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Terracotta, Wheat) to provide an immersive 3-panel user interface.
-4. **Dual-Mode Chat & Teleportation:** Interaction logic is cleanly divided. General chat runs via the main hub, while targeted ingredient recipes are triggered cleanly via isolated Item Modals utilizing Vue's Teleport feature.
+3. **KozakEye Spatial OS:** A Spatial Desktop Paradigm built on Vue 3, utilizing `useDraggable.js` for free-form 2.5D widget manipulation within a strict 1440px canvas. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Blue, Yellow, Wheat) to provide an immersive HUD experience.
+4. **Dual-Mode Chat & Artifact Hub:** Interaction logic is cleanly divided. General chat runs via the central Command Hub (`InteractionZone`), while polymorphic JSON recipes and alerts are rendered in the 'Chef's Advice' Artifact Hub with full `localStorage` persistence.
 5. **Ghost State Memory:** Prevents database bulk deletions from creating confusing UX. Products orphaned from deleted receipts retain local "Ghost Metadata" mappings in the UI.
 6. **Agentic RAG (Local Inference):** Asynchronously fetches "classic flavor pairings" from a local knowledge base (The Flavor Bible) to rescue expiring ingredients. Driven by **Gemma 4 via Ollama**, ensuring 100% data privacy and offline capability through advanced Python ETL pipelines.
 

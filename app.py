@@ -430,6 +430,36 @@ try:
 except Exception as e:
     client = None
 
+@app.get("/api/v1/chef/state")
+async def get_chef_state(session: AsyncSession = Depends(get_db)):
+    state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
+    
+    # Check if there is an active session with messages
+    session_db_q = await session.execute(
+        select(ChefSessionModel)
+        .where(ChefSessionModel.user_id == DEFAULT_USER_ID)
+        .order_by(ChefSessionModel.created_at.desc())
+    )
+    latest_session = session_db_q.scalars().first()
+    
+    if latest_session:
+        messages_q = await session.execute(
+            select(ChatMessageModel)
+            .where(ChatMessageModel.session_id == latest_session.id)
+            .limit(1)
+        )
+        has_messages = messages_q.scalars().first() is not None
+        
+        # If no messages in the current session, reset to IDLE
+        if not has_messages and state_db and state_db.current_state != "IDLE":
+            state_db.current_state = "IDLE"
+            state_db.emotion_value = 0.0
+            await session.commit()
+            
+    if state_db:
+        return {"status": "success", "current_state": state_db.current_state.upper(), "emotion_value": state_db.emotion_value}
+    return {"status": "error", "message": "Chef state not found", "current_state": "IDLE"}
+
 class ChatRequest(BaseModel):
     message: str
 
@@ -458,6 +488,13 @@ async def get_session_history(session_id: str, session: AsyncSession = Depends(g
 async def clear_session(session: AsyncSession = Depends(get_db)):
     new_session = ChefSessionModel(user_id=DEFAULT_USER_ID, topic="New Session")
     session.add(new_session)
+    
+    # Reset Chef State to IDLE
+    state_db = await session.get(ChefStateModel, DEFAULT_USER_ID)
+    if state_db:
+        state_db.current_state = "IDLE"
+        state_db.emotion_value = 0.0
+        
     await session.commit()
     return {"status": "success", "new_session_id": new_session.id}
 

@@ -47,5 +47,25 @@ export function useChefFSM() {
     chefStore.reset()
   }
 
-  return { chefState, updateState, resetState }
+  const fetchChefState = async () => {
+    try {
+      const resp = await fetch('http://localhost:8000/api/v1/chef/state')
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.status === 'success') {
+          chefState.emotionDisplay = data.current_state || 'IDLE'
+          const chefStore = useChefStore()
+          chefStore.setEmotion(chefState.emotionDisplay)
+          
+          if (chefState.emotionDisplay.toUpperCase() === 'ANGRY' || chefState.emotionDisplay.toUpperCase() === 'CHAOTIC') {
+            document.documentElement.classList.add('danger-zone')
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to fetch Chef FSM state", e)
+    }
+  }
+
+  return { chefState, updateState, resetState, fetchChefState }
 }

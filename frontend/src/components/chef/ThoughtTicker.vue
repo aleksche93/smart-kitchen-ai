@@ -51,14 +51,16 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted, onMounted } from 'vue'
+import { ref, watch, onUnmounted, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefStore } from '../../stores/chefStore'
+import { useLayoutStore } from '../../stores/layoutStore'
 import { useTypewriter } from '../../composables/useTypewriter'
 
 const { isLoading } = useKitchenAPI()
 const chefStore = useChefStore()
+const layoutStore = useLayoutStore()
 const { thoughts } = storeToRefs(chefStore)
 
 const { displayText, type, abort } = useTypewriter()
@@ -69,8 +71,10 @@ const isDragging = ref(false)
 const tickerEl = ref(null)
 let hideTimer = null
 
-// Position (bottom-right default)
-const pos = ref({ x: window.innerWidth - 340, y: window.innerHeight - 230 })
+// Position bound to layoutStore
+const widgetData = computed(() => layoutStore.widgets.find(w => w.widget_id === 'thought_ticker') || { x: window.innerWidth - 340, y: window.innerHeight - 230 })
+
+const pos = computed(() => ({ x: widgetData.value.x, y: widgetData.value.y }))
 
 // Drag logic
 let dragOffset = { x: 0, y: 0 }
@@ -84,9 +88,15 @@ const startDrag = (e) => {
 }
 
 const onDrag = (e) => {
-  pos.value = {
-    x: Math.max(0, Math.min(window.innerWidth - 340, e.clientX - dragOffset.x)),
-    y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dragOffset.y))
+  const canvasWidth = Math.max(window.innerWidth, 1440)
+  const canvasHeight = Math.max(window.innerHeight, 800)
+  const newX = Math.max(0, Math.min(canvasWidth - 340, e.clientX - dragOffset.x))
+  const newY = Math.max(0, Math.min(canvasHeight - 60, e.clientY - dragOffset.y))
+  
+  const w = layoutStore.widgets.find(w => w.widget_id === 'thought_ticker')
+  if (w) {
+    w.x = newX
+    w.y = newY
   }
 }
 
@@ -127,9 +137,12 @@ onMounted(() => {
   chefStore.startSarcasticEngine()
   // Recalculate position on resize
   window.addEventListener('resize', () => {
-    pos.value = {
-      x: Math.min(pos.value.x, window.innerWidth - 340),
-      y: Math.min(pos.value.y, window.innerHeight - 60)
+    const w = layoutStore.widgets.find(w => w.widget_id === 'thought_ticker')
+    if (w) {
+      const canvasWidth = Math.max(window.innerWidth, 1440)
+      const canvasHeight = Math.max(window.innerHeight, 800)
+      w.x = Math.min(w.x, canvasWidth - 340)
+      w.y = Math.min(w.y, canvasHeight - 60)
     }
   })
 })

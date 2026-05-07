@@ -74,7 +74,11 @@ async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = 
     user_query = request.ingredient.strip() if request.ingredient else ""
     
     # 1. Aggregate expiring items from DB
-    fridge_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    fridge_query = await session.execute(
+        select(InventoryItemModel)
+        .where(InventoryItemModel.storage_location == 'Fridge')
+        .where(InventoryItemModel.quantity > 0)
+    )
     all_items = fridge_query.scalars().all()
     
     current_date = datetime.now()
@@ -205,7 +209,11 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
     if not client:
         raise HTTPException(status_code=500, detail="Gemini Client is missing. Check your API Key.")
 
-    fridge_query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    fridge_query = await session.execute(
+        select(InventoryItemModel)
+        .where(InventoryItemModel.storage_location == 'Fridge')
+        .where(InventoryItemModel.quantity > 0)
+    )
     all_items = fridge_query.scalars().all()
     fridge_summary = ", ".join([f"{i.name} ({i.quantity}{i.unit})" for i in all_items])
 

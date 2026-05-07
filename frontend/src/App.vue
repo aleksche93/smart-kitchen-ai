@@ -1,17 +1,17 @@
 <template>
-  <div class="h-screen w-screen bg-transparent text-slate-200 overflow-y-auto font-sans relative">
+  <div class="h-screen w-screen bg-slate-900 text-slate-200 overflow-auto font-sans relative">
     
     <!-- Background overlay to tone down the svg pattern -->
-    <div class="absolute inset-0 bg-slate-900/90 -z-10 pointer-events-none"></div>
+    <div class="fixed inset-0 bg-slate-900/90 -z-10 pointer-events-none"></div>
 
     <!-- Main App Container -->
-    <div class="w-full h-full flex flex-col p-4 md:p-8 space-y-6">
+    <div class="min-w-[1440px] min-h-[800px] h-full flex flex-col p-4 md:p-8 space-y-6">
       
       <!-- Top Title Bar -->
       <header class="flex justify-between items-center text-slate-400">
         <div class="flex items-center gap-6">
            <h1 class="text-2xl font-bold tracking-widest text-slate-100 flex items-center">
-             <span class="text-neoBlue mr-1">Kozak</span><span class="text-neoYellow">EYE</span><span class="text-yellow-300 text-sm -mt-1">OS</span>
+             <span class="text-neoBlue mr-1">Kozak</span><span class="text-neoYellow">Eye</span>
            </h1>
            <!-- Identity Dropdown Header Module -->
            <div class="relative z-50">
@@ -74,30 +74,33 @@
       <!-- Phase 12.2: Spatial OS Workspace (Absolute Positioning) -->
       <main v-if="activeTab === 'kitchen'" class="flex-1 min-h-0 relative w-full h-full overflow-hidden">
         <template v-if="layoutStore.isLoaded">
-           <WidgetWrapper 
-              v-for="element in layoutStore.widgets"
-              :key="element.widget_id"
-              :widget="element" 
-              :title="getWidgetTitle(element.widget_id)"
-              :isFocused="activeWidget === element.widget_id"
-              :showClose="element.widget_id === 'thought_ticker'"
-              @focus="activeWidget = element.widget_id"
-              @close="() => { element.is_collapsed = true; layoutStore.saveLayout() }"
-              @update:collapse="(val) => { element.is_collapsed = val; layoutStore.saveLayout() }"
-           >
-              <div class="h-full flex flex-col">
-                <FridgeList v-if="element.widget_id === 'fridge'" />
-                
-                <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
-                   <InteractionZone @artifact="onArtifact" />
-                </div>
-                
-                <AdviceDisplay
-                  v-else-if="element.widget_id === 'advice'"
-                  class="pr-2"
-                />
-              </div>
-           </WidgetWrapper>
+          <template v-for="element in layoutStore.widgets" :key="element.widget_id">
+            <WidgetWrapper 
+               v-if="element.widget_id !== 'thought_ticker'"
+               :widget="element" 
+               :title="getWidgetTitle(element.widget_id)"
+               :isFocused="activeWidget === element.widget_id"
+               :showClose="false"
+               @focus="activeWidget = element.widget_id"
+               @close="() => { element.is_collapsed = true; layoutStore.saveLayout() }"
+               @update:collapse="(val) => { element.is_collapsed = val; layoutStore.saveLayout() }"
+            >
+               <div class="h-full flex flex-col">
+                 <FridgeList v-if="element.widget_id === 'fridge'" />
+                 
+                 <div v-else-if="element.widget_id === 'chef_hub'" class="flex flex-col relative h-full pr-2">
+                    <InteractionZone @artifact="onArtifact" />
+                 </div>
+                 
+                 <AdviceDisplay
+                   v-else-if="element.widget_id === 'advice'"
+                   class="pr-2"
+                 />
+               </div>
+            </WidgetWrapper>
+            
+            <ThoughtTicker v-else-if="element.widget_id === 'thought_ticker'" />
+          </template>
         </template>
         
         <div v-else class="h-full flex items-center justify-center text-slate-500 animate-pulse">
@@ -111,9 +114,6 @@
       </main>
 
     </div>
-
-    <!-- Floating ThoughtTicker (Global, outside grid) -->
-    <ThoughtTicker />
 
     <!-- Phase 12.1 Step C: Focus Mode Overlay (Teleport) -->
     <Teleport to="body">
@@ -157,7 +157,7 @@ import ThoughtTicker from './components/chef/ThoughtTicker.vue'
 import { useChefFSM, chefState } from './composables/useChefFSM'
 
 const { activeTab } = useKitchenAPI()
-const { resetState } = useChefFSM()
+const { resetState, fetchChefState } = useChefFSM()
 
 const isMenuOpen = ref(false)
 
@@ -214,6 +214,7 @@ const checkHealth = () => {
 
 onMounted(() => {
   layoutStore.fetchLayout()
+  fetchChefState()
   checkHealth()
   pingInterval = setInterval(checkHealth, 5000)
 })

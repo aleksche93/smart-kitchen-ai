@@ -24,5 +24,14 @@
     "troll": {
       "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
     }
+  },
+  "artifact": {
+    "types": {
+      "RECIPE": "Recipe",
+      "SHOPPING_LIST": "Shopping List",
+      "PREP_SCHEDULE": "Prep Schedule",
+      "TASK_LIST": "Task List",
+      "WASTE_ALERT": "Waste Alert"
+    }
   }
 }

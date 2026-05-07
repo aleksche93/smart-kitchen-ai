@@ -192,9 +192,19 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Focus Mode Lockdown:** Prevented accidental background clicks from closing the modal via `@click.stop` event propagation shields.
 - [x] **Inventory Deletion:** Upgraded API with `DELETE /v1/fridge/item/{name}` and added a contextual trash icon to `InventoryItem` with instant Pinia state reactivity.
 
-### Phase 11: Cognitive Brain & Agentic Orchestrator
-- [x] **Local Inference Architecture:** Successfully deployed local inference pipeline for Flavor Bible parsing using Gemma 4 via Ollama.
-- [x] **Autonomous Knowledge Extraction:** Implemented specialized Python ETL scripts optimized by Gemini Code Assist for automated JSON knowledge extraction.
+### Phase 12.4: System Integrity & KozakEye OS [100% COMPLETED] ✅
+- [x] **Spatial Desktop Paradigm:** Enforced strict 1440px workspace lockdown with `Math.clamp` via `useDraggable.js`.
+- [x] **Ghost Eradication:** Fixed `/generate-artifact` endpoint to eliminate zero-quantity ghost items.
+- [x] **Artifact Persistence:** Implemented `localStorage` hydration for active artifacts in `layoutStore.js`.
+- [x] **Troll Chef Evolution:** Stylish Right-aligned "Cook It" button with subtle fluid dodge mechanics.
+- [x] **Branding & Localization:** Re-branded to KozakEye OS, strictly enforced English artifact headers via `en.json`, and optimized UI paddings.
+
+---
+
+## 🏗️ STAGE IV: ECOSYSTEM & ORCHESTRATOR (PHASES 13–14)
+*Expanding capabilities through specialized modules and cognitive orchestration.*
+
+### Phase 13: Cognitive Brain & Agentic Orchestrator
 - [ ] **Chef as Orchestrator:** Transform the Chef into a controlling model that asynchronously calls agents (Scanner, Generator, Inventory Analyst).
 - [ ] **Vector DB & Flavor Bible:** Creation of a vector knowledge base (e.g., Qdrant/Chroma) for dynamic flavor pairing search.
 - [ ] **Flavor Harmony Score:** Algorithm for evaluating ingredient compatibility (Weighting 1.0 - 4.0) based on RAG.
@@ -203,39 +213,17 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [ ] **Smart Receipt 2.0:** Transition to proactive financial analytics (Unit price tracking, categorical normalization).
 - [ ] **Agentic Skill Interface:** Standardization of the interaction protocol between the Chef and his "Workers".
 
----
-
-## 🎮 STAGE III: LIVE HUD & JUICY UX (PHASE 12)
-*Visualization of the AI's "thought process" and enhancement of emotional response.*
-
-- [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
-	- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
+### Phase 14: Skills & Hands-Free Integration
 - [ ] **Persistent Persona State:** Saving the Chef's emotional state and context between page reloads (Redis/LocalStorage).
-- [x] **Live Thought Ticker 2.0:**
-	- [x] Extraction of ThoughtTicker into a standalone floating draggable component (bottom-right, z-index: 1000).
-    - [x] Visualization of asynchronous agent work (SSE streaming states, typing indicators).
-    - [x] Global "thoughts" terminal widget for the Chef (FSM state log + minimize to icon).
-- [ ] **Visual Polish:** Strengthening color indication of states and updating animations (preparation for 3D-Kozak implementation).
-- [x] **Processing Feedback:** Contextual animations (typing dots for chat, shimmer skeletons for artifacts) instead of standard spinners.
-
----
-
-## 🏗️ STAGE IV: ECOSYSTEM & SKILLS (PHASES 13–14)
-*Expanding capabilities through specialized modules.*
-
-### Phase 13: Capability Expansion
-- [ ] **Skill: Recipe Generator:** Transforming the generator into an autonomous asynchronous tool with its own instructions.
+- [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
+- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
 - [ ] **Skill: Bag Management:** Module for tracking consumable materials ("bag of bags").
-	- [ ] **Bag Skill (Skill-Based Architecture):** Separate skill for the "bag of bags" (`FunModuleBagModel` DB, visual widget).
 - [ ] **Search Trigger:** Function to invoke external search (Google Search/Gemini) through the Chef for complex queries.
 - [ ] **Financial Analyst Agent:** Proactive analytics of supermarket prices and offers.
 - [ ] **Loyalty-Tracker:** Agent that aggregates supermarket bonuses (_Silpo_, _ATB_) from OCR data.
 - [ ] **Chrono-Mise-en-place:** Visual timeline planner for parallel cooking processes.
-
-### Phase 14: Hands-Free and IoT Integration
 - [ ] **Voice Interaction:** Web Speech API (STT/TTS) — voice control of recipe steps.
 - [ ] **IoT Controller Stubs:** Creation of API endpoints for future integration with Home Assistant (ovens, refrigerators).
-- [ ] **Persistent Web-Push:** Notifications about product expiration dates directly to desktop/mobile.
 
 ---
 
@@ -258,3 +246,4 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 | **Refined** | "Bag Skill" | In Phase 9.5, this was an idea; here it is highlighted as a separate module in Stage III (skills architecture). |
 | **Deleted** | "Firebase/Firestore Migration" | Decided to leave this as an option, but focus shifted to **Local AI (Gemma 4)** and **Edge Computing** for privacy. |
 | **Clarified** | "Thought Ticker" | Merged the idea of "Chat-first" and "Console UI" into a single Global Thought Ticker. |
+

@@ -103,7 +103,7 @@ const buttonStyle = computed(() => {
   if (isFleeing.value) {
     return {
       transform: `translate(${buttonTranslateX.value}px, ${buttonTranslateY.value}px)`,
-      transition: 'transform 0.15s ease-out'
+      transition: 'transform 0.2s ease-out'
     }
   }
   return {
@@ -143,21 +143,15 @@ const handleButtonHover = () => {
   const containerRect = containerRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
   
-  // Calculate relative bounds within container, adding padding margins
-  const padding = 16
-  const maxX = Math.max(0, (containerRect.width - btnRect.width - (padding * 2)) / 2)
-  const maxY = Math.max(0, (containerRect.height - btnRect.height - (padding * 2)) / 2)
+  // Subtle flee radius
+  const fleeRadius = 45
+  let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeRadius
+  let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeRadius
   
-  // Target random position within container
-  const targetX = padding + Math.random() * maxX
-  const targetY = padding + Math.random() * maxY
-  
-  // To get the untransformed position, subtract the current translation from the clientRect
-  const currentUnTransformedX = btnRect.left - buttonTranslateX.value - containerRect.left
-  const currentUnTransformedY = btnRect.top - buttonTranslateY.value - containerRect.top
-  
-  buttonTranslateX.value = targetX - currentUnTransformedX
-  buttonTranslateY.value = targetY - currentUnTransformedY
+  // Constrain to prevent flying too far away from origin
+  const maxDisplacement = 60
+  buttonTranslateX.value = Math.max(-maxDisplacement, Math.min(newX, maxDisplacement))
+  buttonTranslateY.value = Math.max(-maxDisplacement, Math.min(newY, maxDisplacement))
 }
 
 const handleCook = () => {

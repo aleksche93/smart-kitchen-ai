@@ -14,22 +14,22 @@ export function useDraggable() {
     const startY = e.clientY
     const initialWidgetX = widget.x || 0
     const initialWidgetY = widget.y || 0
-
-    // Get current widget DOM element width to prevent dragging entirely off-screen
-    // The handle is inside the widget, so target is handle. Closest '.neo-widget-wrapper' is the container.
-    const container = e.target.closest('.neo-widget-wrapper')
-    const rect = container ? container.getBoundingClientRect() : { width: 350, height: 400 }
+    
+    const widgetWidth = widget.w || 350
+    const widgetHeight = widget.is_collapsed ? 48 : (widget.h || 400)
 
     const onMouseMove = (moveEvent) => {
       let newX = initialWidgetX + (moveEvent.clientX - startX)
       let newY = initialWidgetY + (moveEvent.clientY - startY)
 
-      // Viewport constraints
-      // Allow dragging but keep at least 100px visible horizontally and 40px vertically
+      // Viewport constraints (Fixed Desktop 1440px aware)
+      const canvasWidth = Math.max(window.innerWidth, 1440)
+      const canvasHeight = Math.max(window.innerHeight, 800)
+      
       const minX = 0
-      const maxX = window.innerWidth - rect.width
+      const maxX = Math.max(0, canvasWidth - widgetWidth)
       const minY = 60 // Below top header
-      const maxY = window.innerHeight - rect.height
+      const maxY = Math.max(minY, canvasHeight - widgetHeight)
 
       newX = Math.max(minX, Math.min(newX, maxX))
       newY = Math.max(minY, Math.min(newY, maxY))

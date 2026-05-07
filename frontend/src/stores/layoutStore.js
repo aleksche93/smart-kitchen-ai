@@ -47,13 +47,14 @@ export const useLayoutStore = defineStore('layout', () => {
   }, { deep: true })
 
   // Phase 12.2: Spatial OS Grid Destruction
-  const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice']
+  const WIDGET_REGISTRY = ['fridge', 'chef_hub', 'advice', 'thought_ticker']
   
   // Default coordinates for a 1920x1080 screen roughly
   const defaultCoords = {
     'fridge': { x: 20, y: 80, w: 400, h: 600 },
     'chef_hub': { x: 440, y: 80, w: 400, h: 700 },
-    'advice': { x: 860, y: 80, w: 500, h: 800 }
+    'advice': { x: 860, y: 80, w: 500, h: 800 },
+    'thought_ticker': { x: 440, y: 800, w: 400, h: 100 }
   }
 
   const sanitizeLayout = (layoutArray) => {
@@ -69,12 +70,20 @@ export const useLayoutStore = defineStore('layout', () => {
       .filter(w => WIDGET_REGISTRY.includes(w.widget_id))
       .map(w => {
         const def = defaultCoords[w.widget_id] || { x: 100, y: 100, w: 300, h: 400 }
+        const validW = typeof w.w === 'number' && w.w > 50 ? w.w : def.w
+        const validH = typeof w.h === 'number' && w.h > 50 ? w.h : def.h
+        const validX = typeof w.x === 'number' ? w.x : def.x
+        const validY = typeof w.y === 'number' ? w.y : def.y
+        
+        // If x,y are both exactly 0, it might be an uninitialized artifact from backend
+        const isOrigin = validX === 0 && validY === 0
+        
         return {
           ...w,
-          x: typeof w.x === 'number' ? w.x : def.x,
-          y: typeof w.y === 'number' ? w.y : def.y,
-          w: typeof w.w === 'number' ? w.w : def.w,
-          h: typeof w.h === 'number' ? w.h : def.h,
+          x: isOrigin ? def.x : validX,
+          y: isOrigin ? def.y : validY,
+          w: validW,
+          h: validH,
           isMinimized: w.isMinimized || false,
           is_collapsed: w.is_collapsed || false,
           z_index: w.z_index ?? 10,
@@ -107,6 +116,9 @@ export const useLayoutStore = defineStore('layout', () => {
   }, { deep: true })
 
   const addArtifact = (artifact) => {
+    if (artifact.artifact_type === 'WASTE_ALERT') {
+      activeArtifacts.value = activeArtifacts.value.filter(a => a.artifact_type !== 'WASTE_ALERT')
+    }
     const newArtifact = { ...artifact, id: Date.now() + Math.random().toString() }
     activeArtifacts.value.push(newArtifact)
   }
