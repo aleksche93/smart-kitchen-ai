@@ -19,10 +19,16 @@ export function useDraggable() {
     const widgetHeight = widget.is_collapsed ? 48 : (widget.h || 400)
 
     const onMouseMove = (moveEvent) => {
-      let newX = initialWidgetX + (moveEvent.clientX - startX)
-      let newY = initialWidgetY + (moveEvent.clientY - startY)
+      // Calculate scale if CSS zoom/scale is applied to body
+      const scale = parseFloat(getComputedStyle(document.body).getPropertyValue('--zoom-scale')) || 1;
+      
+      const deltaX = (moveEvent.clientX - startX) / scale;
+      const deltaY = (moveEvent.clientY - startY) / scale;
 
-      // Viewport constraints (Fixed Desktop 1440px aware)
+      let newX = initialWidgetX + deltaX
+      let newY = initialWidgetY + deltaY
+
+      // Viewport constraints (Adaptive Canvas)
       const canvasWidth = Math.max(window.innerWidth, 1440)
       const canvasHeight = Math.max(window.innerHeight, 800)
       

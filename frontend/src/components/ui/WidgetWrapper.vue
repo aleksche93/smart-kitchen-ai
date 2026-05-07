@@ -1,14 +1,14 @@
 <template>
-  <div v-show="!widget.isMinimized" class="neo-widget-wrapper bg-neoGray/30 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl absolute flex flex-col transition-shadow duration-300"
+  <div v-show="!widget.isMinimized" class="ke-widget-wrapper bg-keGray/30 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-2xl absolute flex flex-col transition-shadow duration-300"
        :style="{ left: widget.x + 'px', top: widget.y + 'px', width: widget.w + 'px', height: widget.is_collapsed ? '48px' : widget.h + 'px', zIndex: widget.z_index }"
-       :class="{'ring-2 ring-neoBlue/50 shadow-neoBlue/20': isFocused}"
+       :class="{'ring-2 ring-keBlue/50 shadow-keBlue/20': isFocused}"
        @mousedown="handleFocus">
     
     <!-- Drag Handle and Header -->
     <div class="widget-header flex justify-between items-center px-4 py-2 border-b border-slate-700/50 bg-slate-800/50 rounded-t-2xl group">
       <div class="flex items-center space-x-3">
         <!-- Drag Handle Icon -->
-        <span class="drag-handle text-slate-500 group-hover:text-neoBlue transition-colors select-none text-lg"
+        <span class="drag-handle text-slate-500 group-hover:text-keBlue transition-colors select-none text-lg"
               @mousedown="startDrag">
           ⠿
         </span>
@@ -20,7 +20,10 @@
       <!-- Collapse toggle, Minimize and optional Close -->
       <div class="flex items-center space-x-2">
         <slot name="header-actions"></slot>
-        <button @click.stop="toggleMinimize" class="text-slate-500 hover:text-neoYellow transition-colors p-1" title="Minimize to Dock">
+        <button @click.stop="handleFocus" class="text-slate-500 hover:text-keBlue transition-colors p-1" title="Layer Up (Bring to Front)">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+        </button>
+        <button @click.stop="toggleMinimize" class="text-slate-500 hover:text-keYellow transition-colors p-1" title="Minimize to Dock">
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
         </button>
         <button v-if="showClose" @click.stop="emit('close')" class="text-slate-500 hover:text-red-400 transition-colors p-1" title="Close Widget">

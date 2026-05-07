@@ -338,15 +338,16 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
             await session.rollback()
             if os.path.exists(file_path):
                 try:
-                    base_dir = os.path.abspath("data/receipt_images")
-                    target_path = os.path.abspath(file_path)
-                    if target_path.startswith(base_dir):
+                    base_dir = Path("data/receipt_images").resolve()
+                    target_path = Path(file_path).resolve()
+                    if target_path.is_relative_to(base_dir):
                         os.remove(target_path)
                     else:
                         logging.warning(f"Directory traversal attempt detected: {file_path}")
                 except Exception:
                     pass
-            raise inner_e
+            logging.error("Inner error parsing receipt", exc_info=True)
+            raise HTTPException(status_code=500, detail="Internal server error")
             
         return {
             "status": "success",
@@ -362,7 +363,11 @@ async def parse_receipt_vision(file: UploadFile = File(...), session: AsyncSessi
 @app.get("/api/v1/fridge")
 async def get_fridge_inventory(session: AsyncSession = Depends(get_db)):
     """Returns current fridge inventory directly from SQLite."""
-    query = await session.execute(select(InventoryItemModel).where(InventoryItemModel.storage_location == 'Fridge'))
+    query = await session.execute(
+        select(InventoryItemModel)
+        .where(InventoryItemModel.storage_location == 'Fridge')
+        .where(InventoryItemModel.quantity > 0)
+    )
     all_items = query.scalars().all()
     
     items_data = []
@@ -640,9 +645,10 @@ async def delete_receipt_and_sync_inventory(receipt_id: str, delete_items: bool 
             
         if receipt.image_path and os.path.exists(receipt.image_path):
             try:
-                base_dir = os.path.abspath("data/receipt_images")
-                target_path = os.path.abspath(receipt.image_path)
-                if target_path.startswith(base_dir):
+                base_dir = Path("data/receipt_images").resolve()
+                target_path = Path(receipt.image_path).resolve()
+                
+                if target_path.is_relative_to(base_dir):
                     os.remove(target_path)
                 else:
                     logging.warning(f"Directory traversal attempt detected: {receipt.image_path}")
@@ -709,11 +715,12 @@ async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends
     await session.execute(text("DELETE FROM ui_layout WHERE user_id = :uid"), {"uid": DEFAULT_USER_ID})
     
     # Insert new
+    new_layouts = []
     for idx, w in enumerate(payload.layout):
         widget_id = str(w.get("widget_id")).replace("'", "") # sanitize
         is_col = w.get("is_collapsed", False)
         
-        new_w = UILayoutModel(
+        new_layouts.append(UILayoutModel(
             user_id=DEFAULT_USER_ID,
             widget_id=widget_id,
             order_index=idx,
@@ -725,8 +732,10 @@ async def save_ui_layout(payload: LayoutPayload, session: AsyncSession = Depends
             w=w.get("w"),
             h=w.get("h"),
             is_minimized=w.get("isMinimized", False)
-        )
-        session.add(new_w)
+        ))
+        
+    if new_layouts:
+        session.add_all(new_layouts)
         
     await session.commit()
     return {"status": "success"}

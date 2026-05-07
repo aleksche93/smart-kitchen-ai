@@ -32,7 +32,7 @@
           </div>
         </div>
         <button v-if="isFocused" @click.stop="$emit('close')"
-                class="text-slate-400 hover:text-neoYellow hover:bg-slate-800/50 rounded-full transition-all duration-200 p-2 cursor-pointer">
+                class="text-slate-400 hover:text-keYellow hover:bg-slate-800/50 rounded-full transition-all duration-200 p-2 cursor-pointer">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>

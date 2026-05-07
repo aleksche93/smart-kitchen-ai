@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="fade">
       <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-[2px]" @click.self="close">
-        <div class="bg-neoGray border border-slate-700/50 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative" role="dialog" aria-modal="true">
+        <div class="bg-keGray border border-slate-700/50 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl relative" role="dialog" aria-modal="true">
           
           <button @click="close" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -10,7 +10,7 @@
 
           <div class="p-6">
              <div class="flex items-center justify-between mb-1">
-               <div class="text-xs font-bold uppercase tracking-widest text-neoWheat">{{ item.category || 'Unknown Category' }}</div>
+               <div class="text-xs font-bold uppercase tracking-widest text-keWheat">{{ item.category || 'Unknown Category' }}</div>
                <div v-if="item.expiration_date" class="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700/50 flex items-center gap-1">
                  <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                  {{ formatDate(item.expiration_date) }}
@@ -27,7 +27,7 @@
                  v-if="receiptDetails" 
                  @click="!receiptDetails.isGhost && navigateToReceipt()"
                  class="group inline-flex items-center text-xs px-3 py-1.5 rounded-full border transition-all"
-                 :class="[receiptDetails.isGhost ? 'bg-slate-800/40 border-slate-700/30 text-slate-500 cursor-default' : 'bg-slate-800/80 hover:bg-neoBlue/20 text-slate-300 hover:text-neoBlue border-slate-700/50 hover:border-neoBlue/50 cursor-pointer']"
+                 :class="[receiptDetails.isGhost ? 'bg-slate-800/40 border-slate-700/30 text-slate-500 cursor-default' : 'bg-slate-800/80 hover:bg-keBlue/20 text-slate-300 hover:text-keBlue border-slate-700/50 hover:border-keBlue/50 cursor-pointer']"
                  :title="receiptDetails.isGhost ? 'Original receipt has been deleted' : 'View Source Receipt'"
                >
                  <span class="mr-2">{{ receiptDetails.isGhost ? '👻' : '🧾' }}</span>
@@ -52,7 +52,7 @@
                
                <div class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
                  <span class="text-slate-400">Available Qty:</span>
-                 <span class="text-slate-200 font-mono text-neoBlue">{{ formatAmount(item.amount) }} {{ item.unit }}</span>
+                 <span class="text-slate-200 font-mono text-keBlue">{{ formatAmount(item.amount) }} {{ item.unit }}</span>
                </div>
                
                <div class="flex justify-between items-center text-sm border-b border-slate-700/50 pb-2">
@@ -136,7 +136,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKey))
 // Removed requestRecipe
 
 const freshnessClass = computed(() => {
-  if (props.item.days_left < 0) return 'text-neoTerracotta'
+  if (props.item.days_left < 0) return 'text-keTerracotta'
   if (props.item.days_left <= 2) return 'text-orange-500'
   return 'text-green-400'
 })

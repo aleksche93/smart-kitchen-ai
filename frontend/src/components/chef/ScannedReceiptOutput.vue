@@ -1,9 +1,9 @@
 <template>
   <Teleport to="body">
     <div v-if="items && items.length > 0" class="fixed bottom-6 right-6 w-[400px] z-50 animate-fade-in-up">
-      <div class="bg-slate-800/90 backdrop-blur-md border border-neoBlue/30 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(56,189,248,0.15)] flex flex-col max-h-[60vh]">
-        <div class="bg-neoBlue/20 border-b border-neoBlue/30 px-4 py-3 flex justify-between items-center shrink-0">
-          <h3 class="text-sm font-bold text-neoBlue uppercase tracking-wider flex items-center">
+      <div class="bg-slate-800/90 backdrop-blur-md border border-keBlue/30 rounded-xl overflow-hidden shadow-[0_0_20px_rgba(56,189,248,0.15)] flex flex-col max-h-[60vh]">
+        <div class="bg-keBlue/20 border-b border-keBlue/30 px-4 py-3 flex justify-between items-center shrink-0">
+          <h3 class="text-sm font-bold text-keBlue uppercase tracking-wider flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -31,7 +31,7 @@
                   </span>
                 </td>
                 <td class="px-3 py-2 flex items-center space-x-1">
-                  <span class="text-neoYellow font-mono">{{ item.quantity || item.amount || 1 }}</span>
+                  <span class="text-keYellow font-mono">{{ item.quantity || item.amount || 1 }}</span>
                   <span class="text-slate-500 text-[10px] uppercase">{{ item.unit || 'pcs' }}</span>
                 </td>
               </tr>

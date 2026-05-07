@@ -10,24 +10,34 @@
       <!-- Top Title Bar -->
       <header class="flex justify-between items-center text-slate-400">
         <div class="flex items-center gap-6">
-           <h1 class="text-2xl font-bold tracking-widest text-slate-100 flex items-center">
-             <span class="text-neoBlue mr-1">Kozak</span><span class="text-neoYellow">Eye</span>
+           <h1 class="text-2xl font-extrabold tracking-widest flex items-center drop-shadow-lg group">
+             <span class="bg-gradient-to-r from-keBlue to-blue-400 bg-clip-text text-transparent">Kozak</span>
+             <span class="relative flex items-center ml-1">
+               <span class="bg-gradient-to-r from-keYellow to-yellow-200 bg-clip-text text-transparent">Eye</span>
+               <!-- Kinetic Eye Indicator (Iris Style) -->
+               <div class="ml-2 relative flex items-center justify-center w-4 h-4">
+                 <span class="absolute w-full h-full bg-keYellow/20 rounded-full animate-pulse"></span>
+                 <span class="absolute w-2 h-2 bg-keYellow rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)]"></span>
+                 <span class="absolute w-4 h-4 border border-keYellow/30 rounded-full animate-[spin_4s_linear_infinite]"></span>
+               </div>
+             </span>
            </h1>
            <!-- Identity Dropdown Header Module -->
            <div class="relative z-50">
-              <div @click="isMenuOpen = !isMenuOpen" class="flex items-center gap-3 cursor-pointer p-1.5 pr-3 rounded-full bg-slate-800/50 border border-slate-700 hover:border-neoBlue transition-all">
+              <div @click="isMenuOpen = !isMenuOpen" class="flex items-center gap-3 cursor-pointer p-1.5 pr-3 rounded-full bg-slate-800/50 border border-slate-700 hover:border-keBlue transition-all">
                  <!-- Avatar Small -->
                  <ChefAvatar :mood="chefState.emotionDisplay" />
                  <div class="flex flex-col select-none">
                    <span class="text-xs font-bold text-slate-200 uppercase">The Chef</span>
                    <span class="text-[10px] uppercase font-bold" :class="emotionTextStyles">{{ chefState.emotionDisplay }}</span>
                  </div>
-                 <svg :class="{'rotate-180 text-neoBlue': isMenuOpen}" class="w-4 h-4 ml-1 text-slate-500 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                 <svg :class="{'rotate-180 text-keBlue': isMenuOpen}" class="w-4 h-4 ml-1 text-slate-500 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </div>
               
               <!-- Dropdown Context -->
               <div :class="isMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'" class="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl transition-all duration-300 overflow-hidden">
                  <button @click="handleReset" class="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">Reset Session</button>
+                 <button @click="() => { layoutStore.clearAllArtifacts(); isMenuOpen = false }" class="w-full text-left px-4 py-3 text-xs font-bold text-amber-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">Clear Artifacts</button>
                  <button class="w-full text-left px-4 py-3 text-xs font-bold text-slate-400 hover:bg-slate-700 block disabled:opacity-50 transition-colors" disabled>Profile Settings</button>
               </div>
            </div>
@@ -37,10 +47,10 @@
         <div class="flex items-center gap-3">
           <template v-for="w in minimizedWidgets" :key="w.widget_id">
              <button @click="restoreWidget(w)"
-                     class="p-2 px-3 bg-slate-800/50 hover:bg-slate-700/80 rounded-xl border border-slate-600/50 transition-all shadow-lg hover:shadow-neoBlue/20 hover:border-neoBlue/50 group flex items-center gap-2"
+                     class="p-2 px-3 bg-slate-800/50 hover:bg-slate-700/80 rounded-xl border border-slate-600/50 transition-all shadow-lg hover:shadow-keBlue/20 hover:border-keBlue/50 group flex items-center gap-2"
                      :title="`Restore ${getWidgetTitle(w.widget_id)}`">
-               <svg class="w-4 h-4 text-neoBlue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-               <span class="text-xs uppercase font-bold text-slate-300 group-hover:text-neoBlue">{{ getWidgetTitle(w.widget_id) }}</span>
+               <svg class="w-4 h-4 text-keBlue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+               <span class="text-xs uppercase font-bold text-slate-300 group-hover:text-keBlue">{{ getWidgetTitle(w.widget_id) }}</span>
              </button>
           </template>
         </div>
@@ -53,12 +63,12 @@
            </div>
            
            <button @click="activeTab = 'kitchen'" 
-                   :class="activeTab === 'kitchen' ? 'text-neoBlue' : 'text-slate-400 hover:text-slate-200'" 
+                   :class="activeTab === 'kitchen' ? 'text-keBlue' : 'text-slate-400 hover:text-slate-200'" 
                    class="relative w-1/2 z-10 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors rounded-full text-center">
              Kitchen
            </button>
            <button @click="activeTab = 'archive'" 
-                   :class="activeTab === 'archive' ? 'text-neoBlue' : 'text-slate-400 hover:text-slate-200'" 
+                   :class="activeTab === 'archive' ? 'text-keBlue' : 'text-slate-400 hover:text-slate-200'" 
                    class="relative w-1/2 z-10 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors rounded-full text-center">
              Archive
            </button>
@@ -173,14 +183,14 @@ const handleReset = () => {
 const emotionIconStyles = computed(() => {
   const e = chefState.emotionDisplay.toUpperCase()
   if (['ANGRY', 'CHAOTIC', 'FURIOUS'].includes(e)) return 'text-red-400 border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]'
-  if (['PLAYFUL', 'CREATIVE'].includes(e)) return 'text-neoYellow border-neoYellow shadow-[0_0_10px_rgba(250,204,21,0.3)]'
-  return 'text-neoBlue'
+  if (['PLAYFUL', 'CREATIVE'].includes(e)) return 'text-keYellow border-keYellow shadow-[0_0_10px_rgba(250,204,21,0.3)]'
+  return 'text-keBlue'
 })
 
 const emotionTextStyles = computed(() => {
   const e = chefState.emotionDisplay.toUpperCase()
   if (['ANGRY', 'CHAOTIC'].includes(e)) return 'text-red-400'
-  return 'text-neoBlue opacity-80'
+  return 'text-keBlue opacity-80'
 })
 
 const layoutStore = useLayoutStore()

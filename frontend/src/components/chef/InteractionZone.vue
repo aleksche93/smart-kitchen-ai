@@ -5,7 +5,7 @@
     <div class="flex justify-between items-center bg-slate-800/80 px-4 py-2 flex-shrink-0 border border-slate-700/50 rounded-lg mb-3">
       <div class="flex items-center gap-4">
         <!-- Scan Receipt File Picker -->
-        <label class="cursor-pointer text-xs uppercase tracking-wider font-bold text-slate-300 hover:text-neoYellow transition-colors flex items-center group" title="Scan Receipt / Vision">
+        <label class="cursor-pointer text-xs uppercase tracking-wider font-bold text-slate-300 hover:text-keYellow transition-colors flex items-center group" title="Scan Receipt / Vision">
           <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
           Scan Receipt
           <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
@@ -32,21 +32,21 @@
     <div class="flex-grow overflow-y-auto p-4 custom-scrollbar flex flex-col space-y-4 w-full bg-slate-800/30 rounded-lg min-h-0 mb-3" ref="chatContainer">
        <div v-for="(msg, index) in chatHistory" :key="msg._id || index"
             :class="msg.role === 'user'
-              ? 'self-end bg-neoBlue/20 text-neoBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-neoBlue/30'
+              ? 'self-end bg-keBlue/20 text-keBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-keBlue/30'
               : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
           <!-- Typing indicator: 3 dots — visible ONLY before first chunk arrives -->
           <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1 py-0.5">
-            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-            <span class="w-2 h-2 bg-neoBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
           </span>
           <!-- Content: renders as text arrives chunk by chunk (kinetic typing via SSE) -->
           <span v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}<span
             v-if="msg.role === 'assistant' && isStreaming && index === chatHistory.length - 1 && msg.content !== ''"
-            class="inline-block w-0.5 h-3.5 bg-neoBlue ml-0.5 align-middle animate-pulse"
+            class="inline-block w-0.5 h-3.5 bg-keBlue ml-0.5 align-middle animate-pulse"
           ></span></span>
           <!-- Magic artifact trigger button — з'являється коли Шеф додає [ACTION: MAGIC_TRIGGER] -->
-          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-neoYellow/10 hover:bg-neoYellow/20 text-neoYellow border border-neoYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
+          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-keYellow/10 hover:bg-keYellow/20 text-keYellow border border-keYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
              ✨ Generate Magic
           </button>
        </div>
@@ -62,14 +62,14 @@
             v-model="localInput"
             type="text" 
             placeholder="Ask Chef..."
-            class="w-full bg-slate-900/50 border border-slate-600 focus:border-neoBlue focus:ring-1 focus:ring-neoBlue text-slate-200 rounded-full py-3 pl-5 pr-5 outline-none transition-all shadow-inner"
+            class="w-full bg-slate-900/50 border border-slate-600 focus:border-keBlue focus:ring-1 focus:ring-keBlue text-slate-200 rounded-full py-3 pl-5 pr-5 outline-none transition-all shadow-inner"
             @keyup.enter="handleAdvice"
           />
         </div>
         <button 
           @click="handleAdvice"
           :disabled="btnState === BUTTON_STATES.ACTIVE || !localInput.trim()"
-          class="w-[100px] bg-neoBlue hover:bg-blue-600 active:bg-blue-700 text-white font-medium rounded-full transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shrink-0 shadow-md"
+          class="w-[100px] bg-keBlue hover:bg-blue-600 active:bg-blue-700 text-white font-medium rounded-full transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shrink-0 shadow-md"
         >
           <span v-if="btnState === BUTTON_STATES.IDLE" class="text-sm">Send</span>
           <span v-else class="flex items-center text-xs whitespace-nowrap">

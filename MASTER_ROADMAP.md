@@ -199,6 +199,23 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Troll Chef Evolution:** Stylish Right-aligned "Cook It" button with subtle fluid dodge mechanics.
 - [x] **Branding & Localization:** Re-branded to KozakEye OS, strictly enforced English artifact headers via `en.json`, and optimized UI paddings.
 
+### Phase 12.5: Audit Cleanup (Sprint A) [100% COMPLETED] ✅
+- [x] **Branding Audit:** Complete cleanup of CSS variables to `--ke-` and enhanced `App.vue` header with "Midnight Steppe" gradients.
+- [x] **Thought Ticker Persistence:** Embedded the minimize/collapse button natively within the container and bound state to `layoutStore` & `localStorage`.
+- [x] **UX Geometry:** Fixed `useDraggable.js` scale/zoom anchor logic to prevent widget displacement and hardened strict 1440px bounds.
+- [x] **Z-Index Layering:** Added manual "Layer Up" (`bringToFront`) button for widgets to prevent chaotic z-index jumping on click.
+- [x] **Artifact De-Duplication:** Refactored `layoutStore.addArtifact` to elegantly replace existing artifacts of the same type instead of rendering duplicates.
+- [x] **Data Integrity:** Added Pydantic schema validation for artifacts directly into `/generate-artifact` backend to intercept LLM hallucinated JSON.
+- [x] **Vision UI Triage:** Hard-split `HybridCropper.vue` into "Auto bounds" (preprocessing) and "Scan Selection" (API call).
+
+### Phase 12.6: UI & Logic Stabilization [100% COMPLETED] ✅
+- [x] **KozakEYE Branding:** Restored and stylized branding with "Iris" kinetic indicator and `keYellow` Tailwind integration.
+- [x] **Thought Ticker UX:** Switched to classic `-` minimize button and fixed drag-and-drop for the minimized "circle" state.
+- [x] **Spatial OS Expansion:** Removed 1440px width constraints in `useDraggable.js`, allowing widgets to move across the full viewport.
+- [x] **Layering Logic:** Enhanced `bringToFront` with unconditional z-index elevation and periodic normalization.
+- [x] **JSON Resilience:** Added LLM garbage cleanup to `api/smart_fridge.py` and upgraded artifact generation to `gemini-2.0-flash`.
+- [x] **Workspace Cleanup:** Implemented "Clear Artifacts" utility in Chef's dropdown for manual desk purging.
+
 ---
 
 ## 🏗️ STAGE IV: ECOSYSTEM & ORCHESTRATOR (PHASES 13–14)

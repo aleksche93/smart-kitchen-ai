@@ -6,7 +6,7 @@
         <h2 class="text-3xl font-bold text-slate-100 mb-1">Receipt Archive</h2>
         <p class="text-sm text-slate-400">View and manage history of digitized grocery scans.</p>
       </div>
-      <button @click="refresh" :disabled="isLoading" class="text-neoBlue hover:text-blue-400 flex items-center text-sm font-medium transition-colors">
+      <button @click="refresh" :disabled="isLoading" class="text-keBlue hover:text-blue-400 flex items-center text-sm font-medium transition-colors">
         <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
         Sync
       </button>
@@ -40,13 +40,13 @@
             alt="Receipt Scan"
           />
           <div class="absolute bottom-3 left-3 flex flex-col items-center justify-center bg-slate-900/80 rounded-full px-3 py-1">
-            <span class="text-neoWheat font-bold text-xs">{{ receipt.added_items_count }} Items</span>
+            <span class="text-keWheat font-bold text-xs">{{ receipt.added_items_count }} Items</span>
           </div>
         </div>
         
         <!-- Metadata -->
         <div class="p-4 flex flex-col space-y-3 flex-1 relative">
-           <button @click.stop="handleDelete(receipt.id)" class="absolute top-4 right-4 text-slate-500 hover:text-neoTerracotta transition-colors bg-slate-800 p-1 rounded-full shadow-inner" title="Delete Receipt">
+           <button @click.stop="handleDelete(receipt.id)" class="absolute top-4 right-4 text-slate-500 hover:text-keTerracotta transition-colors bg-slate-800 p-1 rounded-full shadow-inner" title="Delete Receipt">
              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
            </button>
 
@@ -56,7 +56,7 @@
            </div>
 
            <div class="flex flex-col flex-1 justify-end">
-             <span class="text-lg font-mono text-neoBlue font-bold block pt-2 border-t border-slate-700/50">
+             <span class="text-lg font-mono text-keBlue font-bold block pt-2 border-t border-slate-700/50">
                {{ receipt.total_price != null ? `${receipt.total_price.toFixed(2)} ${receipt.currency}` : 'Completed' }}
              </span>
            </div>
@@ -69,7 +69,7 @@
       <Transition name="fade">
         <div v-if="selectedReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4" @click.self="selectedReceipt = null">
           <div 
-             class="bg-neoGray border border-slate-700/50 rounded-2xl w-full overflow-hidden shadow-2xl relative flex flex-col transition-all duration-500 ease-in-out"
+             class="bg-keGray border border-slate-700/50 rounded-2xl w-full overflow-hidden shadow-2xl relative flex flex-col transition-all duration-500 ease-in-out"
              :class="isExpanded ? 'max-w-6xl lg:flex-row h-[90vh]' : 'max-w-3xl flex-col max-h-[85vh]'"
           >
             
@@ -102,7 +102,7 @@
                    <p class="text-sm text-slate-400 mb-3">{{ formatDate(selectedReceipt.scan_date) }}</p>
                    
                    <!-- Maps Badge Pill -->
-                   <div v-if="selectedReceipt.comment" class="inline-flex w-max items-center bg-neoBlue/10 border border-neoBlue/30 text-neoBlue rounded-full px-3 py-1 shadow-sm hover:bg-neoBlue/20 transition-colors">
+                   <div v-if="selectedReceipt.comment" class="inline-flex w-max items-center bg-keBlue/10 border border-keBlue/30 text-keBlue rounded-full px-3 py-1 shadow-sm hover:bg-keBlue/20 transition-colors">
                      <svg class="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                      <a :href="`https://maps.google.com/?q=${encodeURIComponent(selectedReceipt.comment)}`" target="_blank" class="text-xs font-medium truncate max-w-[200px]">
                        {{ selectedReceipt.comment }}
@@ -147,7 +147,7 @@
                       <td class="px-3 py-2.5 font-mono text-[11px] text-slate-400">
                         {{ item.unit_price ? item.unit_price.toFixed(2) : '-' }}
                       </td>
-                      <td class="px-3 py-2.5 text-right font-mono text-neoBlue font-medium">
+                      <td class="px-3 py-2.5 text-right font-mono text-keBlue font-medium">
                         {{ item.row_subtotal ? item.row_subtotal.toFixed(2) : '-' }}
                       </td>
                     </tr>
@@ -162,7 +162,7 @@
                </div>
                <div class="flex items-center gap-4">
                   <div class="text-sm text-slate-400 uppercase tracking-widest">Grand Total</div>
-                  <div class="text-2xl font-mono text-neoBlue font-bold bg-neoBlue/10 px-4 py-1.5 rounded-lg border border-neoBlue/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                  <div class="text-2xl font-mono text-keBlue font-bold bg-keBlue/10 px-4 py-1.5 rounded-lg border border-keBlue/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
                     {{ selectedReceipt.total_price != null ? `${selectedReceipt.total_price.toFixed(2)} ${selectedReceipt.currency}` : 'N/A' }}
                   </div>
                </div>

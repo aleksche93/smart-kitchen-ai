@@ -9,27 +9,28 @@
         <!-- Minimized State -->
         <div v-if="isMinimized"
              @click="isMinimized = false"
-             class="w-12 h-12 rounded-full bg-slate-900/80 backdrop-blur-xl border border-green-500/30 flex items-center justify-center cursor-pointer hover:border-green-400/60 hover:scale-110 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] group">
+             @mousedown="startDrag"
+             class="w-12 h-12 rounded-full bg-slate-900/80 backdrop-blur-xl border border-green-500/30 flex items-center justify-center cursor-grab active:cursor-grabbing hover:border-green-400/60 hover:scale-110 transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)] group">
           <span class="text-green-400 text-lg group-hover:animate-pulse">$</span>
         </div>
 
         <!-- Full Ticker -->
         <div v-else
-             class="bg-slate-900/85 backdrop-blur-xl rounded-xl border border-slate-700/50 shadow-2xl overflow-hidden transition-all duration-300 hover:opacity-100"
+             class="bg-slate-900/85 backdrop-blur-xl rounded-xl border border-slate-700/50 shadow-2xl overflow-hidden transition-all duration-300 hover:opacity-100 relative"
              :class="isDragging ? 'opacity-100 ring-2 ring-green-500/30' : 'opacity-75'">
           
+          <!-- Collapse Button Inside Container (Simplified to '-') -->
+          <button @click.stop="isMinimized = true"
+                  class="absolute top-2 right-2 z-10 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-md px-2 py-0.5 transition-all shadow-sm border border-slate-600 font-bold" title="Fold Ticker">
+            -
+          </button>
+
           <!-- Header (Drag Handle) -->
-          <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-700/40 cursor-grab active:cursor-grabbing bg-slate-800/60"
+          <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-700/40 cursor-grab active:cursor-grabbing bg-slate-800/60 pr-8"
                @mousedown="startDrag">
             <div class="flex items-center gap-2">
               <span class="text-green-400 animate-pulse text-[10px]">●</span>
               <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Chef HUD</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <button @click.stop="isMinimized = true"
-                      class="text-slate-500 hover:text-slate-300 transition-colors p-0.5" title="Minimize">
-                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6" /></svg>
-              </button>
             </div>
           </div>
 
@@ -66,8 +67,12 @@ const { thoughts } = storeToRefs(chefStore)
 const { displayText, type, abort } = useTypewriter()
 
 const isVisible = ref(false)
-const isMinimized = ref(false)
 const isDragging = ref(false)
+
+const isMinimized = computed({
+  get: () => layoutStore.isTickerFolded,
+  set: (val) => layoutStore.isTickerFolded = val
+})
 const tickerEl = ref(null)
 let hideTimer = null
 
@@ -80,18 +85,20 @@ const pos = computed(() => ({ x: widgetData.value.x, y: widgetData.value.y }))
 let dragOffset = { x: 0, y: 0 }
 
 const startDrag = (e) => {
+  if (e.button !== 0) return
   isDragging.value = true
   dragOffset.x = e.clientX - pos.value.x
   dragOffset.y = e.clientY - pos.value.y
   document.addEventListener('mousemove', onDrag)
   document.addEventListener('mouseup', stopDrag)
+  e.stopPropagation() // Prevent click event if dragging minimized state
 }
 
 const onDrag = (e) => {
   const canvasWidth = Math.max(window.innerWidth, 1440)
   const canvasHeight = Math.max(window.innerHeight, 800)
-  const newX = Math.max(0, Math.min(canvasWidth - 340, e.clientX - dragOffset.x))
-  const newY = Math.max(0, Math.min(canvasHeight - 60, e.clientY - dragOffset.y))
+  const newX = Math.max(0, Math.min(canvasWidth - (isMinimized.value ? 48 : 340), e.clientX - dragOffset.x))
+  const newY = Math.max(0, Math.min(canvasHeight - (isMinimized.value ? 48 : 160), e.clientY - dragOffset.y))
   
   const w = layoutStore.widgets.find(w => w.widget_id === 'thought_ticker')
   if (w) {
@@ -104,6 +111,7 @@ const stopDrag = () => {
   isDragging.value = false
   document.removeEventListener('mousemove', onDrag)
   document.removeEventListener('mouseup', stopDrag)
+  layoutStore.saveLayout()
 }
 
 // Visibility logic

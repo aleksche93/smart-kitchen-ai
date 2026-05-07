@@ -2,7 +2,7 @@
   <div ref="containerRef" class="space-y-4 relative">
     <!-- Recipe Title & Meta -->
     <div class="flex items-center justify-between">
-      <h4 class="text-lg font-bold text-neoYellow">{{ recipe.name || 'Untitled Recipe' }}</h4>
+      <h4 class="text-lg font-bold text-keYellow">{{ recipe.name || 'Untitled Recipe' }}</h4>
       <div class="flex gap-2 text-[10px] uppercase tracking-wider text-slate-400">
         <span v-if="recipe.time || recipe.estimated_duration">⏱ {{ recipe.time || recipe.estimated_duration }}</span>
         <span v-if="recipe.difficulty || recipe.recipe_complexity">📊 {{ recipe.difficulty || recipe.recipe_complexity }}</span>
@@ -50,11 +50,14 @@
           @click="handleCook"
           @mouseover="handleButtonHover"
           :disabled="cookLoading || cookDone"
-          class="w-auto py-1.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+          class="w-auto py-1.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm relative overflow-hidden"
           :style="buttonStyle"
           :class="buttonClasses"
         >
-          <span v-if="cookLoading" class="animate-spin text-sm">⏳</span>
+          <span v-if="cookLoading" class="flex items-center gap-2">
+            <svg class="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Cooking...
+          </span>
           <span v-else-if="cookDone">🍽️ Cooked!</span>
           <span v-else>🍳 Cook It!</span>
         </button>
@@ -118,7 +121,7 @@ const buttonClasses = computed(() => {
   if (isAlarmLocked.value) {
     return `bg-slate-800/60 border border-red-500/50 text-red-400 cursor-not-allowed ${isShaking.value ? 'animate-shake' : ''}`
   }
-  return 'bg-neoYellow/10 hover:bg-neoYellow/20 active:bg-neoYellow/30 border border-neoYellow/30 hover:border-neoYellow/50 text-neoYellow hover:shadow-[0_0_12px_rgba(250,204,21,0.2)] hover:-translate-y-0.5'
+  return 'bg-keYellow/10 hover:bg-keYellow/20 active:bg-keYellow/30 border border-keYellow/30 hover:border-keYellow/50 text-keYellow hover:shadow-[0_0_12px_rgba(250,204,21,0.2)] hover:-translate-y-0.5'
 })
 
 const startFleeing = (missingIngredients) => {
@@ -143,15 +146,17 @@ const handleButtonHover = () => {
   const containerRect = containerRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
   
-  // Subtle flee radius
-  const fleeRadius = 45
+  // Aggressive flee radius (2-3x further)
+  const fleeRadius = 150
   let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeRadius
   let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeRadius
   
-  // Constrain to prevent flying too far away from origin
-  const maxDisplacement = 60
-  buttonTranslateX.value = Math.max(-maxDisplacement, Math.min(newX, maxDisplacement))
-  buttonTranslateY.value = Math.max(-maxDisplacement, Math.min(newY, maxDisplacement))
+  // Constrain to prevent flying too far away from origin (but give it space)
+  const maxDisplacementX = Math.min(250, containerRect.width / 2 - btnRect.width / 2)
+  const maxDisplacementY = Math.min(200, containerRect.height / 2 - btnRect.height / 2)
+
+  buttonTranslateX.value = Math.max(-maxDisplacementX, Math.min(newX, maxDisplacementX))
+  buttonTranslateY.value = Math.max(-maxDisplacementY, Math.min(newY, maxDisplacementY))
 }
 
 const handleCook = () => {

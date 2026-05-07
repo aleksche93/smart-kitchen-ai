@@ -27,7 +27,7 @@
       <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Рекомендації</h5>
       <ul class="space-y-1 text-sm text-slate-300">
         <li v-for="(rec, i) in recommendations" :key="i" class="flex items-start gap-2">
-          <span class="text-neoYellow shrink-0">💡</span>
+          <span class="text-keYellow shrink-0">💡</span>
           <span>{{ rec }}</span>
         </li>
       </ul>

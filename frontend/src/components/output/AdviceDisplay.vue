@@ -17,8 +17,8 @@
 
     <div v-if="chefState.recipeText" class="@container flex-1 flex flex-col space-y-4 w-full h-full">
 
-      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-3 max-w-full break-words rounded-xl border-l-4 border-neoWheat shadow-lg flex flex-col h-auto flex-1">
-        <h4 class="text-xs uppercase tracking-widest text-neoWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
+      <div v-if="chefState.recipeText" class="bg-slate-900/80 p-3 max-w-full break-words rounded-xl border-l-4 border-keWheat shadow-lg flex flex-col h-auto flex-1">
+        <h4 class="text-xs uppercase tracking-widest text-keWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
         
         <!-- Multi-Option Structured Rendering -->
         <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col h-auto">
@@ -30,7 +30,7 @@
               :key="'card'+idx"
               @click="selectedRecipeIndex = idx"
               :class="['text-left px-3 py-2 rounded-lg border transition-all cursor-pointer select-none overflow-hidden flex flex-col', 
-                       selectedRecipeIndex === idx ? 'bg-slate-800/80 border-neoWheat shadow-[0_0_15px_rgba(253,224,71,0.15)]' : 'bg-transparent border-slate-700 hover:bg-slate-800/50']"
+                       selectedRecipeIndex === idx ? 'bg-slate-800/80 border-keWheat shadow-[0_0_15px_rgba(253,224,71,0.15)]' : 'bg-transparent border-slate-700 hover:bg-slate-800/50']"
             >
               <div class="flex w-full items-start justify-between min-w-0 gap-2 mb-1">
                 <div class="flex gap-1.5 text-[10px] uppercase tracking-wider opacity-80 font-bold text-slate-400 min-w-0 overflow-hidden items-center">
@@ -43,7 +43,7 @@
                   {{ idx === 0 ? '⚡' : (idx === 1 ? '🥘' : '🎨') }}
                 </span>
               </div>
-              <div class="font-bold text-sm w-full leading-tight line-clamp-2 hyphens-auto break-words" :class="selectedRecipeIndex === idx ? 'text-neoWheat' : 'text-slate-400'">{{ recipe.name || 'Recipe Option' }}</div>
+              <div class="font-bold text-sm w-full leading-tight line-clamp-2 hyphens-auto break-words" :class="selectedRecipeIndex === idx ? 'text-keWheat' : 'text-slate-400'">{{ recipe.name || 'Recipe Option' }}</div>
             </button>
           </div>
 
@@ -70,7 +70,7 @@
                      </div>
                      <!-- Text -->
                      <div class="flex flex-col min-w-0">
-                       <span class="text-[10px] font-bold text-neoBlue/80 truncate uppercase tracking-widest">{{ ingObj.qtyAndUnit }}</span>
+                       <span class="text-[10px] font-bold text-keBlue/80 truncate uppercase tracking-widest">{{ ingObj.qtyAndUnit }}</span>
                        <span class="text-sm font-medium truncate capitalize" :class="ingObj.inStock ? 'text-emerald-300' : 'text-slate-300'">{{ ingObj.name }}</span>
                      </div>
                      <!-- Warning Plus -->
@@ -117,13 +117,13 @@
           </Transition>
 
           <div class="flex flex-wrap gap-2">
-            <button @click="simulateAction('Recipe Saved')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-neoWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
+            <button @click="simulateAction('Recipe Saved')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-keWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
               💾 Save Recipe
             </button>
-            <button @click="simulateAction('Added to Cart')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-neoWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
+            <button @click="simulateAction('Added to Cart')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-keWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
               🛒 Add to Cart
             </button>
-            <button @click="simulateAction('Oven Preheating...')" class="flex-1 min-w-[120px] bg-neoWheat/10 hover:bg-neoTerracotta/20 active:bg-neoTerracotta/30 border border-neoWheat/30 hover:border-neoTerracotta/50 text-neoWheat hover:text-neoTerracotta font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
+            <button @click="simulateAction('Oven Preheating...')" class="flex-1 min-w-[120px] bg-keWheat/10 hover:bg-keTerracotta/20 active:bg-keTerracotta/30 border border-keWheat/30 hover:border-keTerracotta/50 text-keWheat hover:text-keTerracotta font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
               🔥 Send to Smart Oven
             </button>
           </div>
@@ -252,7 +252,7 @@ const formatMarkdown = (text) => {
 }
 </script>
 
-<style>
+<style scoped>
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

@@ -59,6 +59,20 @@ class ArtifactRequest(BaseModel):
     artifact_type: ArtifactType
     context_parameters: str = ""
 
+class WasteAlertSchema(BaseModel):
+    severity: str
+    expiring_items: list
+    total_value_at_risk: str
+    recommended_action: str
+
+class RecipeSchema(BaseModel):
+    name: str
+    time: str
+    difficulty: str
+    ingredients: list
+    instructions: list
+    notes: Optional[str] = None
+
 class CookRequest(BaseModel):
     ingredients: List[str]  # e.g. ["2 eggs", "100g butter", "1 cup flour"]
 
@@ -226,24 +240,44 @@ async def generate_artifact(request: ArtifactRequest, session: AsyncSession = De
     Artifact Type: {artifact_type_key}
     User Context/Parameters: {request.context_parameters}
     Current Fridge Inventory: {fridge_summary}
+    
+    IMPORTANT: 
+    - Output ONLY raw JSON. 
+    - Do not wrap in markdown blocks. 
+    - Ensure all quotes are escaped properly.
+    - Double check the structure matches the required schema.
     """
 
     try:
         response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash', # Upgrading to 2.0 for better artifact stability
             contents=user_prompt,
             config=types.GenerateContentConfig(
                 system_instruction=schema_instruction,
                 response_mime_type="application/json",
-                temperature=0.65
+                temperature=0.7
             )
         )
 
-        raw_text = response.text.replace("```json", "").replace("```", "").strip() if response.text else "{}"
+        raw_text = response.text.strip() if response.text else "{}"
+        # Robust cleanup of potential garbage
+        if "```json" in raw_text:
+            raw_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            raw_text = raw_text.split("```")[1].split("```")[0].strip()
+
         try:
             artifact_data = json.loads(raw_text)
-        except json.JSONDecodeError as e:
-            artifact_data = {"error": f"Parse fail: {e}", "raw": raw_text[:500]}
+            # Pydantic validation
+            if artifact_type_key == "WASTE_ALERT":
+                WasteAlertSchema(**artifact_data)
+            elif artifact_type_key == "RECIPE":
+                RecipeSchema(**artifact_data)
+        except Exception as e:
+            # Fallback/Repair attempt if json.loads fails due to simple issues
+            import logging
+            logging.error(f"JSON Parse fail: {e}. Raw text snippet: {raw_text[:100]}")
+            artifact_data = {"error": f"Parse/Validation fail: {e}", "raw": raw_text[:1000]}
 
         return {
             "status": "success",
@@ -284,7 +318,7 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
 
     IGNORED_SPICES = {"salt", "black pepper", "pepper", "water", "сіль", "перець", "вода", "цукор", "sugar"}
 
-    items_q = await session.execute(select(InventoryItemModel))
+    items_q = await session.execute(select(InventoryItemModel).where(InventoryItemModel.quantity > 0))
     all_inv = items_q.scalars().all()
 
     inv_name_map = {item.name.lower(): item for item in all_inv}

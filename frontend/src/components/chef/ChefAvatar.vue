@@ -17,24 +17,24 @@ const props = defineProps({
   }
 })
 
-// Dynamic Neo-Ukrainian / Danger styles based on emotion prop
+// Dynamic Ke-Ukrainian / Danger styles based on emotion prop
 const avatarStyles = computed(() => {
   const e = (props.mood || '').toUpperCase()
   if (['ANGRY', 'CHAOTIC', 'FURIOUS'].includes(e)) {
     return 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] bg-red-900/20'
   }
   if (['PLAYFUL', 'CREATIVE'].includes(e)) {
-    return 'border-neoYellow shadow-[0_0_10px_rgba(250,204,21,0.3)] bg-yellow-900/20'
+    return 'border-keYellow shadow-[0_0_10px_rgba(250,204,21,0.3)] bg-yellow-900/20'
   }
   // Default/Serious/Idle
-  return 'border-neoBlue shadow-[0_0_10px_rgba(59,130,246,0.3)]'
+  return 'border-keBlue shadow-[0_0_10px_rgba(59,130,246,0.3)]'
 })
 
 const iconStyles = computed(() => {
   const e = (props.mood || '').toUpperCase()
   if (['ANGRY', 'CHAOTIC', 'FURIOUS'].includes(e)) return 'text-red-400'
-  if (['PLAYFUL', 'CREATIVE'].includes(e)) return 'text-neoYellow'
-  return 'text-neoBlue'
+  if (['PLAYFUL', 'CREATIVE'].includes(e)) return 'text-keYellow'
+  return 'text-keBlue'
 })
 </script>
 

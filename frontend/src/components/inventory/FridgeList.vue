@@ -21,11 +21,11 @@
         v-for="item in inventory" 
         :key="item.name"
         @click="selectItem(item)"
-        class="group px-3 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-neoGray hover:border-neoBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
+        class="group px-3 py-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-keGray hover:border-keBlue shadow-sm cursor-pointer transition-all flex flex-col justify-between h-full hover:-translate-y-0.5"
       >
         <div class="flex justify-between items-start mb-1">
           <div class="flex items-center gap-2">
-            <span class="block font-bold text-slate-100 group-hover:text-neoBlue transition-colors text-base capitalize">{{ item.name }}</span>
+            <span class="block font-bold text-slate-100 group-hover:text-keBlue transition-colors text-base capitalize">{{ item.name }}</span>
           </div>
           <!-- Status Badges -->
           <span 
@@ -37,7 +37,7 @@
           </span>
           <span 
             v-else-if="item.days_left <= 2" 
-            class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-yellow-900/60 text-neoYellow border border-yellow-700/50 shadow-[0_0_8px_rgba(250,204,21,0.2)]"
+            class="px-2.5 py-1 text-[10px] uppercase font-bold rounded-md bg-yellow-900/60 text-keYellow border border-yellow-700/50 shadow-[0_0_8px_rgba(250,204,21,0.2)]"
           >
             <span class="inline @[300px]:hidden">⚠️</span>
             <span class="hidden @[300px]:inline">⚠️ Expiring</span>
@@ -52,7 +52,7 @@
         </div>
         
         <div class="flex justify-between items-end border-t border-slate-700/50 pt-1 mt-1">
-          <span class="text-xs font-mono text-neoBlue bg-neoBlue/10 px-2 py-0.5 rounded">{{ item.amount }} {{ item.unit }}</span>
+          <span class="text-xs font-mono text-keBlue bg-keBlue/10 px-2 py-0.5 rounded">{{ item.amount }} {{ item.unit }}</span>
           <div class="text-right">
              <span class="block text-[10px] text-slate-500 uppercase tracking-widest font-semibold">{{ item.category }}</span>
              <span class="text-xs font-medium text-slate-400">{{ item.days_left < 0 ? 'Expired' : item.days_left + ' days left' }}</span>

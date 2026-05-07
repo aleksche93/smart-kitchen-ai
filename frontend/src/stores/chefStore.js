@@ -29,7 +29,7 @@ export const useChefStore = defineStore('chef', {
         if (this.emotionDisplay === 'IDLE') {
           const idleThoughts = [
             'Polishing the virtual knives...',
-            'Humming a neo-Ukrainian tune...',
+            'Humming a ke-Ukrainian tune...',
             'Judging your fridge inventory...',
             'Waiting for a culinary challenge...',
             'Staring at a digital potato...'

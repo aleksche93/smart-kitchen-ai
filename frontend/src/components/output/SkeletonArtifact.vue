@@ -33,7 +33,7 @@
 
     <!-- Pulsing indicator -->
     <div class="flex items-center justify-center gap-2 py-3 border-t border-slate-700/30">
-      <span class="w-1.5 h-1.5 rounded-full bg-neoBlue animate-ping"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-keBlue animate-ping"></span>
       <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Chef is generating...</span>
     </div>
   </div>

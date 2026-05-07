@@ -96,12 +96,23 @@ export const useLayoutStore = defineStore('layout', () => {
   const focusWidget = (widgetId) => bringToFront(widgetId)
   
   const bringToFront = (widgetId) => {
-    const maxZ = Math.max(0, ...widgets.value.map(w => w.z_index || 0))
+    const maxZ = Math.max(10, ...widgets.value.map(w => w.z_index || 0))
     const widget = widgets.value.find(w => w.widget_id === widgetId)
-    if (widget && widget.z_index < maxZ) {
+    if (widget) {
       widget.z_index = maxZ + 1
-      saveLayout()
+      // Periodically normalize to prevent integer explosion
+      if (maxZ > 1000) {
+        normalizeZIndices()
+      } else {
+        saveLayout()
+      }
     }
+  }
+
+  const normalizeZIndices = () => {
+     const sorted = [...widgets.value].sort((a,b) => (a.z_index || 0) - (b.z_index || 0))
+     sorted.forEach((w, i) => w.z_index = 10 + i)
+     saveLayout()
   }
 
   // Phase 12.1 Step C: Dynamic Resize & Focus Mode
@@ -127,6 +138,10 @@ export const useLayoutStore = defineStore('layout', () => {
     activeArtifacts.value = activeArtifacts.value.filter(a => a.id !== id)
   }
 
+  const clearAllArtifacts = () => {
+    activeArtifacts.value = []
+  }
+
   const toggleAdviceMaximized = () => {
     isAdviceMaximized.value = !isAdviceMaximized.value
   }
@@ -143,6 +158,6 @@ export const useLayoutStore = defineStore('layout', () => {
     widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
     isAdviceMaximized, focusedArtifact, activeArtifacts,
     toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront,
-    addArtifact, removeArtifact
+    addArtifact, removeArtifact, clearAllArtifacts
   }
 })

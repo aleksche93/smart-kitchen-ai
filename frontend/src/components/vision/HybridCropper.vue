@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="bg-slate-800 p-4 border-b border-slate-700 flex justify-between items-center z-10">
         <h3 class="text-slate-100 font-bold flex items-center">
-          <span class="mr-2 text-neoYellow">🎯</span> Vision Preprocessing
+          <span class="mr-2 text-keYellow">🎯</span> Vision Preprocessing
         </h3>
         <button @click="$emit('cancel')" class="text-slate-400 hover:text-white transition-colors">
           <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -40,14 +40,14 @@
         </button>
         <button 
            @click="autoAccept" 
-           class="flex-1 py-2.5 bg-neoBlue/20 hover:bg-neoBlue/40 text-neoBlue font-medium rounded-lg transition-colors border border-neoBlue/30"
+           class="flex-1 py-2.5 bg-keBlue/20 hover:bg-keBlue/40 text-keBlue font-medium rounded-lg transition-colors border border-keBlue/30"
            title="90% Center Crop"
         >
           Auto 90%
         </button>
         <button 
            @click="exportCrop" 
-           class="flex-1 py-2.5 bg-neoYellow hover:bg-yellow-500 text-slate-900 font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]"
+           class="flex-1 py-2.5 bg-keYellow hover:bg-yellow-500 text-slate-900 font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(234,179,8,0.3)]"
         >
           Scan
         </button>
