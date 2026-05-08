@@ -1,6 +1,8 @@
 import json
 import re
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,11 +10,12 @@ from sqlalchemy import select, delete, update
 from datetime import datetime
 import aiofiles
 
-from db.database import get_db
+from db.database import get_db, async_session
 from db.models import InventoryItemModel, ChefStateModel, ChefMemoryModel, ChefSessionModel
 from core.fsm import ChefFSM, ChefTrigger
 from core.persona import ChefPersona
 from core.services.artifact_service import ARTIFACT_SCHEMAS
+from core.agents.orchestrator import ChefOrchestrator
 
 from google import genai
 from google.genai import types
@@ -75,6 +78,44 @@ class RecipeSchema(BaseModel):
 
 class CookRequest(BaseModel):
     ingredients: List[str]  # e.g. ["2 eggs", "100g butter", "1 cup flour"]
+
+class ProcessRequest(BaseModel):
+    message: str
+
+@router.post("/v1/chef/process")
+async def process_orchestrator(request: ProcessRequest):
+    """
+    New Orchestrator API supporting Incremental SSE (3-Tier Protocol).
+    """
+    async def event_generator():
+        try:
+            async with async_session() as session:
+                fridge_query = await session.execute(
+                    select(InventoryItemModel)
+                    .where(InventoryItemModel.storage_location == 'Fridge')
+                    .where(InventoryItemModel.quantity > 0)
+                )
+                all_items = fridge_query.scalars().all()
+                inventory_data = [{"name": i.name, "amount": i.quantity, "unit": i.unit, "days_left": (datetime.fromisoformat(i.expiry_date) - datetime.now()).days if i.expiry_date else None} for i in all_items]
+                
+                context = {
+                    "user_input": request.message,
+                    "inventory": inventory_data
+                }
+                
+                orchestrator = ChefOrchestrator()
+                async for chunk in orchestrator.process(context):
+                    yield chunk
+        except asyncio.CancelledError:
+            import logging
+            logging.info("SSE Stream disconnected by client (CancelledError). AsyncSession safely rolled back/closed.")
+            raise
+        except Exception as e:
+            import logging
+            logging.error(f"Orchestrator unhandled error: {e}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Fatal error occurred.'}})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.post("/v1/chef/advice")
 async def generate_batch_recipe(request: RecipeRequest, session: AsyncSession = Depends(get_db)):
