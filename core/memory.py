@@ -9,11 +9,13 @@ try:
     ef = embedding_functions.SentenceTransformerEmbeddingFunction(model_name="paraphrase-multilingual-MiniLM-L12-v2")
     user_traits_col = chroma_client.get_or_create_collection(name="user_traits", embedding_function=ef)
     culinary_sins_col = chroma_client.get_or_create_collection(name="culinary_sins", embedding_function=ef)
+    flavor_bible_col = chroma_client.get_or_create_collection(name="flavor_bible", embedding_function=ef)
 except Exception as e:
     print(f"ChromaDB initialization failed: {e}")
     chroma_client = None
     user_traits_col = None
     culinary_sins_col = None
+    flavor_bible_col = None
 
 def get_chroma_client():
     return chroma_client

@@ -2,12 +2,35 @@
   <div ref="containerRef" class="space-y-4 relative">
     <!-- Recipe Title & Meta -->
     <div class="flex items-center justify-between">
-      <h4 class="text-lg font-bold text-keYellow">{{ recipe.name || 'Untitled Recipe' }}</h4>
+      <div class="flex flex-col">
+        <h4 class="text-lg font-bold text-keYellow">{{ recipe.name || 'Untitled Recipe' }}</h4>
+        <div v-if="recipe.harmony_score" class="flex items-center gap-1.5 mt-0.5">
+          <div class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter shadow-sm"
+               :class="harmonyClass">
+            Harmony: {{ recipe.harmony_score }}
+          </div>
+          <span v-if="recipe.pairing_tips?.length" class="text-[9px] text-slate-500 italic">
+            Try adding: {{ recipe.pairing_tips.join(', ') }}
+          </span>
+        </div>
+      </div>
       <div class="flex gap-2 text-[10px] uppercase tracking-wider text-slate-400">
         <span v-if="recipe.time || recipe.estimated_duration">⏱ {{ recipe.time || recipe.estimated_duration }}</span>
         <span v-if="recipe.difficulty || recipe.recipe_complexity">📊 {{ recipe.difficulty || recipe.recipe_complexity }}</span>
       </div>
     </div>
+
+    <!-- Sin-Sieve Audit Warning -->
+    <Transition name="audit">
+      <div v-if="recipe.audit?.has_issues" class="bg-amber-900/20 border border-amber-600/30 rounded-xl p-3 space-y-2">
+        <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-widest">
+          <span>⚠️ Sin-Sieve Audit ({{ recipe.audit.severity }})</span>
+        </div>
+        <ul class="text-xs text-amber-200/70 space-y-1 list-disc list-inside">
+          <li v-for="(warn, i) in recipe.audit.warnings" :key="i">{{ warn }}</li>
+        </ul>
+      </div>
+    </Transition>
 
     <!-- Ingredients -->
     <div v-if="ingredients.length" class="space-y-2">
@@ -91,6 +114,13 @@ const instructions = computed(() => {
 const cookLoading = ref(false)
 const cookDone = ref(false)
 const cookResult = ref(null)
+
+const harmonyClass = computed(() => {
+  const score = recipe.value.harmony_score || 0
+  if (score >= 3.5) return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+  if (score >= 2.5) return 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+  return 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+})
 
 // Fleeing Button State
 const isFleeing = ref(false)
@@ -214,5 +244,12 @@ defineExpose({ onCookResult })
 }
 .animate-shake {
   animation: shake 0.3s ease-in-out;
+}
+.audit-enter-active, .audit-leave-active {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.audit-enter-from, .audit-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
 }
 </style>

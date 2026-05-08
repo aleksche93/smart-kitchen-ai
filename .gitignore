@@ -21,6 +21,7 @@ memory/
 knowledge/
 graphify-out/
 .graphifyignore
+scripts/
 
 # Agents
 .agents/

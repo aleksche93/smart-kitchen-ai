@@ -37,8 +37,14 @@
     }
   },
   "chef": {
+    "generating": "Шеф готує...",
     "troll": {
       "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
+    }
+  },
+  "ui": {
+    "actions": {
+      "cancel_generation": "Зупинити генерацію"
     }
   }
 }

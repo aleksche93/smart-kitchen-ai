@@ -3,6 +3,32 @@
 
     <!-- Phase 12.1-B: Polymorphic Artifact Panel (Magic Bridge Output) -->
     <TransitionGroup name="artifact-reveal" tag="div" class="relative">
+      <!-- Phase 13: Streaming View -->
+      <div v-if="isProcessing" key="streaming-view" class="mb-4 p-4 bg-slate-800/80 border border-keBlue/40 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.1)] relative group overflow-hidden">
+         <div class="absolute inset-0 bg-gradient-to-r from-keBlue/5 to-transparent pointer-events-none"></div>
+         
+         <div class="flex justify-between items-center mb-4 relative z-10">
+            <div class="flex items-center gap-3">
+               <div class="relative w-2.5 h-2.5">
+                  <span class="absolute inset-0 bg-keBlue rounded-full animate-ping opacity-75"></span>
+                  <span class="relative block w-2.5 h-2.5 bg-keBlue rounded-full shadow-[0_0_8px_rgba(37,99,235,0.6)]"></span>
+               </div>
+               <h3 class="text-[10px] uppercase tracking-[0.2em] font-black text-keBlue">{{ $t('chef.generating') }}</h3>
+            </div>
+            <button @click="abortGeneration" class="px-3 py-1 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 text-red-400 text-[10px] uppercase font-bold tracking-wider rounded-full transition-all flex items-center gap-1.5 active:scale-95 shadow-lg">
+               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+               {{ $t('ui.actions.cancel_generation') }}
+            </button>
+         </div>
+
+         <div class="prose prose-invert prose-sm max-w-none text-slate-300 markdown-body custom-scrollbar max-h-[500px] overflow-y-auto pr-3 leading-relaxed" v-html="formatMarkdown(streamingContent)"></div>
+         
+         <!-- Progress gradient bottom -->
+         <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-700/50">
+            <div class="h-full bg-keBlue animate-[loading_2s_infinite_linear] origin-left" style="width: 30%"></div>
+         </div>
+      </div>
+
       <div v-for="(artifact, index) in layoutStore.activeArtifacts" :key="artifact.id" class="mb-4 relative">
         <ArtifactCard
           :artifact="artifact"
@@ -147,11 +173,10 @@ import ArtifactCard from './ArtifactCard.vue'
 import { chefState } from '../../composables/useChefFSM'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useLayoutStore } from '../../stores/layoutStore'
+import { useChefStream } from '../../composables/useChefStream'
 
 const layoutStore = useLayoutStore()
-
-
-
+const { isProcessing, streamingContent, abortGeneration } = useChefStream()
 const { inventory } = useKitchenAPI()
 
 const hasIngredient = (ingStr) => {

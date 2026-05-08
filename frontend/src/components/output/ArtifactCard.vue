@@ -18,9 +18,9 @@
          :class="glowClass"></div>
 
     <!-- Card Body -->
-    <div class="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300"
+    <div class="relative bg-slate-900/40 backdrop-blur-md rounded-2xl border transition-all duration-300"
          @click.stop
-         :class="isFocused ? `border-slate-500/60 shadow-2xl` : 'border-slate-700/50 shadow-lg'">
+         :class="isFocused ? `border-slate-500/60 shadow-2xl` : 'border-slate-700/30 shadow-sm'">
 
       <!-- Header -->
       <div class="flex items-center justify-between px-3 py-2 border-b border-slate-700/40">
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Dynamic Polymorphic Content -->
-      <div class="p-3 max-h-[420px] overflow-y-auto custom-scrollbar max-w-full break-words">
+      <div class="p-4 max-w-full break-words">
         <!-- Typed artifact component -->
         <component
           v-if="artifactComponent && artifact.data && !isDataMalformed"
@@ -72,6 +72,7 @@ import { computed, ref, shallowRef, provide } from 'vue'
 import RecipeArtifact from './artifacts/RecipeArtifact.vue'
 import ShoppingListArtifact from './artifacts/ShoppingListArtifact.vue'
 import WasteAlertArtifact from './artifacts/WasteAlertArtifact.vue'
+import MarkdownArtifact from './artifacts/MarkdownArtifact.vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useLayoutStore } from '../../stores/layoutStore'
 import { useI18n } from '../../plugins/i18n'
@@ -92,7 +93,8 @@ const emit = defineEmits(['focus', 'close'])
 const ARTIFACT_MAP = {
   RECIPE: RecipeArtifact,
   SHOPPING_LIST: ShoppingListArtifact,
-  WASTE_ALERT: WasteAlertArtifact
+  WASTE_ALERT: WasteAlertArtifact,
+  ORCHESTRATED_RESPONSE: MarkdownArtifact
 }
 
 const artifactComponent = computed(() => ARTIFACT_MAP[props.artifact?.artifact_type] || null)
@@ -129,7 +131,8 @@ const typeConfig = computed(() => {
     SHOPPING_LIST: { icon: '🛒', glow: 'shadow-[0_0_30px_rgba(52,211,153,0.25)]',   glowColor: 'rgba(52,211,153,0.4)' },
     WASTE_ALERT:   { icon: '⚠️', glow: 'shadow-[0_0_30px_rgba(248,113,113,0.25)]',  glowColor: 'rgba(248,113,113,0.4)' },
     PREP_SCHEDULE: { icon: '📋', glow: 'shadow-[0_0_30px_rgba(96,165,250,0.25)]',   glowColor: 'rgba(96,165,250,0.4)' },
-    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30_rgba(192,132,252,0.25)]',  glowColor: 'rgba(192,132,252,0.4)' }
+    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30_rgba(192,132,252,0.25)]',  glowColor: 'rgba(192,132,252,0.4)' },
+    ORCHESTRATED_RESPONSE: { icon: '🧠', glow: 'shadow-[0_0_30px_rgba(37,99,235,0.25)]', glowColor: 'rgba(37,99,235,0.4)' }
   }
   return configs[props.artifact?.artifact_type] || configs.RECIPE
 })

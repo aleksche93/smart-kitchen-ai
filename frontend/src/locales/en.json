@@ -21,8 +21,14 @@
     "magic_trigger_message": "I have some ideas. Want to see my magic module? ✨"
   },
   "chef": {
+    "generating": "Chef is cooking...",
     "troll": {
       "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
+    }
+  },
+  "ui": {
+    "actions": {
+      "cancel_generation": "Stop Generation"
     }
   },
   "artifact": {

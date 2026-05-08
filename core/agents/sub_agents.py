@@ -6,6 +6,7 @@ from google.genai import types
 from pydantic import BaseModel, Field
 
 from .base import BaseChefAgent
+from core.services.artifact_service import ARTIFACT_SCHEMAS
 
 try:
     client = genai.Client()
@@ -74,16 +75,16 @@ class FlavorArchitect(BaseChefAgent):
         inventory_summary = context.get("inventory_summary", "No inventory data.")
         
         system_prompt = (
-            "You are the KozakEye Chef Orchestrator. "
-            "You are generating a recipe, cooking instructions, or culinary advice. "
-            "CRITICAL RULE: You MUST generate all content, instructions, and labels STRICTLY in English. "
-            "Do NOT use Ukrainian or any other language in your output. "
-            "Provide a well-structured markdown response."
+            "You are the KozakEye Chef Orchestrator. Your goal is to provide a premium culinary experience. "
+            "First, generate a concise, witty markdown narrative (max 100 words) describing your creation. "
+            "Then, append a separator '---JSON_START---' followed by a valid JSON object matching the requested artifact type. "
+            f"For RECIPE, use this schema: {ARTIFACT_SCHEMAS['RECIPE']} "
+            "CRITICAL: All content MUST be in English. No Ukrainian."
         )
         
-        user_prompt = f"User Request: {user_input}\nFridge Inventory:\n{inventory_summary}\n\nPlease generate the culinary response."
+        user_prompt = f"Request: {user_input}\nFridge: {inventory_summary}\n\nPlease generate the narrative and JSON."
 
-        full_text = ""
+        full_response = ""
         try:
             response_stream = await client.aio.models.generate_content_stream(
                 model='gemini-2.5-flash',
@@ -93,17 +94,92 @@ class FlavorArchitect(BaseChefAgent):
 
             async for chunk in response_stream:
                 if chunk.text:
-                    full_text += chunk.text
-                    yield {"type": "delta", "data": {"text": chunk.text}}
+                    full_response += chunk.text
+                    # Only stream the narrative part to the UI
+                    if '---JSON_START---' in full_response:
+                        narrative = full_response.split('---JSON_START---')[0]
+                        if '---JSON_START---' not in chunk.text:
+                             yield {"type": "delta", "data": {"text": chunk.text}}
+                    else:
+                        yield {"type": "delta", "data": {"text": chunk.text}}
             
-            # Final validation via Pydantic
+            # Final parsing
+            if '---JSON_START---' in full_response:
+                parts = full_response.split('---JSON_START---')
+                narrative = parts[0].strip()
+                json_str = parts[1].strip().replace('```json', '').replace('```', '')
+                try:
+                    structured_data = json.loads(json_str)
+                    if "ingredients" in structured_data or "instructions" in structured_data:
+                        artifact_type = "RECIPE"
+                    elif "categories" in structured_data:
+                        artifact_type = "SHOPPING_LIST"
+                    elif "expiring_items" in structured_data:
+                        artifact_type = "WASTE_ALERT"
+                    else:
+                        artifact_type = "ORCHESTRATED_RESPONSE"
+                except:
+                    structured_data = {"content": narrative}
+                    artifact_type = "ORCHESTRATED_RESPONSE"
+            else:
+                structured_data = {"content": full_response}
+                artifact_type = "ORCHESTRATED_RESPONSE"
+
+            # Store for downstream agents
+            context["generated_content"] = full_response
+            context["artifact_type"] = artifact_type
+            context["ingredients"] = structured_data.get("ingredients", [])
+
             payload = FinalArtifactPayload(
-                artifact_type="ORCHESTRATED_RESPONSE",
-                content=full_text,
-                metadata={"item_count": len(context.get("inventory", []))}
+                artifact_type=artifact_type,
+                content=structured_data.get("content") or full_response.split('---JSON_START---')[0],
+                metadata=structured_data
             )
             
             yield {"type": "final", "data": {"payload": payload.model_dump()}}
 
         except Exception as e:
-            yield {"type": "status", "data": {"text": f"Error generating flavors: {str(e)}"}}
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"CRITICAL ERROR in FlavorArchitect: {error_trace}")
+            yield {"type": "status", "data": {"text": f"Error: {str(e)}"}}
+            yield {"type": "delta", "data": {"text": f"\n\n> **Chef's Diagnostic:** Generation failed. {str(e)}"}}
+class SinSieveAgent(BaseChefAgent):
+    """
+    Reviews the generated artifact for culinary errors, safety issues, or "sins".
+    """
+    async def generate_stream(self, context: dict) -> AsyncGenerator[dict, None]:
+        yield {"type": "status", "data": {"text": "Sin-Sieve is auditing the recipe..."}}
+        await asyncio.sleep(0.3)
+        
+        recipe_text = context.get("generated_content", "")
+        if not recipe_text:
+            return
+
+        system_prompt = (
+            "You are the Sin-Sieve, a strict culinary auditor. "
+            "Review the provided recipe for: "
+            "1. Safety issues (raw meat, dangerous temperatures). "
+            "2. Culinary sins (wrong proportions, clashing flavors). "
+            "3. Logical errors (missing steps). "
+            "Output JSON ONLY: {\"has_issues\": bool, \"warnings\": [string], \"severity\": \"LOW/MEDIUM/HIGH\"}."
+        )
+        
+        try:
+            response = await client.aio.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=system_prompt + "\n\nRecipe to audit:\n" + recipe_text,
+                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.1)
+            )
+            audit_data = json.loads(response.text)
+            context["audit_results"] = audit_data
+            
+            if audit_data.get("has_issues"):
+                msg = f"Audit found {len(audit_data['warnings'])} issues ({audit_data['severity']})."
+                yield {"type": "status", "data": {"text": msg}}
+            else:
+                yield {"type": "status", "data": {"text": "Recipe cleared by Sin-Sieve."}}
+                
+        except Exception as e:
+            print(f"Sin-Sieve failed: {e}")
+            context["audit_results"] = {"has_issues": False, "warnings": []}

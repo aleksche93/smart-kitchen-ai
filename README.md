@@ -11,14 +11,15 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 3. **KozakEye Spatial OS:** A Spatial Desktop Paradigm built on Vue 3, utilizing `useDraggable.js` for free-form 2.5D widget manipulation within a strict 1440px canvas. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Blue, Yellow, Wheat) to provide an immersive HUD experience.
 4. **Dual-Mode Chat & Artifact Hub:** Interaction logic is cleanly divided. General chat runs via the central Command Hub (`InteractionZone`), while polymorphic JSON recipes and alerts are rendered in the 'Chef's Advice' Artifact Hub with full `localStorage` persistence.
 5. **Ghost State Memory:** Prevents database bulk deletions from creating confusing UX. Products orphaned from deleted receipts retain local "Ghost Metadata" mappings in the UI.
-6. **Agentic RAG (Local Inference):** Asynchronously fetches "classic flavor pairings" from a local knowledge base (The Flavor Bible) to rescue expiring ingredients. Driven by **Gemma 4 via Ollama**, ensuring 100% data privacy and offline capability through advanced Python ETL pipelines.
+6. **Agentic Orchestration (Phase 13):** A multi-agent chain coordinates specialized workers (Scanner, Architect, Auditor) via a high-performance SSE stream. Features a **Sin-Sieve Audit** layer for recipe safety and a **Flavor Harmony Score** (1.0-4.0) driven by a local ChromaDB Flavor Bible.
+7. **Agentic RAG (ChromaDB):** Asynchronously fetches "classic flavor pairings" from a local knowledge base to rescue expiring ingredients. Driven by **Gemini 2.5 Flash** and **Sentence Transformers**, ensuring high-precision culinary logic.
 
 ## 👁️ Advanced Vision Pipeline & Security (Phase 9 Integration)
 The ecosystem features a robust, enterprise-grade ingestion engine for digitizing physical grocery receipts:
 - **Hybrid Vision Processing:** A powerful combination of the native HTML5 Canvas API for user-guided interactive cropping (grayscale pixel manipulation, contrast enhancement) and **Gemini 2.5 Flash** for high-accuracy OCR structural extraction.
 - **Security (Agent Trap Mitigation):** Implementation of a zero-trust AI sanitization layer. Text extracted from physical media is treated strictly as raw data, completely neutralizing malicious prompt injection attempts (e.g., "Ignore previous instructions").
-- **Semantic Grounding (UAH Anchor):** Context-aware heuristic logic that identifies Native Store Profiles (e.g., *Сільпо*, *АТБ*) directly from the image, preserving original Cyrillic scripts and automatically forcing the `UAH` currency standard to ensure financial precision.
-- **UX Mastery:** A seamless **Animated Split-View Modal** connects physical artifacts to digital inventory. A **Global Thought Ticker** simulates a live terminal, providing real-time AI transparency during ingestion, complemented by playful contextual animations (e.g., "Chopping veg 🔪") and interactive skill triggers like the *Bag Detection Module*.
+- **Smart Receipt 2.0:** Proactive extraction of item prices, supermarket categories (Meat, Produce, Dairy), and store identification, enabling granular financial tracking.
+- **UX Mastery:** A seamless **Animated Split-View Modal** connects physical artifacts to digital inventory. A **Global Thought Ticker** simulates a live terminal, providing real-time AI transparency during orchestration (e.g., "Auditing with Sin-Sieve 🕵️‍♂️"), complemented by interactive skill triggers like the *Bag Detection Module*.
 
 ## 👨‍🍳 The Agentic Kitchen Brigade
 

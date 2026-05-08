@@ -111,10 +111,12 @@ import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
 import { useI18n } from '../../plugins/i18n'
 import { useChefStore } from '../../stores/chefStore'
+import { useChefStream } from '../../composables/useChefStream'
 
 const { t } = useI18n()
 const chefStore = useChefStore()
-const { isLoading, error, getChefAdvice, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession, generateArtifact } = useKitchenAPI()
+const { startProcess } = useChefStream()
+const { isLoading, error, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
 const { updateState } = useChefFSM()
 
 // Typewriter composable — Variant A (real-time per-chunk typing)
@@ -290,47 +292,30 @@ const executeMagic = async (query = lastQuery.value) => {
   try {
     if (query !== lastQuery.value) lastQuery.value = query
 
-    // Bug 2 Fix: Спрощений flow — прямо до /generate-artifact без проміжного /advice
-    // /advice часто повертає порожній summaries якщо запит нечіткий
-    // Натомість: Chef вже сказав що потрібно — генеруємо RECIPE як default
-    let artifactType = 'RECIPE'
-    let artifactTitle = 'Chef\'s Recipe'
+    const payload = {
+      title: "Chef's Artifact",
+      artifact_type: "RECIPE",
+      context_parameters: String(query || "")
+    }
+    console.debug('[Magic] Sending payload to /process:', payload)
 
-    // Спробуємо фазу 1 (/advice) як best-effort; якщо фейль — fallback на RECIPE
-    try {
-      const data = await getChefAdvice(query)
-      const summaries = data?.chef_response?.technical_data?.artifact_summaries || []
-      if (summaries.length > 0) {
-        artifactType = summaries[0].artifact_type
-        artifactTitle = summaries[0].title || artifactTitle
-        console.debug('[Magic] Phase 1 OK — type:', artifactType, 'title:', artifactTitle)
-      } else {
-        console.warn('[Magic] Phase 1: no summaries, falling back to RECIPE')
+    await startProcess(
+      payload,
+      (statusMsg) => {
+        chefStore.logThought(statusMsg)
+      },
+      (finalData) => {
+        // finalData is { payload: { artifact_type, content, metadata } }
+        const actualPayload = finalData.payload || finalData
+        const artifactData = actualPayload.metadata || actualPayload
+        
+        emit('artifact', {
+          artifact_type: actualPayload.artifact_type || 'ORCHESTRATED_RESPONSE',
+          title: artifactData.name || actualPayload.title || payload.title,
+          data: artifactData
+        })
       }
-    } catch (adviceErr) {
-      console.warn('[Magic] Phase 1 /advice failed, falling back to RECIPE:', adviceErr.message)
-    }
-
-    // Фаза 2: /generate-artifact — typed full artifact (ЗАВЖДИ виконується)
-    console.debug('[Magic] Phase 2: generating', artifactType, 'for query:', query)
-    const fullArtifact = await generateArtifact({
-      title: artifactTitle,
-      artifact_type: artifactType,
-      context_parameters: query
-    })
-
-    console.debug('[Magic] Phase 2 result:', fullArtifact)
-
-    if (!fullArtifact?.artifact || fullArtifact.artifact?.error) {
-      throw new Error('Artifact data is empty or malformed: ' + JSON.stringify(fullArtifact?.artifact))
-    }
-
-    // Emit до App.vue → AdviceDisplay
-    emit('artifact', {
-      artifact_type: fullArtifact.artifact_type || artifactType,
-      title: artifactTitle,
-      data: fullArtifact.artifact
-    })
+    )
 
     localInput.value = ''
   } catch (err) {

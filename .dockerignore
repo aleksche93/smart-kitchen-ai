@@ -40,3 +40,6 @@ gemini/
 # IDEs
 .vscode/
 .idea/
+
+# Scripts
+scripts/
