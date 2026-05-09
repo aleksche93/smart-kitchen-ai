@@ -134,6 +134,36 @@ export const useLayoutStore = defineStore('layout', () => {
     activeArtifacts.value.push(newArtifact)
   }
 
+  /**
+   * upsertArtifact — Smart artifact slot management.
+   * If an artifact of the same artifact_type already exists:
+   *   → Overwrites ONLY data, title, updated_at.
+   *   → STRICTLY PRESERVES x, y, z_index, id (no spatial jumping!).
+   * If no artifact of this type exists:
+   *   → Pushes a new artifact to the list.
+   */
+  const upsertArtifact = (artifact) => {
+    const existingIdx = activeArtifacts.value.findIndex(
+      a => a.artifact_type === artifact.artifact_type
+    )
+    if (existingIdx !== -1) {
+      // IN-PLACE update: only content fields, never spatial
+      const existing = activeArtifacts.value[existingIdx]
+      activeArtifacts.value[existingIdx] = {
+        ...existing,                     // preserve ALL existing fields (x, y, z_index, id, etc.)
+        data: artifact.data,             // update content
+        title: artifact.title,           // update title
+        updated_at: Date.now()           // triggers pulse animation in ArtifactCard
+      }
+    } else {
+      activeArtifacts.value.push({
+        ...artifact,
+        id: Date.now() + Math.random().toString(),
+        updated_at: Date.now()
+      })
+    }
+  }
+
   const removeArtifact = (id) => {
     activeArtifacts.value = activeArtifacts.value.filter(a => a.id !== id)
   }
@@ -158,6 +188,6 @@ export const useLayoutStore = defineStore('layout', () => {
     widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
     isAdviceMaximized, focusedArtifact, activeArtifacts,
     toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront,
-    addArtifact, removeArtifact, clearAllArtifacts
+    addArtifact, upsertArtifact, removeArtifact, clearAllArtifacts
   }
 })

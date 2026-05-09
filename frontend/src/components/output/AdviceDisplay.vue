@@ -7,18 +7,12 @@
       <div v-if="isProcessing" key="streaming-view" class="mb-4 p-4 bg-slate-800/80 border border-keBlue/40 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.1)] relative group overflow-hidden">
          <div class="absolute inset-0 bg-gradient-to-r from-keBlue/5 to-transparent pointer-events-none"></div>
          
-         <div class="flex justify-between items-center mb-4 relative z-10">
-            <div class="flex items-center gap-3">
-               <div class="relative w-2.5 h-2.5">
-                  <span class="absolute inset-0 bg-keBlue rounded-full animate-ping opacity-75"></span>
-                  <span class="relative block w-2.5 h-2.5 bg-keBlue rounded-full shadow-[0_0_8px_rgba(37,99,235,0.6)]"></span>
-               </div>
-               <h3 class="text-[10px] uppercase tracking-[0.2em] font-black text-keBlue">{{ $t('chef.generating') }}</h3>
+         <div class="flex items-center gap-3 mb-4 relative z-10">
+            <div class="relative w-2.5 h-2.5">
+               <span class="absolute inset-0 bg-keBlue rounded-full animate-ping opacity-75"></span>
+               <span class="relative block w-2.5 h-2.5 bg-keBlue rounded-full shadow-[0_0_8px_rgba(37,99,235,0.6)]"></span>
             </div>
-            <button @click="abortGeneration" class="px-3 py-1 bg-red-900/20 hover:bg-red-900/40 border border-red-700/30 text-red-400 text-[10px] uppercase font-bold tracking-wider rounded-full transition-all flex items-center gap-1.5 active:scale-95 shadow-lg">
-               <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-               {{ $t('ui.actions.cancel_generation') }}
-            </button>
+            <h3 class="text-[10px] uppercase tracking-[0.2em] font-black text-keBlue">{{ $t('chef.generating') }}</h3>
          </div>
 
          <div class="prose prose-invert prose-sm max-w-none text-slate-300 markdown-body custom-scrollbar max-h-[500px] overflow-y-auto pr-3 leading-relaxed" v-html="formatMarkdown(streamingContent)"></div>
@@ -130,7 +124,7 @@
         </div>
         
         <!-- Markdown Fallback (Legacy) -->
-        <div v-else class="flex-1 overflow-y-auto pr-2 custom-scrollbar prose prose-invert prose-sm max-w-none text-slate-300 markdown-body mb-2" v-html="formatMarkdown(chefState.recipeText)"></div>
+        <div v-else class="flex-1 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 shadow-inner overflow-y-auto custom-scrollbar prose prose-invert prose-sm max-w-none text-slate-300 markdown-body mb-2 leading-relaxed" v-html="formatMarkdown(chatContentFallback)"></div>
         
         <!-- B2C Action Stubs -->
         <div class="mt-auto border-t border-slate-700/50 pt-4 flex flex-col relative">
@@ -243,9 +237,25 @@ const parsedRecipes = computed(() => {
       return []
     }
   }
+    // Safeguard: Do not parse pure CHAT responses as recipe arrays
+    if (data && data.artifact_type === 'CHAT') return []
+    
   // Safe extraction map for array payload or legacy objects
   if (Array.isArray(data)) return data
   return data.recipe_options || (data.recipe ? [data.recipe] : [data])
+})
+
+const chatContentFallback = computed(() => {
+  if (!chefState.recipeText) return ''
+  if (typeof chefState.recipeText === 'object') {
+    return chefState.recipeText.content || ''
+  }
+  try {
+    const data = JSON.parse(chefState.recipeText)
+    return data.content || chefState.recipeText
+  } catch (e) {
+    return chefState.recipeText
+  }
 })
 
 const activeRecipe = computed(() => {

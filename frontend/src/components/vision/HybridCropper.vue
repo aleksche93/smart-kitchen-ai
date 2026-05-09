@@ -234,7 +234,6 @@ const handlePointerUp = () => {
 const autoAccept = () => {
   resetCropBox()
   draw()
-  exportCrop()
 }
 
 const exportCrop = () => {

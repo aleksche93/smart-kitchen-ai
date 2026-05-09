@@ -180,7 +180,7 @@ const { resetState, fetchChefState } = useChefFSM()
 const isMenuOpen = ref(false)
 
 const onArtifact = (artifactData) => {
-  layoutStore.addArtifact(artifactData)
+  layoutStore.upsertArtifact(artifactData)
 }
 
 const handleReset = () => {

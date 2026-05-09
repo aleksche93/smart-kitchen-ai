@@ -18,7 +18,8 @@
     "duplicate_receipt": "Hey! This receipt has already been scanned. Stop trying to trick me!",
     "chef_error": "Chef error: {msg}",
     "chef_refused": "Chef refused to chat: {msg}",
-    "connection_lost": "Connection lost."
+    "connection_lost": "Connection lost.",
+    "generation_stopped": "Generation stopped."
   },
   "chef": {
     "generating": "Chef is cooking...",
@@ -34,10 +35,17 @@
     },
     "status": {
       "thinking": "Chef is pondering...",
-      "idle": "Ready for orders"
+      "idle": "Ready for orders",
+      "classifying": "Classifying intent..."
     },
     "audit": {
       "warning": "Sin-Sieve Audit"
+    },
+    "proactive": {
+      "expiring_warning": "⚠️ By the way: your {item} expires in {days} days. Should we use it?"
+    },
+    "magic": {
+      "surprise_prompt": "Surprise me, Chef!"
     },
     "troll": {
       "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
@@ -86,7 +94,8 @@
       "SHOPPING_LIST": "Shopping List",
       "PREP_SCHEDULE": "Prep Schedule",
       "TASK_LIST": "Task List",
-      "WASTE_ALERT": "Waste Alert"
+      "WASTE_ALERT": "Waste Alert",
+      "ANALYTICS": "Inventory Report"
     },
     "keys": {
       "ingredients": "Ingredients",
@@ -94,6 +103,14 @@
       "notes": "Notes",
       "time": "Time",
       "difficulty": "Difficulty"
+    },
+    "analytics": {
+      "critical": "Critical — Use Today!",
+      "warning": "Expiring Soon",
+      "fresh": "Fresh Items",
+      "total": "Total Items",
+      "at_risk": "At Risk",
+      "empty": "Your fridge is empty. Time to restock!"
     }
   }
 }

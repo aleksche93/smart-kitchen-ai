@@ -57,10 +57,146 @@ class ChefResponse(BaseModel):
     technical_data: TechnicalData
     emotion_displayed: str
 
-class ArtifactRequest(BaseModel):
-    title: str
-    artifact_type: str
+# ---------------------------------------------------------------------------
+# Analytics Schemas — MUST be defined BEFORE orchestrator wiring
+# Used for ANALYTICS intent inventory reports (avoids 500 on event: final)
+# ---------------------------------------------------------------------------
+
+class AnalyticsItemReport(BaseModel):
+    """A single fridge item in the analytics report."""
+    name: str
+    days_left: Optional[int] = None
+    amount: float = 0.0
+    unit: str = ""
+    priority: str = "FRESH"  # "CRITICAL" | "WARNING" | "FRESH"
+
+class AnalyticsReportSchema(BaseModel):
+    """Structured inventory analytics report for ANALYTICS artifacts."""
+    summary: str = ""
+    critical_items: List[AnalyticsItemReport] = []   # days_left <= 2
+    warning_items: List[AnalyticsItemReport] = []    # days_left 3-5
+    fresh_items: List[AnalyticsItemReport] = []      # days_left > 5 or None
+    total_items: int = 0
+    waste_risk_count: int = 0
+
+class ProcessRequest(BaseModel):
+    """Unified request model for all Orchestrator interactions (chat + recipe)."""
+    title: str = "Chef's Artifact"
+    artifact_type: str = "RECIPE"
     context_parameters: Optional[str] = ""
+    # Last 10 messages for conversational memory: [{role: "user"|"assistant", content: "..."}]
+    chat_history: Optional[List[Dict[str, Any]]] = []
+    # Force a specific intent, bypassing the LLM classifier (used by executeMagic)
+    force_intent: Optional[str] = None
+
+
+@router.post("/v1/chef/process")
+async def process_orchestrator(request: ProcessRequest):
+    """
+    Single Orchestrator endpoint for ALL interactions (chat and artifact generation).
+    Implements 3-Tier SSE Protocol: status → delta (with intent field) → final.
+    The frontend routes delta chunks based on delta.data.intent: CHAT or RECIPE.
+    Persists user + assistant messages to SQLite for session history restoration.
+    """
+    from db.models import ChefSessionModel, ChatMessageModel
+    from sqlalchemy import select as sa_select
+    import logging
+
+    async def event_generator():
+        full_assistant_reply = ""
+        user_input_text = (request.context_parameters or request.title or "").strip()
+        try:
+            async with async_session() as session:
+                fridge_query = await session.execute(
+                    select(InventoryItemModel)
+                    .where(InventoryItemModel.storage_location == 'Fridge')
+                    .where(InventoryItemModel.quantity > 0)
+                )
+                all_items = fridge_query.scalars().all()
+                inventory_data = [
+                    {
+                        "name": i.name,
+                        "amount": i.quantity,
+                        "unit": i.unit,
+                        "days_left": (
+                            (datetime.fromisoformat(i.expiry_date) - datetime.now()).days
+                            if i.expiry_date else None
+                        )
+                    }
+                    for i in all_items
+                ]
+
+                # Sanitize and limit chat_history to last 10 messages
+                raw_history = request.chat_history or []
+                safe_history = [
+                    {"role": str(m.get("role", "user")), "content": str(m.get("content", ""))}
+                    for m in raw_history
+                    if m.get("content", "").strip()
+                ][-10:]
+
+                context = {
+                    "user_input": user_input_text,
+                    "artifact_type": (
+                        request.artifact_type.value
+                        if hasattr(request.artifact_type, "value")
+                        else request.artifact_type
+                    ),
+                    "title": request.title,
+                    "inventory": inventory_data,
+                    "chat_history": safe_history,
+                    "force_intent": request.force_intent,
+                }
+
+                orchestrator = ChefOrchestrator()
+                async for chunk in orchestrator.process(context):
+                    # Intercept delta chunks to accumulate CHAT reply for DB persistence
+                    try:
+                        event_obj = json.loads(chunk.replace("data: ", "").strip())
+                        if event_obj.get("type") == "delta" and event_obj["data"].get("intent") == "CHAT":
+                            full_assistant_reply += event_obj["data"].get("text", "")
+                    except Exception:
+                        pass
+                    yield chunk
+
+                # --- DB Persistence: save user + assistant messages to SQLite ---
+                if user_input_text and not request.force_intent:
+                    try:
+                        sess_q = await session.execute(
+                            sa_select(ChefSessionModel)
+                            .where(ChefSessionModel.user_id == DEFAULT_USER_ID)
+                            .order_by(ChefSessionModel.created_at.desc())
+                        )
+                        active_session = sess_q.scalars().first()
+                        if active_session:
+                            clean_reply = (
+                                full_assistant_reply
+                                .replace("[ACTION: MAGIC_TRIGGER]", "")
+                                .replace("[ACTION: AUDIT_WARNING]", "")
+                                .strip()
+                            )
+                            session.add(ChatMessageModel(
+                                session_id=active_session.id,
+                                role="user",
+                                content=user_input_text
+                            ))
+                            if clean_reply:
+                                session.add(ChatMessageModel(
+                                    session_id=active_session.id,
+                                    role="assistant",
+                                    content=clean_reply
+                                ))
+                            await session.commit()
+                    except Exception as db_err:
+                        logging.warning(f"[/process] DB persist failed (non-fatal): {db_err}")
+
+        except asyncio.CancelledError:
+            logging.info("[/process] SSE stream disconnected by client.")
+            raise
+        except Exception as e:
+            logging.error(f"[/process] Unhandled error: {e}", exc_info=True)
+            yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Fatal error occurred.'}})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 class WasteAlertSchema(BaseModel):
     severity: str
@@ -78,43 +214,6 @@ class RecipeSchema(BaseModel):
 
 class CookRequest(BaseModel):
     ingredients: List[str]  # e.g. ["2 eggs", "100g butter", "1 cup flour"]
-
-@router.post("/v1/chef/process")
-async def process_orchestrator(request: ArtifactRequest):
-    """
-    New Orchestrator API supporting Incremental SSE (3-Tier Protocol).
-    """
-    async def event_generator():
-        try:
-            async with async_session() as session:
-                fridge_query = await session.execute(
-                    select(InventoryItemModel)
-                    .where(InventoryItemModel.storage_location == 'Fridge')
-                    .where(InventoryItemModel.quantity > 0)
-                )
-                all_items = fridge_query.scalars().all()
-                inventory_data = [{"name": i.name, "amount": i.quantity, "unit": i.unit, "days_left": (datetime.fromisoformat(i.expiry_date) - datetime.now()).days if i.expiry_date else None} for i in all_items]
-                
-                context = {
-                    "user_input": request.context_parameters or request.title,
-                    "artifact_type": request.artifact_type.value if hasattr(request.artifact_type, "value") else request.artifact_type,
-                    "title": request.title,
-                    "inventory": inventory_data
-                }
-                
-                orchestrator = ChefOrchestrator()
-                async for chunk in orchestrator.process(context):
-                    yield chunk
-        except asyncio.CancelledError:
-            import logging
-            logging.info("SSE Stream disconnected by client (CancelledError). AsyncSession safely rolled back/closed.")
-            raise
-        except Exception as e:
-            import logging
-            logging.error(f"Orchestrator unhandled error: {e}", exc_info=True)
-            yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Fatal error occurred.'}})}\n\n"
-
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 class InventoryItem(BaseModel):
     name: str

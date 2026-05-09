@@ -243,7 +243,16 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Stop Control:** Integrated `AbortController` UI for instant stream termination.
 - [x] **Language Switcher:** Integrated EN/UA toggle into the Chef Identity menu.
 
-- [ ] **Persistent Persona State:** Saving the Chef's emotional state and context between page reloads (Redis/LocalStorage).
+### Phase 13.2: Conversational Memory, Typing Effect & Proactive Culinary Logic [100% COMPLETED] ✅
+- [x] **Unified Endpoint:** ALL chat + magic requests route through `/api/v1/chef/process`. Old `/chef/chat` deprecated.
+- [x] **Stream Routing:** Orchestrator broadcasts `intent` in first `status` event. Delta chunks route: `CHAT` → chat bubble, `RECIPE` → AdviceDisplay.
+- [x] **Conversational Memory:** `chat_history` (last 10 msgs) sent in payload. `ConversationalAgent` + `FlavorArchitect` use Gemini multi-turn `contents` format.
+- [x] **Proactive Inventory Logic:** `InventoryScanner` tags `expiring_soon_items`. `FlavorArchitect` appends proactive warnings; Magic Button generates "Chef's Special" from expiring items.
+- [x] **SinSieve CHAT Skip:** Output audit bypassed for CHAT responses.
+- [x] **Pydantic Safety:** `FinalArtifactPayload.content` defaults to `""` — no CHAT final event crash.
+- [x] **AbortController:** Stop button preserved for all stream types.
+- [x] **i18n:** New keys: `chef.status.classifying`, `chef.proactive.expiring_warning`, `chef.magic.surprise_prompt`, `errors.generation_stopped`.
+
 - [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
 - [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
 - [ ] **Skill: Bag Management:** Module for tracking consumable materials ("bag of bags").
@@ -253,6 +262,18 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [ ] **Chrono-Mise-en-place:** Visual timeline planner for parallel cooking processes.
 - [ ] **Voice Interaction:** Web Speech API (STT/TTS) — voice control of recipe steps.
 - [ ] **IoT Controller Stubs:** Creation of API endpoints for future integration with Home Assistant (ovens, refrigerators).
+
+### Phase 13.3: Cognitive Intelligence & Artifact Resilience [100% COMPLETED] ✅
+- [x] **ANALYTICS Intent:** New `AnalyticsAgent` generates structured `InventoryReportArtifact` (Critical/Warning/Fresh tiers). `IntentClassifier` biased: inventory queries → ANALYTICS, named dishes → RECIPE, vague requests → CHAT.
+- [x] **Pydantic Safety:** `AnalyticsItemReport` + `AnalyticsReportSchema` defined before routing — eliminates 500 errors on `event: final`.
+- [x] **`AnalyticsArtifact.vue`:** New modular component: stats grid (Total/At Risk/Fresh), CRITICAL/WARNING/FRESH tiers, collapsible Fresh section, i18n labels.
+- [x] **`ArtifactCard.vue` — ANALYTICS support:** Added to `ARTIFACT_MAP`, type config (📊 cyan glow), pulse animation on `updated_at` change (upsert feedback).
+- [x] **`upsertArtifact()` in `layoutStore.js`:** Coordinate-preserving slot management — `data/title/updated_at` updated in-place, `x/y/z_index/id` NEVER touched. Prevents spatial "jumping".
+- [x] **Thought Trace UI:** `orchestrator.py` `_tag_thought()` filters content-aware thoughts vs technical routing logs. `InteractionZone` renders ⚙️ thought trace per bubble, fades out on first delta.
+- [x] **SSE Parser Fix (CRITICAL):** Root cause — `\\n\\n` escaped newline in `orchestrator.py` sent literal `\n\n` as JSON text instead of SSE delimiter. Fixed via `_sse()` helper. `useChefStream.js` rewritten with proper accumulator buffer (`indexOf('\n\n')` loop). Malformed events skipped with `console.warn`, stream never crashes.
+- [x] **Morphing Send/Stop Button:** Single `w-12 h-12` icon-only button — paper-plane SVG (idle/blue) ↔ stop-square SVG (streaming/red). No layout shifts. Replaces two separate buttons.
+- [x] **AdviceDisplay cleanup:** Removed redundant "Stop Generation" button. Single stop control in `InteractionZone`.
+- [x] **i18n:** `artifact.analytics.*` keys added to `en.json` + `uk.json` (critical, warning, fresh, total, at_risk, empty).
 
 ---
 

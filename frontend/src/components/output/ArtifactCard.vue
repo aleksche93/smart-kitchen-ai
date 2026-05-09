@@ -1,7 +1,7 @@
 <template>
   <div
     class="artifact-card group relative transition-all duration-500 ease-out"
-    :class="[isFocused ? 'scale-105 z-50' : 'hover:scale-[1.02]', typeColorClass]"
+    :class="[isFocused ? 'scale-105 z-50' : 'hover:scale-[1.02]', typeColorClass, isPulsing ? 'artifact-pulse' : '']"
     :style="spatialStyle"
     @click="$emit('focus')"
   >
@@ -68,11 +68,12 @@
 </template>
 
 <script setup>
-import { computed, ref, shallowRef, provide } from 'vue'
+import { computed, ref, shallowRef, provide, watch } from 'vue'
 import RecipeArtifact from './artifacts/RecipeArtifact.vue'
 import ShoppingListArtifact from './artifacts/ShoppingListArtifact.vue'
 import WasteAlertArtifact from './artifacts/WasteAlertArtifact.vue'
 import MarkdownArtifact from './artifacts/MarkdownArtifact.vue'
+import AnalyticsArtifact from './artifacts/AnalyticsArtifact.vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useLayoutStore } from '../../stores/layoutStore'
 import { useI18n } from '../../plugins/i18n'
@@ -94,6 +95,7 @@ const ARTIFACT_MAP = {
   RECIPE: RecipeArtifact,
   SHOPPING_LIST: ShoppingListArtifact,
   WASTE_ALERT: WasteAlertArtifact,
+  ANALYTICS: AnalyticsArtifact,
   ORCHESTRATED_RESPONSE: MarkdownArtifact
 }
 
@@ -101,6 +103,18 @@ const artifactComponent = computed(() => ARTIFACT_MAP[props.artifact?.artifact_t
 
 // Ref до дочірнього компонента (для виклику onCookResult)
 const artifactComponentRef = shallowRef(null)
+
+// --- Pulse animation on upsert (updated_at change) ---
+const isPulsing = ref(false)
+watch(
+  () => props.artifact?.updated_at,
+  (newVal, oldVal) => {
+    if (newVal && newVal !== oldVal) {
+      isPulsing.value = true
+      setTimeout(() => { isPulsing.value = false }, 1200)
+    }
+  }
+)
 
 // --- Localization Helpers ---
 const localizedType = computed(() => {
@@ -131,7 +145,8 @@ const typeConfig = computed(() => {
     SHOPPING_LIST: { icon: '🛒', glow: 'shadow-[0_0_30px_rgba(52,211,153,0.25)]',   glowColor: 'rgba(52,211,153,0.4)' },
     WASTE_ALERT:   { icon: '⚠️', glow: 'shadow-[0_0_30px_rgba(248,113,113,0.25)]',  glowColor: 'rgba(248,113,113,0.4)' },
     PREP_SCHEDULE: { icon: '📋', glow: 'shadow-[0_0_30px_rgba(96,165,250,0.25)]',   glowColor: 'rgba(96,165,250,0.4)' },
-    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30_rgba(192,132,252,0.25)]',  glowColor: 'rgba(192,132,252,0.4)' },
+    TASK_LIST:     { icon: '✅', glow: 'shadow-[0_0_30_rgba(192,132,252,0.25)]',    glowColor: 'rgba(192,132,252,0.4)' },
+    ANALYTICS:     { icon: '📊', glow: 'shadow-[0_0_30px_rgba(34,211,238,0.25)]',   glowColor: 'rgba(34,211,238,0.4)' },
     ORCHESTRATED_RESPONSE: { icon: '🧠', glow: 'shadow-[0_0_30px_rgba(37,99,235,0.25)]', glowColor: 'rgba(37,99,235,0.4)' }
   }
   return configs[props.artifact?.artifact_type] || configs.RECIPE
@@ -174,6 +189,16 @@ const handleCook = async (ingredients) => {
 @keyframes artifactZoomIn {
   from { opacity: 0; transform: perspective(800px) scale(0.85) rotateY(var(--init-angle, 0deg)); }
   to   { opacity: 1; transform: perspective(800px) scale(1)    rotateY(var(--init-angle, 0deg)); }
+}
+
+@keyframes artifactPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.5); }
+  50%  { box-shadow: 0 0 0 12px rgba(34, 211, 238, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
+}
+
+.artifact-pulse {
+  animation: artifactPulse 1.2s ease-out;
 }
 
 .focus-glow-enter-active, .focus-glow-leave-active {
