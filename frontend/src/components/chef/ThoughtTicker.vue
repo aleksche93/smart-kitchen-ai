@@ -30,13 +30,19 @@
                @mousedown="startDrag">
             <div class="flex items-center gap-2">
               <span class="text-green-400 animate-pulse text-[10px]">●</span>
-              <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Chef HUD</span>
+              <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{{ $t('chef.status.thinking') }}</span>
             </div>
           </div>
 
           <!-- Terminal Body -->
           <div class="p-3 max-h-[160px] overflow-y-auto flex flex-col justify-end custom-scrollbar">
             <transition-group name="slide-up" tag="div" class="flex flex-col space-y-1">
+              <!-- Idle State if no thoughts -->
+              <div v-if="thoughts.length === 0" class="flex items-start opacity-50">
+                <span class="mr-2 text-green-600">$</span>
+                <span class="text-green-400">{{ $t('chef.status.idle') }}</span>
+              </div>
+              
               <div v-for="(log, idx) in thoughts" :key="log.id" class="flex items-start">
                 <span class="opacity-70 mr-2 text-green-600">$</span>
                 <span v-if="idx !== thoughts.length - 1" class="opacity-50 text-green-400/70">{{ log.text }}</span>
@@ -118,30 +124,21 @@ const stopDrag = () => {
 watch(isLoading, (newVal) => {
   if (newVal) {    
     isVisible.value = true
-    if (hideTimer) clearTimeout(hideTimer)
-  } else {
-    hideTimer = setTimeout(() => {
-      isVisible.value = false
-    }, 5000)
   }
 })
 
 watch(() => thoughts.value.length, async () => {
   isVisible.value = true
-  if (hideTimer) clearTimeout(hideTimer)
   
   if (thoughts.value.length > 0) {
     const latestThought = thoughts.value[thoughts.value.length - 1]
     abort()
     await type(latestThought.text)
   }
-
-  hideTimer = setTimeout(() => {
-    if (!isLoading.value) isVisible.value = false
-  }, 5000)
 })
 
 onMounted(() => {
+  isVisible.value = true // Always visible unless minimized
   chefStore.startSarcasticEngine()
   // Recalculate position on resize
   window.addEventListener('resize', () => {

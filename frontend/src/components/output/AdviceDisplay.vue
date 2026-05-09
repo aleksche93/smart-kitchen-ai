@@ -44,7 +44,7 @@
     <div v-if="chefState.recipeText" class="@container flex-1 flex flex-col space-y-4 w-full h-full">
 
       <div v-if="chefState.recipeText" class="bg-slate-900/80 p-3 max-w-full break-words rounded-xl border-l-4 border-keWheat shadow-lg flex flex-col h-auto flex-1">
-        <h4 class="text-xs uppercase tracking-widest text-keWheat mb-3 pb-1 shrink-0">Recipe Options</h4>
+        <h4 class="text-xs uppercase tracking-widest text-keWheat mb-3 pb-1 shrink-0">{{ $t('chef.recipe_options') }}</h4>
         
         <!-- Multi-Option Structured Rendering -->
         <div v-if="parsedRecipes.length > 0" class="flex-1 flex flex-col h-auto">
@@ -69,7 +69,7 @@
                   {{ idx === 0 ? '⚡' : (idx === 1 ? '🥘' : '🎨') }}
                 </span>
               </div>
-              <div class="font-bold text-sm w-full leading-tight line-clamp-2 hyphens-auto break-words" :class="selectedRecipeIndex === idx ? 'text-keWheat' : 'text-slate-400'">{{ recipe.name || 'Recipe Option' }}</div>
+              <div class="font-bold text-sm w-full leading-tight line-clamp-2 hyphens-auto break-words" :class="selectedRecipeIndex === idx ? 'text-keWheat' : 'text-slate-400'">{{ recipe.name || $t('artifact.types.RECIPE') }}</div>
             </button>
           </div>
 
@@ -79,7 +79,7 @@
             <!-- Ingredients Accordion (Open by default) -->
             <details v-if="activeRecipe.ingredients && activeRecipe.ingredients.length" open class="group bg-slate-800 rounded-lg border border-slate-700 overflow-hidden transition-all duration-300">
               <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden focus:outline-none hover:bg-slate-700/50 transition-colors">
-                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">Ingredients</h3>
+                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">{{ $t('artifact.keys.ingredients') }}</h3>
                 <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -109,7 +109,7 @@
             <!-- Instructions Accordion (Closed by default) -->
             <details v-if="activeRecipe.instructions && activeRecipe.instructions.length" class="group bg-slate-800 rounded-lg border border-slate-700 overflow-hidden transition-all duration-300">
               <summary class="flex items-center justify-between px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden focus:outline-none hover:bg-slate-700/50 transition-colors">
-                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">Instructions</h3>
+                <h3 class="text-slate-300 uppercase tracking-widest text-xs font-bold">{{ $t('artifact.keys.instructions') }}</h3>
                 <svg class="w-4 h-4 text-slate-400 group-open:rotate-180 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -144,13 +144,13 @@
 
           <div class="flex flex-wrap gap-2">
             <button @click="simulateAction('Recipe Saved')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-keWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
-              💾 Save Recipe
+              💾 {{ $t('ui.actions.save_recipe') }}
             </button>
             <button @click="simulateAction('Added to Cart')" class="flex-1 min-w-[120px] bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border border-slate-600 text-slate-300 hover:text-keWheat font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
-              🛒 Add to Cart
+              🛒 {{ $t('ui.actions.add_to_cart') }}
             </button>
             <button @click="simulateAction('Oven Preheating...')" class="flex-1 min-w-[120px] bg-keWheat/10 hover:bg-keTerracotta/20 active:bg-keTerracotta/30 border border-keWheat/30 hover:border-keTerracotta/50 text-keWheat hover:text-keTerracotta font-semibold py-2 px-3 rounded-lg text-xs transition-all transform hover:-translate-y-0.5 shadow-sm">
-              🔥 Send to Smart Oven
+              🔥 {{ $t('ui.actions.send_to_oven') }}
             </button>
           </div>
         </div>

@@ -18,9 +18,13 @@
              </div>
              <div class="flex items-start justify-between">
                <h2 class="text-2xl font-bold text-slate-100 capitalize">{{ item.name }}</h2>
-               <button @click="confirmDelete" class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-slate-800 rounded-md transition-colors" title="Delete Item">
-                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-               </button>
+               <div class="flex flex-col items-end">
+                 <button @click.stop.prevent="handleDeleteClick" class="p-1.5 rounded-md transition-colors relative z-10 flex items-center justify-center" :class="isConfirming ? 'bg-red-900 text-red-200 hover:bg-red-800 border border-red-700' : 'text-slate-500 hover:text-red-400 hover:bg-slate-800'" :title="isConfirming ? 'Click again to confirm' : 'Delete Item'">
+                   <span v-if="isConfirming" class="text-xs px-2 font-bold uppercase tracking-wider">Sure?</span>
+                   <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                 </button>
+                 <span v-if="actionError" class="text-[10px] text-red-400 mt-1 max-w-[150px] leading-tight text-right">{{ actionError }}</span>
+               </div>
              </div>
              <div class="mt-2 mb-4">
                <button 
@@ -73,7 +77,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useKitchenAPI } from '../../composables/useKitchenAPI'
 import { useChefFSM } from '../../composables/useChefFSM'
 
@@ -86,6 +90,9 @@ const emit = defineEmits(['close'])
 
 const { isLoading, history, ghostReceipts, getChefAdvice, activeTab, selectedReceipt, deleteItem, fetchFridge, fetchHistory } = useKitchenAPI()
 const { updateState } = useChefFSM()
+
+const isConfirming = ref(false)
+const actionError = ref(null)
 
 const receiptDetails = computed(() => {
   if (props.item.receipt_id) {
@@ -113,11 +120,27 @@ const navigateToReceipt = () => {
   }
 }
 
-const confirmDelete = async () => {
-  if (confirm(`Are you sure you want to delete ${props.item.name}?`)) {
-    await deleteItem(props.item.name)
+const handleDeleteClick = async () => {
+  actionError.value = null
+  if (!props.item || !props.item.id) {
+    actionError.value = "Item ID missing."
+    return
+  }
+  
+  if (!isConfirming.value) {
+    isConfirming.value = true
+    setTimeout(() => { isConfirming.value = false }, 3000)
+    return
+  }
+
+  try {
+    isConfirming.value = false
+    await deleteItem(props.item.id)
     await Promise.all([fetchFridge(), fetchHistory()])
-    close()
+    emit('close')
+  } catch (err) {
+    console.error("Delete item failed:", err)
+    actionError.value = err.message || "Failed to delete"
   }
 }
 

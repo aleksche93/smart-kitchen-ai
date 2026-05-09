@@ -46,9 +46,11 @@
         
         <!-- Metadata -->
         <div class="p-4 flex flex-col space-y-3 flex-1 relative">
-           <button @click.stop="handleDelete(receipt.id)" class="absolute top-4 right-4 text-slate-500 hover:text-keTerracotta transition-colors bg-slate-800 p-1 rounded-full shadow-inner" title="Delete Receipt">
-             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+           <button @click.stop.prevent="handleDeleteClick(receipt.id, $event)" class="absolute top-4 right-4 transition-colors p-1 rounded-full shadow-inner z-10 flex items-center justify-center" :class="confirmingId === receipt.id ? 'bg-red-900 text-red-200 hover:bg-red-800 border border-red-700' : 'bg-slate-800 text-slate-500 hover:text-keTerracotta'" :title="confirmingId === receipt.id ? 'Click again to confirm' : 'Delete Receipt'">
+             <span v-if="confirmingId === receipt.id" class="text-xs px-2 font-bold uppercase tracking-wider">Sure?</span>
+             <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
            </button>
+           <div v-if="actionError && confirmingId === receipt.id" class="absolute top-12 right-4 text-[10px] text-red-400 bg-slate-900/90 px-2 py-1 rounded border border-red-900 z-20">{{ actionError }}</div>
 
            <div class="flex flex-col">
              <span class="text-sm font-bold text-slate-100 truncate pr-6">{{ receipt.store_name }}</span>
@@ -218,18 +220,36 @@ const openModal = (receipt) => {
   selectedReceipt.value = receipt
 }
 
-const handleDelete = async (id) => {
-  const isConfirm = window.confirm("Are you sure you want to delete this receipt and ALL its synchronized items from your fridge?")
-  if (!isConfirm) return
+const confirmingId = ref(null)
+const actionError = ref(null)
+
+const handleDeleteClick = async (id, event) => {
+  if (event) {
+    event.stopPropagation()
+    event.preventDefault()
+  }
+  actionError.value = null
+  if (!id) {
+    actionError.value = "Receipt ID missing."
+    return
+  }
+
+  if (confirmingId.value !== id) {
+    confirmingId.value = id
+    setTimeout(() => { if (confirmingId.value === id) confirmingId.value = null }, 3000)
+    return
+  }
+
   try {
+    confirmingId.value = null
     await deleteReceipt(id)
     if (selectedReceipt.value && selectedReceipt.value.id === id) {
       selectedReceipt.value = null
       isExpanded.value = false
     }
   } catch (e) {
-    alert("Failed to delete the receipt. See console for details.")
     console.error(e)
+    actionError.value = e.message || "Failed to delete"
   }
 }
 

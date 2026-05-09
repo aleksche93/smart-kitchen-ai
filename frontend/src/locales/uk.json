@@ -8,17 +8,77 @@
     "no_bag": "Чек успішно оброблено, холодильник оновлено! Погляньте на ліву панель. З чого ще бажаєте приготувати?"
   },
   "ticker": {
-    "checking_traps": "Checking image for AI-traps...",
-    "processing": "Scanning image vectors...",
-    "identified_shop": "Identified {shop}. Nice taste in groceries!",
-    "extracted_items": "Extracting {count} items. Don't blink."
+    "checking_traps": "Перевірка зображення на AI-пастки...",
+    "processing": "Сканування векторів зображення...",
+    "identified_shop": "Ідентифіковано {shop}. Гарний смак у продуктах!",
+    "extracted_items": "Видобуто {count} товарів. Не кліпайте."
   },
   "errors": {
     "file_too_large": "Ой, це занадто велике фото навіть для мого зору! Спробуйте менший розмір (Макс 5MB).",
-    "duplicate_receipt": "Гей! Цей чек вже був відсканований. Не намагайтеся мене надурити!"
+    "duplicate_receipt": "Гей! Цей чек вже був відсканований. Не намагайтеся мене надурити!",
+    "chef_error": "Помилка Шефа: {msg}",
+    "chef_refused": "Шеф відмовився спілкуватися: {msg}",
+    "connection_lost": "З'єднання втрачено."
+  },
+  "chef": {
+    "generating": "Шеф готує...",
+    "recipe_options": "Варіанти рецептів",
+    "processing": {
+      "chopping": "Шаткування овочів",
+      "pouring": "Наливання напоїв",
+      "searing": "Смаження м'яса",
+      "heating": "Розігрів пателень"
+    },
+    "actions": {
+      "stop": "Зупинити Шефа"
+    },
+    "status": {
+      "thinking": "Шеф міркує...",
+      "idle": "Готовий до наказів"
+    },
+    "audit": {
+      "warning": "Ревізія гріхів"
+    },
+    "troll": {
+      "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
+    }
+  },
+  "ui": {
+    "identity": {
+      "title": "Шеф"
+    },
+    "actions": {
+      "cancel_generation": "Зупинити генерацію",
+      "scan_receipt": "Відсканувати чек",
+      "clear_session": "Очистити сесію",
+      "send": "Надіслати",
+      "save_recipe": "Зберегти рецепт",
+      "add_to_cart": "В кошик",
+      "send_to_oven": "В духовку",
+      "reset_session": "Скинути сесію",
+      "clear_artifacts": "Очистити артефакти",
+      "profile_settings": "Налаштування профілю"
+    },
+    "tabs": {
+      "kitchen": "Кухня",
+      "archive": "Архів"
+    },
+    "status": {
+      "label": "Статус",
+      "loading": "Завантаження простору..."
+    },
+    "widgets": {
+      "inventory": "Інвентар",
+      "command_hub": "Центр керування",
+      "chef_advice": "Поради Шефа"
+    },
+    "placeholders": {
+      "ask_chef": "Запитай Шефа..."
+    }
   },
   "intents": {
-    "magic_trigger_message": "У мене є кілька ідей. Хочеш побачити магію? ✨"
+    "magic_trigger_message": "У мене є кілька ідей. Хочеш побачити магію? ✨",
+    "magic_trigger_button": "Створити магію ✨"
   },
   "artifact": {
     "types": {
@@ -34,17 +94,6 @@
       "notes": "Нотатки",
       "time": "Час",
       "difficulty": "Складність"
-    }
-  },
-  "chef": {
-    "generating": "Шеф готує...",
-    "troll": {
-      "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
-    }
-  },
-  "ui": {
-    "actions": {
-      "cancel_generation": "Зупинити генерацію"
     }
   }
 }

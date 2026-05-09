@@ -624,8 +624,8 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
 @app.delete("/api/v1/fridge/receipt/{receipt_id}")
 async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db)):
     # Phase 10.4: Wire UI to use our new Bulk Deletion Architecture
-    # By default, we orphan items (delete_items=False) instead of hard deleting them.
-    success = await delete_receipt_and_sync_inventory(receipt_id, delete_items=False)
+    # Hard delete items with receipt to ensure they disappear from UI.
+    success = await delete_receipt_and_sync_inventory(receipt_id, delete_items=True)
     
     if not success:
         raise HTTPException(status_code=404, detail="Receipt not found")

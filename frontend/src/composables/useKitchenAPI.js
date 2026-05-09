@@ -10,6 +10,7 @@ const globalActiveTab = ref('kitchen')
 const globalSelectedReceipt = ref(null)
 const globalIsLoading = ref(false)
 const globalError = ref(null)
+let globalChatAbortController = null
 
 export function useKitchenAPI() {
   const isLoading = globalIsLoading
@@ -18,7 +19,7 @@ export function useKitchenAPI() {
   const fetchFridge = async () => {
     isLoading.value = true
     try {
-      const response = await fetch(`${BASE_URL}/fridge`).catch(() => null)
+      const response = await fetch(`${BASE_URL}/fridge`, { cache: 'no-store' }).catch(() => null)
       if (response && response.ok) {
         const data = await response.json()
         globalInventory.value = data.inventory || []
@@ -35,7 +36,7 @@ export function useKitchenAPI() {
   const fetchHistory = async () => {
     isLoading.value = true
     try {
-      const response = await fetch(`${BASE_URL}/fridge/history`).catch(() => null)
+      const response = await fetch(`${BASE_URL}/fridge/history`, { cache: 'no-store' }).catch(() => null)
       if (response && response.ok) {
         const data = await response.json()
         globalHistory.value = data.history || []
@@ -74,11 +75,13 @@ export function useKitchenAPI() {
   const sendChatStream = async (message, onChunk, onMetadata, onError) => {
     isLoading.value = true
     error.value = null
+    globalChatAbortController = new AbortController()
     try {
       const resp = await fetch(`${BASE_URL}/chef/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message }),
+        signal: globalChatAbortController.signal
       })
       if (!resp.ok) {
          const errData = await resp.json().catch(() => ({}))
@@ -117,10 +120,21 @@ export function useKitchenAPI() {
         }
       }
     } catch (err) {
-      error.value = err.message
-      onError && onError(err.message)
+      if (err.name === 'AbortError') {
+        console.log('[useKitchenAPI] Chat stream aborted')
+      } else {
+        error.value = err.message
+        onError && onError(err.message)
+      }
     } finally {
       isLoading.value = false
+      globalChatAbortController = null
+    }
+  }
+
+  const abortChat = () => {
+    if (globalChatAbortController) {
+      globalChatAbortController.abort()
     }
   }
 
@@ -203,9 +217,9 @@ export function useKitchenAPI() {
     }
   }
 
-  const deleteItem = async (itemName) => {
+  const deleteItem = async (itemId) => {
     try {
-      const resp = await fetch(`${BASE_URL}/fridge/item/${encodeURIComponent(itemName)}`, {
+      const resp = await fetch(`${BASE_URL}/fridge/item/${encodeURIComponent(itemId)}`, {
         method: 'DELETE'
       })
       if (!resp.ok) {
@@ -225,6 +239,6 @@ export function useKitchenAPI() {
     inventory: globalInventory, history: globalHistory, ghostReceipts: globalGhostReceipts,
     activeTab: globalActiveTab, selectedReceipt: globalSelectedReceipt,
     fetchFridge, fetchHistory, sendChatStream, scanReceipt, deleteReceipt, deleteItem,
-    fetchSessionHistory, clearSession, cookRecipe
+    fetchSessionHistory, clearSession, cookRecipe, abortChat
   }
 }

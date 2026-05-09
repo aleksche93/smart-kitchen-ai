@@ -25,11 +25,18 @@ class ChefOrchestrator:
             if not context.get("is_safe", True):
                 return
 
-            # 2. Inventory Scanner
+            # 2. Sin-Sieve (Input Audit - Aggressive Firewall)
+            async for event in self.sieve.generate_stream(context):
+                yield f"data: {json.dumps(event)}\n\n"
+            
+            if not context.get("is_safe", True):
+                return
+
+            # 3. Inventory Scanner
             async for event in self.scanner.generate_stream(context):
                 yield f"data: {json.dumps(event)}\n\n"
 
-            # 3. Flavor Architect (Narrative & Delta)
+            # 4. Flavor Architect (Narrative & Delta)
             final_artifact_event = None
             async for event in self.architect.generate_stream(context):
                 if event['type'] == 'final':
@@ -37,7 +44,7 @@ class ChefOrchestrator:
                 else:
                     yield f"data: {json.dumps(event)}\n\n"
 
-            # 4. Sin-Sieve (Audit)
+            # 5. Sin-Sieve (Output Audit - Content Polish)
             async for event in self.sieve.generate_stream(context):
                 yield f"data: {json.dumps(event)}\n\n"
 

@@ -7,13 +7,13 @@
         <!-- Scan Receipt File Picker -->
         <label class="cursor-pointer text-xs uppercase tracking-wider font-bold text-slate-300 hover:text-keYellow transition-colors flex items-center group" title="Scan Receipt / Vision">
           <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-          Scan Receipt
+          {{ $t('ui.actions.scan_receipt') }}
           <input type="file" accept="image/*" class="hidden" @change="handleFileUpload" />
         </label>
         <!-- Clear Session -->
         <button @click="handleClearSession" class="text-xs uppercase tracking-wider font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center group">
           <svg class="w-4 h-4 mr-1.5 opacity-70 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          Clear Session
+          {{ $t('ui.actions.clear_session') }}
         </button>
       </div>
     </div>
@@ -47,7 +47,7 @@
           ></span></span>
           <!-- Magic artifact trigger button — з'являється коли Шеф додає [ACTION: MAGIC_TRIGGER] -->
           <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-keYellow/10 hover:bg-keYellow/20 text-keYellow border border-keYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
-             ✨ Generate Magic
+             ✨ {{ $t('intents.magic_trigger_button') }}
           </button>
        </div>
     </div>
@@ -61,7 +61,7 @@
           <input 
             v-model="localInput"
             type="text" 
-            placeholder="Ask Chef..."
+            :placeholder="$t('ui.placeholders.ask_chef')"
             class="w-full bg-slate-900/50 border border-slate-600 focus:border-keBlue focus:ring-1 focus:ring-keBlue text-slate-200 rounded-full py-3 pl-5 pr-5 outline-none transition-all shadow-inner"
             @keyup.enter="handleAdvice"
           />
@@ -71,11 +71,20 @@
           :disabled="btnState === BUTTON_STATES.ACTIVE || !localInput.trim()"
           class="w-[100px] bg-keBlue hover:bg-blue-600 active:bg-blue-700 text-white font-medium rounded-full transition-all duration-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shrink-0 shadow-md"
         >
-          <span v-if="btnState === BUTTON_STATES.IDLE" class="text-sm">Send</span>
+          <span v-if="btnState === BUTTON_STATES.IDLE" class="text-sm">{{ $t('ui.actions.send') }}</span>
           <span v-else class="flex items-center text-xs whitespace-nowrap">
             <span class="mr-1 animate-pulse">{{ processingAction.icon }}</span>
             {{ processingAction.text }}
           </span>
+        </button>
+        <!-- Stop Button -->
+        <button 
+          v-if="isStreaming"
+          @click="abortChat"
+          class="w-12 h-12 bg-red-600/20 hover:bg-red-600/40 text-red-500 rounded-full flex items-center justify-center border border-red-500/30 transition-all active:scale-90"
+          :title="$t('chef.actions.stop')"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" /></svg>
         </button>
       </div>
     </div>
@@ -116,7 +125,7 @@ import { useChefStream } from '../../composables/useChefStream'
 const { t } = useI18n()
 const chefStore = useChefStore()
 const { startProcess } = useChefStream()
-const { isLoading, error, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
+const { isLoading, error, sendChatStream, scanReceipt, fetchFridge, fetchSessionHistory, clearSession, abortChat } = useKitchenAPI()
 const { updateState } = useChefFSM()
 
 // Typewriter composable — Variant A (real-time per-chunk typing)
@@ -153,6 +162,7 @@ let _msgCounter = 0
 
 // --- Phase 12.1-B: Magic Trigger Bridge ---
 const MAGIC_TAG = '[ACTION: MAGIC_TRIGGER]'
+const AUDIT_TAG = '[ACTION: AUDIT_WARNING]'
 const showMagicButton = ref(false)
 const emit = defineEmits(['artifact'])
 
@@ -166,15 +176,15 @@ const btnState = ref(BUTTON_STATES.IDLE)
 const processingAction = computed(() => {
    const lower = localInput.value.toLowerCase()
    if (lower.includes('tomato') || lower.includes('vegetable') || lower.includes('potato') || lower.includes('onion') || lower.includes('carrot') || lower.includes('garlic')) {
-      return { text: "Chopping veg", icon: "🔪" }
+      return { text: t('chef.processing.chopping'), icon: "🔪" }
    }
    if (lower.includes('water') || lower.includes('juice') || lower.includes('beer') || lower.includes('wine') || lower.includes('drink') || lower.includes('milk')) {
-      return { text: "Pouring drinks", icon: "🫗" }
+      return { text: t('chef.processing.pouring'), icon: "🫗" }
    }
    if (lower.includes('meat') || lower.includes('chicken') || lower.includes('beef') || lower.includes('pork')) {
-      return { text: "Searing meat", icon: "🥩" }
+      return { text: t('chef.processing.searing'), icon: "🥩" }
    }
-   return { text: "Heating pans", icon: "🍳" }
+   return { text: t('chef.processing.heating'), icon: "🍳" }
 })
 
 const handleClearSession = async () => {
@@ -212,19 +222,28 @@ const handleAdvice = async () => {
       queryToSent,
       async (textChunk) => {
         _accumulatedText += textChunk
-        // 1. Regex interception for MAGIC_TRIGGER
-        const regex = /\[ACTION: MAGIC_TRIGGER\]/g
-        if (regex.test(_accumulatedText)) {
-          _accumulatedText = _accumulatedText.replace(regex, '')
+        const regexMagic = /\[ACTION: MAGIC_TRIGGER\]/g
+        const regexAudit = /\[ACTION: AUDIT_WARNING\]/g
+        
+        if (regexMagic.test(_accumulatedText)) {
+          _accumulatedText = _accumulatedText.replace(regexMagic, '')
           if (!showMagicButton.value) showMagicButton.value = true
+        }
+        
+        if (regexAudit.test(_accumulatedText)) {
+          _accumulatedText = _accumulatedText.replace(regexAudit, `⚠️ **${t('chef.audit.warning')}**: `)
         }
 
         // 2. Safe Render Buffer
         // Check if the current accumulated text ends with a partial tag
         let safeText = _accumulatedText
-        const matchPartial = _accumulatedText.match(/\[A?C?T?I?O?N?:?\s?M?A?G?I?C?_?T?R?I?G?G?E?R?]?$/)
-        if (matchPartial && MAGIC_TAG.startsWith(matchPartial[0])) {
-          safeText = _accumulatedText.slice(0, _accumulatedText.length - matchPartial[0].length)
+        const matchPartialMagic = _accumulatedText.match(/\[A?C?T?I?O?N?:?\s?M?A?G?I?C?_?T?R?I?G?G?E?R?]?$/)
+        const matchPartialAudit = _accumulatedText.match(/\[A?C?T?I?O?N?:?\s?A?U?D?I?T?_?W?A?R?N?I?N?G?]?$/)
+        
+        if (matchPartialMagic && MAGIC_TAG.startsWith(matchPartialMagic[0])) {
+          safeText = _accumulatedText.slice(0, _accumulatedText.length - matchPartialMagic[0].length)
+        } else if (matchPartialAudit && AUDIT_TAG.startsWith(matchPartialAudit[0])) {
+          safeText = _accumulatedText.slice(0, _accumulatedText.length - matchPartialAudit[0].length)
         }
 
         // 3. Рендеримо тільки "safe" частину (без хвоста-буфера)
@@ -247,12 +266,12 @@ const handleAdvice = async () => {
         chefStore.setEmotion(emotion)
       },
       (errMsg) => {
-        error.value = "Chef error: " + errMsg
+        error.value = t('errors.chef_error', { msg: errMsg })
         chefState.emotionDisplay = 'ANGRY'
       }
     )
   } catch (err) {
-    error.value = "Chef refused to chat: " + (err.message || 'Connection lost.')
+    error.value = t('errors.chef_refused', { msg: err.message || t('errors.connection_lost') })
     chefState.emotionDisplay = 'ANGRY'
   } finally {
     btnState.value = BUTTON_STATES.IDLE
@@ -270,8 +289,14 @@ const handleAdvice = async () => {
         finalText = finalText.replace(MAGIC_TAG, '')
         showMagicButton.value = true
       }
+      if (finalText.includes(AUDIT_TAG)) {
+        finalText = finalText.replace(AUDIT_TAG, `⚠️ **${t('chef.audit.warning')}**: `)
+      }
       // Беремо повний accumulated text (без тегу) як фінальний
-      const fullClean = (_accumulatedText || '').replaceAll(MAGIC_TAG, '').trimEnd()
+      const fullClean = (_accumulatedText || '')
+        .replaceAll(MAGIC_TAG, '')
+        .replaceAll(AUDIT_TAG, `⚠️ **${t('chef.audit.warning')}**: `)
+        .trimEnd()
       if (fullClean && fullClean !== finalText) {
         chatHistory.value = [
           ...chatHistory.value.slice(0, lastIdx),

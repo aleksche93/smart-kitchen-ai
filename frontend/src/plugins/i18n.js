@@ -5,7 +5,7 @@ import en from '../locales/en.json'
 const locales = { uk, en }
 
 export const i18nState = reactive({
-  locale: 'uk'
+  locale: 'en'
 })
 
 // Simple get with fallback
@@ -17,9 +17,13 @@ function t(key, params = {}) {
   const translations = locales[i18nState.locale] || locales['uk']
   let text = getNestedValue(translations, key) || key
   
-  // Replace {param} placeholders
-  for (const [k, v] of Object.entries(params)) {
-    text = text.replace(new RegExp(`{${k}}`, 'g'), v)
+  // Only interpolate if params is a valid object
+  if (params !== null && typeof params === 'object' && !Array.isArray(params)) {
+    for (const [k, v] of Object.entries(params)) {
+      // Escape special characters in key for RegExp
+      const escapedKey = k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      text = text.replace(new RegExp(`{${escapedKey}}`, 'g'), v)
+    }
   }
   return text
 }

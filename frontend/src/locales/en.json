@@ -15,21 +15,70 @@
   },
   "errors": {
     "file_too_large": "Oh, this photo is too big even for my eyes! Try a smaller size (Max 5MB).",
-    "duplicate_receipt": "Hey! This receipt has already been scanned. Stop trying to trick me!"
-  },
-  "intents": {
-    "magic_trigger_message": "I have some ideas. Want to see my magic module? ✨"
+    "duplicate_receipt": "Hey! This receipt has already been scanned. Stop trying to trick me!",
+    "chef_error": "Chef error: {msg}",
+    "chef_refused": "Chef refused to chat: {msg}",
+    "connection_lost": "Connection lost."
   },
   "chef": {
     "generating": "Chef is cooking...",
+    "recipe_options": "Recipe Options",
+    "processing": {
+      "chopping": "Chopping veg",
+      "pouring": "Pouring drinks",
+      "searing": "Searing meat",
+      "heating": "Heating pans"
+    },
+    "actions": {
+      "stop": "Stop Generation"
+    },
+    "status": {
+      "thinking": "Chef is pondering...",
+      "idle": "Ready for orders"
+    },
+    "audit": {
+      "warning": "Sin-Sieve Audit"
+    },
     "troll": {
       "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
     }
   },
   "ui": {
+    "identity": {
+      "title": "The Chef"
+    },
     "actions": {
-      "cancel_generation": "Stop Generation"
+      "cancel_generation": "Stop Generation",
+      "scan_receipt": "Scan Receipt",
+      "clear_session": "Clear Session",
+      "send": "Send",
+      "save_recipe": "Save Recipe",
+      "add_to_cart": "Add to Cart",
+      "send_to_oven": "Send to Smart Oven",
+      "reset_session": "Reset Session",
+      "clear_artifacts": "Clear Artifacts",
+      "profile_settings": "Profile Settings"
+    },
+    "tabs": {
+      "kitchen": "Kitchen",
+      "archive": "Archive"
+    },
+    "status": {
+      "label": "Status",
+      "loading": "Loading Workspace..."
+    },
+    "widgets": {
+      "inventory": "Inventory",
+      "command_hub": "Command Hub",
+      "chef_advice": "Chef's Advice"
+    },
+    "placeholders": {
+      "ask_chef": "Ask Chef..."
     }
+  },
+  "intents": {
+    "magic_trigger_message": "I have some ideas. Want to see my magic module? ✨",
+    "magic_trigger_button": "Generate Magic ✨"
   },
   "artifact": {
     "types": {
@@ -38,6 +87,13 @@
       "PREP_SCHEDULE": "Prep Schedule",
       "TASK_LIST": "Task List",
       "WASTE_ALERT": "Waste Alert"
+    },
+    "keys": {
+      "ingredients": "Ingredients",
+      "instructions": "Instructions",
+      "notes": "Notes",
+      "time": "Time",
+      "difficulty": "Difficulty"
     }
   }
 }

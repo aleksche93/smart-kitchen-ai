@@ -234,7 +234,15 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Agentic Skill Interface:** Standardization of the interaction protocol between the Chef and his "Workers".
 - [x] **Next-Gen API:** Full migration to **Gemini 2.5 Flash** (2026 Standards).
 
-### Phase 14: Skills & Hands-Free Integration
+### Phase 13.1: Post-Audit Fixes (Block 1) [100% COMPLETED] ✅
+- [x] **Localization Sync:** Multi-language HUD keys (thinking, idle, audit) integrated via `i18n`.
+- [x] **UI Stabilization:** Eradicated render crashes in `i18n.js` by hardening the translation engine against malformed regex.
+- [x] **Clean Locales:** Sanitized `en.json` and `uk.json` to ensure zero language mixing; set English as default.
+- [x] **Ticker Persistence:** Refactored `ThoughtTicker.vue` for permanent visibility with localized idle states.
+- [x] **Aggressive Sin-Sieve:** Re-ordered agentic pipeline for Fail-Fast input auditing.
+- [x] **Stop Control:** Integrated `AbortController` UI for instant stream termination.
+- [x] **Language Switcher:** Integrated EN/UA toggle into the Chef Identity menu.
+
 - [ ] **Persistent Persona State:** Saving the Chef's emotional state and context between page reloads (Redis/LocalStorage).
 - [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
 - [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).

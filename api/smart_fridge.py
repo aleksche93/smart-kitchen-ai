@@ -151,21 +151,19 @@ async def scan_receipt(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/v1/fridge/item/{name}")
-async def remove_fridge_item(name: str, session: AsyncSession = Depends(get_db)):
+@router.delete("/v1/fridge/item/{item_id}")
+async def remove_fridge_item(item_id: str, session: AsyncSession = Depends(get_db)):
     """
     Phase 12.1-B: Legacy fridge logic ported from Fridge.remove_product().
     """
-    items_q = await session.execute(select(InventoryItemModel).where(InventoryItemModel.name == name))
-    item = items_q.scalars().first()
-    
+    item = await session.get(InventoryItemModel, item_id)
+
     if item:
         await session.delete(item)
         await session.commit()
-        return {"status": "success", "message": f"Removed: {name}"}
-    
-    raise HTTPException(status_code=404, detail=f"Product {name} is not in the fridge, can't take it out.")
+        return {"status": "success", "message": f"Removed: {item.name}"}
 
+    raise HTTPException(status_code=404, detail=f"Product not found in the fridge, can't take it out.")
 @router.post("/v1/fridge/cook")
 async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession = Depends(get_db)):
     """

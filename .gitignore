@@ -25,7 +25,6 @@ scripts/
 
 # Agents
 .agents/
-.agents/rules/
 AGENTS.md
 
 # Gemini

@@ -28,7 +28,7 @@
                  <!-- Avatar Small -->
                  <ChefAvatar :mood="chefState.emotionDisplay" />
                  <div class="flex flex-col select-none">
-                   <span class="text-xs font-bold text-slate-200 uppercase">The Chef</span>
+                   <span class="text-xs font-bold text-slate-200 uppercase">{{ $t('ui.identity.title') }}</span>
                    <span class="text-[10px] uppercase font-bold" :class="emotionTextStyles">{{ chefState.emotionDisplay }}</span>
                  </div>
                  <svg :class="{'rotate-180 text-keBlue': isMenuOpen}" class="w-4 h-4 ml-1 text-slate-500 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -36,9 +36,16 @@
               
               <!-- Dropdown Context -->
               <div :class="isMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'" class="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl transition-all duration-300 overflow-hidden">
-                 <button @click="handleReset" class="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">Reset Session</button>
-                 <button @click="() => { layoutStore.clearAllArtifacts(); isMenuOpen = false }" class="w-full text-left px-4 py-3 text-xs font-bold text-amber-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">Clear Artifacts</button>
-                 <button class="w-full text-left px-4 py-3 text-xs font-bold text-slate-400 hover:bg-slate-700 block disabled:opacity-50 transition-colors" disabled>Profile Settings</button>
+                 <button @click="handleReset" class="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">{{ $t('ui.actions.reset_session') }}</button>
+                 <button @click="() => { layoutStore.clearAllArtifacts(); isMenuOpen = false }" class="w-full text-left px-4 py-3 text-xs font-bold text-amber-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">{{ $t('ui.actions.clear_artifacts') }}</button>
+                 <button class="w-full text-left px-4 py-3 text-xs font-bold text-slate-400 hover:bg-slate-700 block disabled:opacity-50 transition-colors border-b border-slate-700/50" disabled>{{ $t('ui.actions.profile_settings') }}</button>
+                 
+                 <!-- Language Switcher -->
+                 <div class="flex items-center justify-around p-2 bg-slate-900/50">
+                   <button @click="i18nState.locale = 'en'" :class="i18nState.locale === 'en' ? 'text-keBlue' : 'text-slate-500'" class="text-[10px] font-bold uppercase hover:text-slate-300 transition-colors">English</button>
+                   <div class="w-px h-3 bg-slate-700"></div>
+                   <button @click="i18nState.locale = 'uk'" :class="i18nState.locale === 'uk' ? 'text-keBlue' : 'text-slate-500'" class="text-[10px] font-bold uppercase hover:text-slate-300 transition-colors">Українська</button>
+                 </div>
               </div>
            </div>
         </div>
@@ -65,18 +72,18 @@
            <button @click="activeTab = 'kitchen'" 
                    :class="activeTab === 'kitchen' ? 'text-keBlue' : 'text-slate-400 hover:text-slate-200'" 
                    class="relative w-1/2 z-10 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors rounded-full text-center">
-             Kitchen
+             {{ $t('ui.tabs.kitchen') }}
            </button>
            <button @click="activeTab = 'archive'" 
                    :class="activeTab === 'archive' ? 'text-keBlue' : 'text-slate-400 hover:text-slate-200'" 
                    class="relative w-1/2 z-10 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors rounded-full text-center">
-             Archive
+             {{ $t('ui.tabs.archive') }}
            </button>
         </div>
 
         <div class="text-[10px] tracking-widest uppercase font-bold transition-all duration-300" 
              :class="serverStatus === 'Online' ? 'text-green-500' : 'text-red-500 animate-pulse'">
-          Status: {{ serverStatus }}
+          {{ $t('ui.status.label') }}: {{ serverStatus }}
         </div>
       </header>
 
@@ -114,7 +121,7 @@
         </template>
         
         <div v-else class="h-full flex items-center justify-center text-slate-500 animate-pulse">
-           Loading Workspace...
+           {{ $t('ui.status.loading') }}
         </div>
       </main>
 
@@ -165,7 +172,9 @@ import ArtifactCard from './components/output/ArtifactCard.vue'
 import ReceiptArchive from './views/ReceiptArchive.vue'
 import ThoughtTicker from './components/chef/ThoughtTicker.vue'
 import { useChefFSM, chefState } from './composables/useChefFSM'
+import { useI18n, i18nState } from './plugins/i18n'
 
+const { t } = useI18n()
 const { activeTab } = useKitchenAPI()
 const { resetState, fetchChefState } = useChefFSM()
 
@@ -209,7 +218,7 @@ const restoreWidget = (widget) => {
   layoutStore.saveLayout()
 }
 
-const serverStatus = ref('Checking...')
+const serverStatus = ref(t('ui.status.loading'))
 let pingInterval = null
 
 const checkHealth = () => {
@@ -235,9 +244,9 @@ onUnmounted(() => {
 })
 
 const getWidgetTitle = (widgetId) => {
-  if (widgetId === 'fridge') return 'Inventory'
-  if (widgetId === 'chef_hub') return 'Command Hub'
-  if (widgetId === 'advice') return "Chef's Advice"
+  if (widgetId === 'fridge') return t('ui.widgets.inventory')
+  if (widgetId === 'chef_hub') return t('ui.widgets.command_hub')
+  if (widgetId === 'advice') return t('ui.widgets.chef_advice')
   return 'Widget'
 }
 

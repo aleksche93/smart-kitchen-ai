@@ -31,7 +31,6 @@ graphify-out/
 # Agents
 .agents/
 AGENTS.md
-.agents/rules/
 
 # Gemini
 gemini/
