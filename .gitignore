@@ -14,7 +14,6 @@ tests/.pytest_cache/
 
 # Local data storage
 data/
-data/receipt_images/
 sources/
 archive/
 memory/

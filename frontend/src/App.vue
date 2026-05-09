@@ -23,7 +23,7 @@
              </span>
            </h1>
            <!-- Identity Dropdown Header Module -->
-           <div class="relative z-50">
+         <div class="relative z-[2000]">
               <div @click="isMenuOpen = !isMenuOpen" class="flex items-center gap-3 cursor-pointer p-1.5 pr-3 rounded-full bg-slate-800/50 border border-slate-700 hover:border-keBlue transition-all">
                  <!-- Avatar Small -->
                  <ChefAvatar :mood="chefState.emotionDisplay" />
@@ -35,8 +35,7 @@
               </div>
               
               <!-- Dropdown Context -->
-              <div :class="isMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'" class="absolute top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl transition-all duration-300 overflow-hidden">
-                 <button @click="handleReset" class="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">{{ $t('ui.actions.reset_session') }}</button>
+              <div :class="isMenuOpen ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2'" class="absolute z-[1050] top-full left-0 mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl transition-all duration-300 overflow-hidden">                 <button @click="handleReset" class="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">{{ $t('ui.actions.reset_session') }}</button>
                  <button @click="() => { layoutStore.clearAllArtifacts(); isMenuOpen = false }" class="w-full text-left px-4 py-3 text-xs font-bold text-amber-400 hover:bg-slate-700 block transition-colors border-b border-slate-700/50">{{ $t('ui.actions.clear_artifacts') }}</button>
                  <button class="w-full text-left px-4 py-3 text-xs font-bold text-slate-400 hover:bg-slate-700 block disabled:opacity-50 transition-colors border-b border-slate-700/50" disabled>{{ $t('ui.actions.profile_settings') }}</button>
                  

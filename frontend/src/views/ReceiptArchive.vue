@@ -67,120 +67,117 @@
     </div>
 
     <!-- Lightbox Modal -->
-    <Teleport to="body">
-      <Transition name="fade">
-        <div v-if="selectedReceipt" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4" @click.self="selectedReceipt = null">
-          <div 
-             class="bg-keGray border border-slate-700/50 rounded-2xl w-full overflow-hidden shadow-2xl relative flex flex-col transition-all duration-500 ease-in-out"
-             :class="isExpanded ? 'max-w-6xl lg:flex-row h-[90vh]' : 'max-w-3xl flex-col max-h-[85vh]'"
-          >
-            
-            <button @click="selectedReceipt = null" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20 bg-slate-900/50 p-1 rounded-full backdrop-blur-sm shadow-md">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+    <UiBackdrop :show="!!selectedReceipt" @close="selectedReceipt = null">
+      <div 
+         class="bg-keGray border border-slate-700/50 rounded-2xl w-full overflow-hidden shadow-2xl relative flex flex-col transition-all duration-500 ease-in-out"
+         :class="isExpanded ? 'max-w-6xl lg:flex-row h-[90vh]' : 'max-w-3xl flex-col max-h-[85vh]'"
+      >
+        
+        <button @click="selectedReceipt = null" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-20 bg-slate-900/50 p-1 rounded-full backdrop-blur-sm shadow-md">
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
 
-            <!-- Expanded Left Panel (Full Image) -->
-            <div 
-               class="transition-all duration-500 ease-in-out bg-black/90 flex flex-col items-center justify-center shrink-0 relative cursor-zoom-out"
-               :class="isExpanded ? 'lg:w-[40%] h-64 lg:h-full opacity-100 border-b lg:border-b-0 lg:border-r border-slate-700/50 p-4' : 'w-0 h-0 opacity-0 overflow-hidden border-none p-0'"
-               @click="isExpanded = false"
-               title="Click to collapse"
-            >
-               <img v-if="isExpanded" :src="'http://localhost:8000/images/' + extractFilename(selectedReceipt.image_path)" class="w-full h-full object-cover rounded drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" alt="Full Receipt" />
-               <div v-if="isExpanded" class="absolute bottom-4 left-0 right-0 text-center text-slate-100 bg-black/50 py-1 text-xs font-mono uppercase tracking-widest pointer-events-none transition-opacity hover:opacity-0">
-                 Click anywhere to collapse
-               </div>
-            </div>
-
-            <!-- Main Data Panel (Right side if expanded) -->
-            <div 
-               class="flex flex-col transition-all duration-500 ease-in-out overflow-hidden"
-               :class="isExpanded ? 'lg:w-[60%] h-full' : 'w-full max-h-[85vh]'"
-            >
-              <!-- Header -->
-              <div class="p-6 border-b border-slate-700/50 bg-slate-800/80 flex justify-between items-start gap-4 shrink-0 transition-all">
-                 <div class="flex flex-col flex-1">
-                   <h3 class="text-2xl font-bold text-slate-100 mb-1 pr-8">Receipt from {{ selectedReceipt.store_name }}</h3>
-                   <p class="text-sm text-slate-400 mb-3">{{ formatDate(selectedReceipt.scan_date) }}</p>
-                   
-                   <!-- Maps Badge Pill -->
-                   <div v-if="selectedReceipt.comment" class="inline-flex w-max items-center bg-keBlue/10 border border-keBlue/30 text-keBlue rounded-full px-3 py-1 shadow-sm hover:bg-keBlue/20 transition-colors">
-                     <svg class="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                     <a :href="`https://maps.google.com/?q=${encodeURIComponent(selectedReceipt.comment)}`" target="_blank" class="text-xs font-medium truncate max-w-[200px]">
-                       {{ selectedReceipt.comment }}
-                     </a>
-                   </div>
-                 </div>
-                 
-                 <!-- Thumbnail inside Header (Only visible if NOT expanded) -->
-                 <div v-show="!isExpanded" class="relative group cursor-zoom-in w-24 h-24 shrink-0 rounded-xl overflow-hidden border border-slate-600 shadow-md transition-all">
-                   <img :src="'http://localhost:8000/images/' + extractFilename(selectedReceipt.image_path)" class="w-full h-full object-cover" alt="Thumb" @error="onImageError" />
-                   <div @click="isExpanded = true" class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
-                     <span class="text-2xl drop-shadow-md">🔍</span>
-                   </div>
-                 </div>
-              </div>
-
-            <!-- Scrollable Table Body -->
-            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar bg-slate-800 max-h-[50vh]">
-               <div v-if="!selectedReceipt.added_items || selectedReceipt.added_items.length === 0" class="text-slate-500 italic text-sm text-center py-8">
-                 No items digitized.
-               </div>
-               
-               <table v-else class="w-full text-left text-sm text-slate-300">
-                  <thead class="text-xs uppercase bg-slate-700/50 text-slate-400 sticky top-0">
-                    <tr>
-                      <th class="px-3 py-2 rounded-tl-lg font-semibold">Product</th>
-                      <th class="px-3 py-2 font-semibold">Qty/Unit</th>
-                      <th class="px-3 py-2 font-semibold">Unit Price</th>
-                      <th class="px-3 py-2 rounded-tr-lg font-semibold text-right">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-700/30">
-                    <tr v-for="item in selectedReceipt.added_items" :key="item.id" class="hover:bg-slate-700/20 transition-colors">
-                      <td class="px-3 py-2.5 font-medium capitalize text-slate-200">
-                         <div class="flex items-center space-x-1.5">
-                           <span>{{ item.name }}</span>
-                           <span v-if="item.is_packaged" title="Packaged Item">📦</span>
-                         </div>
-                         <div v-if="item.brand" class="text-[10px] text-slate-500 font-mono uppercase mt-0.5 tracking-wider">{{ item.brand }}</div>
-                      </td>
-                      <td class="px-3 py-2.5 text-slate-400">{{ formatAmount(item.amount) }} <span class="text-xs opacity-70">{{ item.unit }}</span></td>
-                      <td class="px-3 py-2.5 font-mono text-[11px] text-slate-400">
-                        {{ item.unit_price ? item.unit_price.toFixed(2) : '-' }}
-                      </td>
-                      <td class="px-3 py-2.5 text-right font-mono text-keBlue font-medium">
-                        {{ item.row_subtotal ? item.row_subtotal.toFixed(2) : '-' }}
-                      </td>
-                    </tr>
-                  </tbody>
-               </table>
-            </div>
-
-            <!-- Footer Totals -->
-            <div class="p-6 bg-slate-900 border-t border-slate-700 flex justify-between items-center shrink-0">
-               <div class="text-sm text-slate-400 flex flex-col">
-                  <span>{{ selectedReceipt.added_items_count }} items processed</span>
-               </div>
-               <div class="flex items-center gap-4">
-                  <div class="text-sm text-slate-400 uppercase tracking-widest">Grand Total</div>
-                  <div class="text-2xl font-mono text-keBlue font-bold bg-keBlue/10 px-4 py-1.5 rounded-lg border border-keBlue/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-                    {{ selectedReceipt.total_price != null ? `${selectedReceipt.total_price.toFixed(2)} ${selectedReceipt.currency}` : 'N/A' }}
-                  </div>
-               </div>
-            </div>
-
-            </div> <!-- End Right Panel -->
-          </div>
+        <!-- Expanded Left Panel (Full Image) -->
+        <div 
+           class="transition-all duration-500 ease-in-out bg-black/90 flex flex-col items-center justify-center shrink-0 relative cursor-zoom-out"
+           :class="isExpanded ? 'lg:w-[40%] h-64 lg:h-full opacity-100 border-b lg:border-b-0 lg:border-r border-slate-700/50 p-4' : 'w-0 h-0 opacity-0 overflow-hidden border-none p-0'"
+           @click="isExpanded = false"
+           title="Click to collapse"
+        >
+           <img v-if="isExpanded" :src="'http://localhost:8000/images/' + extractFilename(selectedReceipt.image_path)" class="w-full h-full object-cover rounded drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]" alt="Full Receipt" />
+           <div v-if="isExpanded" class="absolute bottom-4 left-0 right-0 text-center text-slate-100 bg-black/50 py-1 text-xs font-mono uppercase tracking-widest pointer-events-none transition-opacity hover:opacity-0">
+             Click anywhere to collapse
+           </div>
         </div>
-      </Transition>
-    </Teleport>
+
+        <!-- Main Data Panel (Right side if expanded) -->
+        <div 
+           class="flex flex-col transition-all duration-500 ease-in-out overflow-hidden"
+           :class="isExpanded ? 'lg:w-[60%] h-full' : 'w-full max-h-[85vh]'"
+        >
+          <!-- Header -->
+          <div class="p-6 border-b border-slate-700/50 bg-slate-800/80 flex justify-between items-start gap-4 shrink-0 transition-all">
+             <div class="flex flex-col flex-1">
+               <h3 class="text-2xl font-bold text-slate-100 mb-1 pr-8">Receipt from {{ selectedReceipt.store_name }}</h3>
+               <p class="text-sm text-slate-400 mb-3">{{ formatDate(selectedReceipt.scan_date) }}</p>
+               
+               <!-- Maps Badge Pill -->
+               <div v-if="selectedReceipt.comment" class="inline-flex w-max items-center bg-keBlue/10 border border-keBlue/30 text-keBlue rounded-full px-3 py-1 shadow-sm hover:bg-keBlue/20 transition-colors">
+                 <svg class="w-3.5 h-3.5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                 <a :href="`https://maps.google.com/?q=${encodeURIComponent(selectedReceipt.comment)}`" target="_blank" class="text-xs font-medium truncate max-w-[200px]">
+                   {{ selectedReceipt.comment }}
+                 </a>
+               </div>
+             </div>
+             
+             <!-- Thumbnail inside Header (Only visible if NOT expanded) -->
+             <div v-show="!isExpanded" class="relative group cursor-zoom-in w-24 h-24 shrink-0 rounded-xl overflow-hidden border border-slate-600 shadow-md transition-all">
+               <img :src="'http://localhost:8000/images/' + extractFilename(selectedReceipt.image_path)" class="w-full h-full object-cover" alt="Thumb" @error="onImageError" />
+               <div @click="isExpanded = true" class="absolute inset-0 bg-slate-900/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]">
+                 <span class="text-2xl drop-shadow-md">🔍</span>
+               </div>
+             </div>
+          </div>
+
+        <!-- Scrollable Table Body -->
+        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar bg-slate-800 max-h-[50vh]">
+           <div v-if="!selectedReceipt.added_items || selectedReceipt.added_items.length === 0" class="text-slate-500 italic text-sm text-center py-8">
+             No items digitized.
+           </div>
+           
+           <table v-else class="w-full text-left text-sm text-slate-300">
+              <thead class="text-xs uppercase bg-slate-700/50 text-slate-400 sticky top-0">
+                <tr>
+                  <th class="px-3 py-2 rounded-tl-lg font-semibold">Product</th>
+                  <th class="px-3 py-2 font-semibold">Qty/Unit</th>
+                  <th class="px-3 py-2 font-semibold">Unit Price</th>
+                  <th class="px-3 py-2 rounded-tr-lg font-semibold text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-700/30">
+                <tr v-for="item in selectedReceipt.added_items" :key="item.id" class="hover:bg-slate-700/20 transition-colors">
+                  <td class="px-3 py-2.5 font-medium capitalize text-slate-200">
+                     <div class="flex items-center space-x-1.5">
+                       <span>{{ item.name }}</span>
+                       <span v-if="item.is_packaged" title="Packaged Item">📦</span>
+                     </div>
+                     <div v-if="item.brand" class="text-[10px] text-slate-500 font-mono uppercase mt-0.5 tracking-wider">{{ item.brand }}</div>
+                  </td>
+                  <td class="px-3 py-2.5 text-slate-400">{{ formatAmount(item.amount) }} <span class="text-xs opacity-70">{{ item.unit }}</span></td>
+                  <td class="px-3 py-2.5 font-mono text-[11px] text-slate-400">
+                    {{ item.unit_price ? item.unit_price.toFixed(2) : '-' }}
+                  </td>
+                  <td class="px-3 py-2.5 text-right font-mono text-keBlue font-medium">
+                    {{ item.row_subtotal ? item.row_subtotal.toFixed(2) : '-' }}
+                  </td>
+                </tr>
+              </tbody>
+           </table>
+        </div>
+
+        <!-- Footer Totals -->
+        <div class="p-6 bg-slate-900 border-t border-slate-700 flex justify-between items-center shrink-0">
+           <div class="text-sm text-slate-400 flex flex-col">
+              <span>{{ selectedReceipt.added_items_count }} items processed</span>
+           </div>
+           <div class="flex items-center gap-4">
+              <div class="text-sm text-slate-400 uppercase tracking-widest">Grand Total</div>
+              <div class="text-2xl font-mono text-keBlue font-bold bg-keBlue/10 px-4 py-1.5 rounded-lg border border-keBlue/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
+                {{ selectedReceipt.total_price != null ? `${selectedReceipt.total_price.toFixed(2)} ${selectedReceipt.currency}` : 'N/A' }}
+              </div>
+           </div>
+        </div>
+
+        </div> <!-- End Right Panel -->
+      </div>
+    </UiBackdrop>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useKitchenAPI } from '../composables/useKitchenAPI'
+import UiBackdrop from '../components/ui/UiBackdrop.vue'
 
 const { isLoading, history, fetchHistory, deleteReceipt, selectedReceipt } = useKitchenAPI()
 
