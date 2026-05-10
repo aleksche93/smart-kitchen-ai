@@ -62,22 +62,7 @@ class ChefResponse(BaseModel):
 # Used for ANALYTICS intent inventory reports (avoids 500 on event: final)
 # ---------------------------------------------------------------------------
 
-class AnalyticsItemReport(BaseModel):
-    """A single fridge item in the analytics report."""
-    name: str
-    days_left: Optional[int] = None
-    amount: float = 0.0
-    unit: str = ""
-    priority: str = "FRESH"  # "CRITICAL" | "WARNING" | "FRESH"
-
-class AnalyticsReportSchema(BaseModel):
-    """Structured inventory analytics report for ANALYTICS artifacts."""
-    summary: str = ""
-    critical_items: List[AnalyticsItemReport] = []   # days_left <= 2
-    warning_items: List[AnalyticsItemReport] = []    # days_left 3-5
-    fresh_items: List[AnalyticsItemReport] = []      # days_left > 5 or None
-    total_items: int = 0
-    waste_risk_count: int = 0
+from core.agents.sub_agents import AnalyticsItemReport, AnalyticsReportSchema
 
 class ProcessRequest(BaseModel):
     """Unified request model for all Orchestrator interactions (chat + recipe)."""
@@ -230,6 +215,9 @@ async def scan_receipt(file: UploadFile = File(...)):
     """
     contents = await file.read()
     
+    # MIME type protection: fallback to image/jpeg if unknown
+    mime_type = file.content_type if file.content_type and "image" in file.content_type else "image/jpeg"
+
     prompt = """
     Extract items from this receipt. Return ONLY a valid JSON list of objects:
     [{"name": "...", "amount": float, "unit": "...", "days_left": int/null, "category": "...", "unit_price": float}].
@@ -240,7 +228,7 @@ async def scan_receipt(file: UploadFile = File(...)):
     try:
         response = await client.aio.models.generate_content(
             model='gemini-2.5-flash',
-            contents=[prompt, types.Part.from_bytes(data=contents, mime_type=file.content_type)],
+            contents=[prompt, types.Part.from_bytes(data=contents, mime_type=mime_type)],
             config=types.GenerateContentConfig(response_mime_type="application/json")
         )
         items_data = json.loads(response.text)
@@ -248,6 +236,8 @@ async def scan_receipt(file: UploadFile = File(...)):
         # Save to DB logic here (skipped for conciseness as per existing pattern)
         return {"status": "success", "items": items_data}
     except Exception as e:
+        import traceback
+        print(f"[ReceiptScanner] Error: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/v1/fridge/item/{item_id_or_name}")

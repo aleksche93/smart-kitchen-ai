@@ -154,4 +154,5 @@ The API will be available at http://localhost:8000. Interactive documentation (S
 ---
 
 ## 🗺️ Roadmap & Tasks
-Please check `MASTER_ROADMAP.md` for historical phases, current task tracking, and future iterations.
+Please check `docs/MASTER_ROADMAP.md` and `docs/CHANGELOG.md` for historical phases, current task tracking, and future iterations.
+

@@ -34,7 +34,7 @@
             :class="msg.role === 'user'
               ? 'self-end bg-keBlue/20 text-keBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-keBlue/30'
               : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
-         <!-- Thought Trace: native <details> stays in DOM, collapses when first delta arrives -->
+         <!-- Thought Trace -->
          <details
            v-if="msg.role === 'assistant' && msg.thoughts?.length"
            :open="!msg.thoughtsCollapsed"
@@ -53,13 +53,13 @@
              </span>
            </div>
          </details>
-         <!-- Typing indicator: 3 dots — visible ONLY before first chunk arrives -->
+         <!-- Typing indicator -->
          <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1 py-0.5">
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 150ms"></span>
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
          </span>
-         <!-- Content: renders as text arrives chunk by chunk (kinetic typing via SSE) -->
+         <!-- Content -->
          <span v-else class="whitespace-pre-wrap leading-relaxed" v-html="renderContent(msg, index)"></span>
          <!-- Magic artifact trigger button -->
          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-keYellow/10 hover:bg-keYellow/20 text-keYellow border border-keYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
@@ -80,7 +80,7 @@
             @keyup.enter="!isStreaming && handleAdvice()"
             :disabled="isStreaming"
           />
-          <!-- Phase 10.4: Magic Trigger Button ✨ (Restored) -->
+          <!-- Phase 13.5: Magic Trigger Button ✨ -->
           <button 
             v-if="!localInput && !isStreaming" 
             @click="executeMagic()"
@@ -90,23 +90,24 @@
             ✨
           </button>
         </div>
-        <!-- Morphing Send/Stop button: icon-only, fixed size, no text layout shifts -->
+        <!-- Morphing Send/Stop button -->
         <button
           @click="isStreaming ? handleAbort() : handleAdvice()"
           :disabled="!isStreaming && !localInput.trim()"
           :title="isStreaming ? $t('chef.actions.stop') : $t('ui.actions.send')"
-          class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+          class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 shadow-md disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
           :class="isStreaming
             ? 'bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 text-red-400'
             : 'bg-keBlue hover:bg-blue-600 text-white border border-transparent'"
         >
-          <!-- Stop icon (square) — shown during stream -->
+          <!-- Stop icon (square) -->
           <svg v-if="isStreaming" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
             <rect x="5" y="5" width="14" height="14" rx="2" />
           </svg>
-          <!-- Send icon (paper plane) — shown at idle -->
-          <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          <!-- Chef's Knife icon (🔪) — Replaces paper plane -->
+          <svg v-else class="w-6 h-6 transform rotate-[45deg] group-hover:-translate-y-0.5 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 3L21 6L6 21H3V18L18 3Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 6L18 9" opacity="0.4" />
           </svg>
         </button>
       </div>
@@ -185,7 +186,7 @@ const scrollToBottom = () => {
   })
 }
 
-// --- Restore session history on mount (localStorage first, then SQLite fallback) ---
+// --- Restore session history on mount ---
 const CHAT_STORAGE_KEY = 'chef_chat_history_v1'
 
 const saveChatToStorage = () => {
@@ -196,7 +197,6 @@ const saveChatToStorage = () => {
 }
 
 onMounted(async () => {
-  // 1. Restore from localStorage immediately (instant, no network)
   try {
     const stored = localStorage.getItem(CHAT_STORAGE_KEY)
     if (stored) {
@@ -205,12 +205,11 @@ onMounted(async () => {
         chatHistory.value = parsed.map((m, i) => ({ ...m, _id: 'ls_' + i }))
         await nextTick()
         scrollToBottom()
-        return  // localStorage wins — skip SQLite fetch
+        return
       }
     }
   } catch (e) { /* ignore */ }
 
-  // 2. Fallback: fetch from SQLite (for sessions created before this update)
   const historyData = await fetchSessionHistory()
   if (historyData?.messages?.length) {
     chatHistory.value = historyData.messages.map((m, i) => ({ ...m, _id: 'h_' + i }))
@@ -218,21 +217,6 @@ onMounted(async () => {
     await nextTick()
     scrollToBottom()
   }
-})
-
-// --- Processing action label (contextual to user input keywords) ---
-const processingAction = computed(() => {
-   const lower = localInput.value.toLowerCase()
-   if (['tomato', 'vegetable', 'potato', 'onion', 'carrot', 'garlic'].some(k => lower.includes(k))) {
-      return { text: t('chef.processing.chopping'), icon: "🔪" }
-   }
-   if (['water', 'juice', 'beer', 'wine', 'drink', 'milk'].some(k => lower.includes(k))) {
-      return { text: t('chef.processing.pouring'), icon: "🫗" }
-   }
-   if (['meat', 'chicken', 'beef', 'pork'].some(k => lower.includes(k))) {
-      return { text: t('chef.processing.searing'), icon: "🥩" }
-   }
-   return { text: t('chef.processing.heating'), icon: "🍳" }
 })
 
 // --- Clear session ---
@@ -246,17 +230,13 @@ const handleClearSession = async () => {
   try { localStorage.removeItem(CHAT_STORAGE_KEY) } catch (e) { /* ignore */ }
 }
 
-// --- Abort stream (Stop button) ---
+// --- Abort stream ---
 const handleAbort = () => {
   abortGeneration()
   isStreaming.value = false
   btnState.value = BUTTON_STATES.IDLE
 }
 
-/**
- * Build a safe chat_history payload for the backend (last 10 messages, no system artifacts).
- * Strips display-only fields and filters out empty messages.
- */
 const buildChatHistoryPayload = () => {
   return chatHistory.value
     .filter(m => m.content && m.content.trim())
@@ -264,15 +244,10 @@ const buildChatHistoryPayload = () => {
     .slice(-10)
 }
 
-/**
- * renderContent — Transforms markdown/tags into styled HTML.
- * Intercepts Sin-Sieve warnings specifically.
- */
 const renderContent = (msg, index) => {
   if (msg.role === 'user') return msg.content
   let html = msg.content || ''
   
-  // 1. Intercept Sin-Sieve Audit Pattern
   const auditLabel = t('chef.audit.warning')
   const sieveRegex = new RegExp(`> ⚠️ \\*\\*${auditLabel}\\*\\*: (.*)`, 'g')
   
@@ -288,7 +263,6 @@ const renderContent = (msg, index) => {
     `.trim()
   })
 
-  // 2. Add cursor for active streaming assistant bubble
   if (isStreaming.value && index === chatHistory.value.length - 1 && msg.content !== '') {
     html += '<span class="inline-block w-0.5 h-3.5 bg-keBlue ml-0.5 align-middle animate-pulse"></span>'
   }
@@ -296,12 +270,6 @@ const renderContent = (msg, index) => {
   return html
 }
 
-/**
- * handleAdvice — Main entry point for all chat requests.
- * Routes through the unified /api/v1/chef/process endpoint.
- * Delta chunks with intent=CHAT flow into the chat bubble.
- * Delta chunks with intent=RECIPE flow into AdviceDisplay (via streamingContent).
- */
 const handleAdvice = async () => {
   if (!localInput.value.trim() || btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
@@ -313,7 +281,6 @@ const handleAdvice = async () => {
   lastQuery.value = queryToSend
   localInput.value = ''
 
-  // Add user bubble and empty assistant placeholder to chat
   const userMsgId = 'msg_' + (++_msgCounter)
   const assistantMsgId = 'msg_' + (++_msgCounter)
   chatHistory.value = [
@@ -325,8 +292,9 @@ const handleAdvice = async () => {
 
   let _accumulatedChatText = ''
   let _hasReceivedChatDelta = false
+  let _thoughtsCollapsed = false
+  const _bubbleThoughts = []
 
-  // Payload for /process
   const payload = {
     title: "Chef's Chat",
     artifact_type: "RECIPE",
@@ -336,14 +304,6 @@ const handleAdvice = async () => {
 
   const _sleep = (ms) => new Promise(r => setTimeout(r, ms))
 
-  // Per-bubble thought accumulator (status events with ui_thought=true)
-  const _bubbleThoughts = []
-  let _thoughtsCollapsed = false
-
-  /**
-   * addThoughtToBubble — appends a ui_thought status text to the last assistant bubble.
-   * Only shows content-aware thoughts (tagged by orchestrator _tag_thought).
-   */
   const addThoughtToBubble = (text) => {
     if (_thoughtsCollapsed) return
     _bubbleThoughts.push(text)
@@ -354,15 +314,8 @@ const handleAdvice = async () => {
     ]
   }
 
-  /**
-   * onChatDelta — Appends text directly to the last assistant bubble.
-   * This is the real-time typing effect for CHAT intent.
-   * On first delta: collapses the Thought Trace.
-   */
   const onChatDelta = async (textChunk) => {
     _hasReceivedChatDelta = true
-
-    // Collapse thought trace on first real delta
     if (!_thoughtsCollapsed) {
       _thoughtsCollapsed = true
       const idx = chatHistory.value.length - 1
@@ -373,8 +326,6 @@ const handleAdvice = async () => {
     }
 
     _accumulatedChatText += textChunk
-
-    // Intercept and strip ACTION tags
     const regexMagic = /\[ACTION: MAGIC_TRIGGER\]/g
     const regexAudit = /\[ACTION: AUDIT_WARNING\]/g
 
@@ -386,7 +337,6 @@ const handleAdvice = async () => {
       _accumulatedChatText = _accumulatedChatText.replace(regexAudit, `⚠️ **${t('chef.audit.warning')}**: `)
     }
 
-    // Safe render buffer: hold back potential partial tags at end of stream
     let safeText = _accumulatedChatText
     const partialMagic = _accumulatedChatText.match(/\[A?C?T?I?O?N?:?\s?M?A?G?I?C?_?T?R?I?G?G?E?R?\]?$/)
     const partialAudit = _accumulatedChatText.match(/\[A?C?T?I?O?N?:?\s?A?U?D?I?T?_?W?A?R?N?I?N?G?\]?$/)
@@ -396,16 +346,11 @@ const handleAdvice = async () => {
       safeText = _accumulatedChatText.slice(0, -partialAudit[0].length)
     }
 
-    // Patch the assistant bubble content by ID
     const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
     if (msgIdx !== -1) {
-      chatHistory.value[msgIdx] = {
-        ...chatHistory.value[msgIdx],
-        content: safeText
-      }
+      chatHistory.value[msgIdx] = { ...chatHistory.value[msgIdx], content: safeText }
     }
 
-    // Micro-delay for kinetic typing cadence
     const words = textChunk.trim().split(/\s+/)
     for (let i = 0; i < words.length; i++) {
       await _sleep(Math.random() * 20)
@@ -413,23 +358,17 @@ const handleAdvice = async () => {
     scrollToBottom()
   }
 
-  // 2. Start streaming via orchestrator
   layoutStore.setChefStatus('COOKING')
   try {
     await startProcess(
       payload,
-      // onStatus — capture ui_thought events for Thought Trace
       (statusText, statusData) => {
         chefStore.logThought(statusText)
-        if (statusData?.ui_thought) {
-          addThoughtToBubble(statusText)
-        }
+        if (statusData?.ui_thought) addThoughtToBubble(statusText)
       },
-      // onFinal
       (finalData) => {
         const actualPayload = finalData?.payload || finalData
         
-        // If CHAT: finalize the bubble content
         if (actualPayload?.artifact_type === 'CHAT') {
           const fullClean = _accumulatedChatText
             .replaceAll(MAGIC_TAG, '')
@@ -438,15 +377,11 @@ const handleAdvice = async () => {
           
           const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
           if (msgIdx !== -1 && fullClean) {
-            chatHistory.value[msgIdx] = {
-              ...chatHistory.value[msgIdx],
-              content: fullClean
-            }
+            chatHistory.value[msgIdx] = { ...chatHistory.value[msgIdx], content: fullClean }
           }
           return
         }
 
-        // RECIPE / ANALYTICS: Merge confirmation message into the existing assistant bubble
         const artifactType = actualPayload?.artifact_type || 'ORCHESTRATED_RESPONSE'
         const confirmMsgText = t(`chef.responses.${artifactType.toLowerCase()}_ready`)
         
@@ -460,25 +395,18 @@ const handleAdvice = async () => {
           }
         }
         
-        if (actualPayload?.artifact_type === 'RECIPE') {
-          layoutStore.upsertArtifact({
-            artifact_type: 'RECIPE',
-            title: actualPayload.name || 'Generated Recipe',
-            data: actualPayload
-          })
-        } else if (actualPayload?.artifact_type === 'ANALYTICS') {
-          layoutStore.upsertArtifact({
-            artifact_type: 'ANALYTICS',
-            title: t('artifact.analytics.title'),
-            data: actualPayload
-          })
-        }
+        // Phase 13.5: Fix Empty Artifact - Pass metadata to upsertArtifact
+        const artifactData = actualPayload?.metadata || actualPayload
+        
+        layoutStore.upsertArtifact({
+          artifact_type: artifactType,
+          title: artifactType === 'ANALYTICS' ? t('artifact.analytics.title') : (artifactData.name || 'Chef Advice'),
+          data: artifactData
+        })
         
         scrollToBottom()
       },
-      // onChatDelta
       onChatDelta,
-      // onArtifactDelta — streamingContent is updated inside useChefStream automatically
       null
     )
   } catch (err) {
@@ -490,16 +418,10 @@ const handleAdvice = async () => {
     btnState.value = BUTTON_STATES.IDLE
     isStreaming.value = false
     layoutStore.setChefStatus('IDLE')
-
-    // Persist to localStorage after every interaction
     saveChatToStorage()
   }
 }
 
-/**
- * executeMagic — Sends an artifact-generation request through the Orchestrator.
- * Forces RECIPE intent via force_intent field — bypasses LLM classifier.
- */
 const executeMagic = async (query = lastQuery.value) => {
   if (btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
@@ -507,7 +429,6 @@ const executeMagic = async (query = lastQuery.value) => {
   showMagicButton.value = false
   chefState.showMagicTrigger = false
 
-  // 2. Start streaming via orchestrator
   layoutStore.setChefStatus('COOKING')
   try {
     if (query !== lastQuery.value) lastQuery.value = query
@@ -517,14 +438,12 @@ const executeMagic = async (query = lastQuery.value) => {
       artifact_type: "RECIPE",
       context_parameters: String(query || ""),
       chat_history: buildChatHistoryPayload(),
-      force_intent: "RECIPE"  // Always generate artifact, never chat
+      force_intent: "RECIPE"
     }
 
     await startProcess(
       payload,
-      (statusMsg) => {
-        chefStore.logThought(statusMsg)
-      },
+      (statusMsg) => chefStore.logThought(statusMsg),
       (finalData) => {
         const actualPayload = finalData?.payload || finalData
         const artifactData = actualPayload?.metadata || actualPayload
@@ -535,7 +454,6 @@ const executeMagic = async (query = lastQuery.value) => {
           data: artifactData
         })
       },
-      // No chat delta expected for magic (always RECIPE)
       null,
       null
     )
@@ -552,11 +470,9 @@ const executeMagic = async (query = lastQuery.value) => {
   }
 }
 
-// --- File upload & receipt scanning ---
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
-
   if (file.size > 5 * 1024 * 1024) {
     error.value = t('errors.file_too_large')
     event.target.value = ''
@@ -565,36 +481,6 @@ const handleFileUpload = (event) => {
   error.value = null
   rawImageObject.value = URL.createObjectURL(file)
   event.target.value = ''
-}
-
-/**
- * handleFileSelect — Legacy method restored for robustness.
- * Reads file and prepares it via canvas.
- */
-const handleFileSelect = (event) => {
-  const file = event.target.files[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = (e) => prepareImage(e.target.result)
-  reader.readAsDataURL(file)
-}
-
-/**
- * prepareImage — Draws image to scanCanvas and extracts blob.
- */
-const prepareImage = (src) => {
-  const img = new Image()
-  img.onload = () => {
-    if (!scanCanvas.value) return
-    const ctx = scanCanvas.value.getContext('2d')
-    scanCanvas.value.width = img.width
-    scanCanvas.value.height = img.height
-    ctx.drawImage(img, 0, 0)
-    scanCanvas.value.toBlob((blob) => {
-      handleCroppedImage(blob)
-    }, 'image/jpeg', 0.9)
-  }
-  img.src = src
 }
 
 const cancelCrop = () => {
@@ -606,13 +492,11 @@ const cancelCrop = () => {
 
 const handleCroppedImage = async (blob) => {
   cancelCrop()
-
   error.value = null
   successMsg.value = null
   scannedItems.value = []
 
   const fileToUpload = new File([blob], "receipt_cropped.jpg", { type: "image/jpeg" })
-
   chefStore.logThought(t('ticker.checking_traps'))
   chefStore.logThought(t('ticker.processing'))
 
@@ -621,56 +505,22 @@ const handleCroppedImage = async (blob) => {
     if (data.items_added) {
       chefStore.logThought(t('ticker.identified_shop', { shop: data.store_name || 'Unknown' }))
       chefStore.logThought(t('ticker.extracted_items', { count: data.total_recognized }))
-
       scannedItems.value = data.items_added
       successMsg.value = t('scan.success', { store: data.store_name || 'Unknown', count: data.total_recognized })
       setTimeout(() => { successMsg.value = null }, 5000)
-
-      const hasBag = data.items_added.some(item => item.is_bag)
-      if (hasBag) {
-        chefState.chatMessage = t('scan.bag_detected')
-      } else {
-        chefState.chatMessage = t('scan.no_bag')
-      }
-    } else if (data.items) {
-      scannedItems.value = data.items
-    } else if (Array.isArray(data)) {
-      scannedItems.value = data
+      chefState.chatMessage = data.items_added.some(item => item.is_bag) ? t('scan.bag_detected') : t('scan.no_bag')
     } else {
-      scannedItems.value = [data]
+      scannedItems.value = data.items || Array.isArray(data) ? data : [data]
     }
     chefState.emotionDisplay = "FOCUSED"
   } catch (err) {
-    if (err.message && err.message.toLowerCase().includes('duplicate')) {
-       error.value = t('errors.duplicate_receipt')
-       chefState.emotionDisplay = "ANGRY"
-       fetchFridge()
-    } else {
-       error.value = err.message || t('errors.connection_lost')
-    }
+    error.value = err.message || t('errors.connection_lost')
+    if (err.message?.toLowerCase().includes('duplicate')) fetchFridge()
   }
 }
 </script>
 
 <style scoped>
-/* Thought Trace fade-out when content arrives */
-.thought-trace-enter-active {
-  transition: opacity 0.3s ease, max-height 0.3s ease;
-}
-.thought-trace-leave-active {
-  transition: opacity 0.4s ease, max-height 0.5s ease;
-}
-.thought-trace-enter-from,
-.thought-trace-leave-to {
-  opacity: 0;
-  max-height: 0;
-}
-.thought-trace-enter-to,
-.thought-trace-leave-from {
-  opacity: 1;
-  max-height: 200px;
-}
-
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
@@ -680,7 +530,6 @@ const handleCroppedImage = async (blob) => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Sin-Sieve Alert Styling */
 :deep(.sin-sieve-alert) {
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
@@ -691,7 +540,6 @@ const handleCroppedImage = async (blob) => {
   display: flex;
   gap: 0.75rem;
   align-items: flex-start;
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
 }
 
 :deep(.sin-icon) {
@@ -709,7 +557,6 @@ const handleCroppedImage = async (blob) => {
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: #f87171;
 }
 

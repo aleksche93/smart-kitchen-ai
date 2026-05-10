@@ -49,7 +49,8 @@
       "surprise_prompt": "Здивуй мене, Шефе!"
     },
     "troll": {
-      "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
+      "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!",
+      "short_comment": "Успіхів без цього:"
     },
     "responses": {
       "analytics_ready": "Звіт за інвентарем готовий — зазирай до Панелі Порад! 📊",

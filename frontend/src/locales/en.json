@@ -48,7 +48,8 @@
       "surprise_prompt": "Surprise me, Chef!"
     },
     "troll": {
-      "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
+      "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!",
+      "short_comment": "Good luck without these:"
     },
     "responses": {
       "analytics_ready": "Your inventory report is live in the Advice panel — go see what needs saving! 📊",

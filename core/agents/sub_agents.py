@@ -1,6 +1,6 @@
 import json
 import asyncio
-from typing import AsyncGenerator
+from typing import AsyncGenerator, List, Optional
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
@@ -18,6 +18,29 @@ class FinalArtifactPayload(BaseModel):
     artifact_type: str = Field(..., description="Type of the artifact: RECIPE, SHOPPING_LIST, CHAT, etc.")
     content: str = Field(default="", description="The full markdown content generated")
     metadata: dict = Field(default_factory=dict, description="Additional backend metadata")
+
+
+# ---------------------------------------------------------------------------
+# Analytics Schemas (Moved from api/smart_fridge.py to avoid circular imports)
+# ---------------------------------------------------------------------------
+
+class AnalyticsItemReport(BaseModel):
+    """A single fridge item in the analytics report."""
+    name: str
+    days_left: Optional[int] = None
+    amount: float = 0.0
+    unit: str = ""
+    priority: str = "FRESH"
+
+
+class AnalyticsReportSchema(BaseModel):
+    """Structured inventory analytics report for ANALYTICS artifacts."""
+    summary: str = ""
+    critical_items: List[AnalyticsItemReport] = []   # days_left <= 2
+    warning_items: List[AnalyticsItemReport] = []    # days_left 3-5
+    fresh_items: List[AnalyticsItemReport] = []      # days_left > 5 or None
+    total_items: int = 0
+    waste_risk_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +137,9 @@ class IntentClassifierAgent(BaseChefAgent):
         if context.get("force_intent"):
             return context["force_intent"].upper()
 
+        if not client:
+            return "CHAT"
+
         user_input = context.get("user_input", "")
         system_prompt = (
             "You are an Intent Classifier for a Smart Kitchen Assistant.\n"
@@ -160,6 +186,10 @@ class ConversationalAgent(BaseChefAgent):
     """
     async def generate_stream(self, context: dict) -> AsyncGenerator[dict, None]:
         yield {"type": "status", "data": {"text": "Chef is composing a response..."}}
+
+        if not client:
+            yield {"type": "status", "data": {"text": "Error: Gemini client not initialized."}}
+            return
 
         user_input = context.get("user_input", "")
         inventory_summary = context.get("inventory_summary", "No inventory data.")
@@ -348,7 +378,6 @@ class FlavorArchitect(BaseChefAgent):
             yield {"type": "delta", "data": {"text": f"\n\n> **Chef's Diagnostic:** Generation failed. {str(e)}", "intent": "RECIPE"}}
 
 
-
 class AnalyticsAgent(BaseChefAgent):
     """
     Generates a structured inventory analytics report.
@@ -361,25 +390,19 @@ class AnalyticsAgent(BaseChefAgent):
     async def generate_stream(self, context: dict) -> AsyncGenerator[dict, None]:
         yield {"type": "status", "data": {"text": "Chef is analyzing your fridge inventory..."}}
 
-        if not client:
-            yield {"type": "status", "data": {"text": "Error: Gemini client not initialized."}}
-            return
-
         inventory = context.get("inventory", [])
 
         if not inventory:
             yield {"type": "status", "data": {"text": "Fridge is empty — nothing to analyze."}}
+            empty_report = AnalyticsReportSchema(
+                summary="Your fridge is a void. A culinary black hole. Go shopping — now.",
+                total_items=0,
+                waste_risk_count=0
+            )
             empty_payload = FinalArtifactPayload(
                 artifact_type="ANALYTICS",
-                content="Fridge is empty.",
-                metadata={
-                    "summary": "Your fridge is a void. A culinary black hole. Go shopping — now.",
-                    "critical_items": [],
-                    "warning_items": [],
-                    "fresh_items": [],
-                    "total_items": 0,
-                    "waste_risk_count": 0
-                }
+                content=empty_report.summary,
+                metadata=empty_report.model_dump()
             )
             yield {"type": "final", "data": {"payload": empty_payload.model_dump()}}
             return
@@ -395,24 +418,25 @@ class AnalyticsAgent(BaseChefAgent):
                 continue
 
             days = item.get("days_left")
-            entry = {
-                "name": item.get("name", "unknown"),
-                "days_left": days,
-                "amount": amount,
-                "unit": item.get("unit", ""),
-                "priority": ""
-            }
+            entry = AnalyticsItemReport(
+                name=item.get("name", "unknown"),
+                days_left=days,
+                amount=amount,
+                unit=item.get("unit", ""),
+                priority=""
+            )
             if days is not None and days <= 2:
-                entry["priority"] = "CRITICAL"
+                entry.priority = "CRITICAL"
                 critical_items.append(entry)
             elif days is not None and days <= 5:
-                entry["priority"] = "WARNING"
+                entry.priority = "WARNING"
                 warning_items.append(entry)
             else:
-                entry["priority"] = "FRESH"
+                entry.priority = "FRESH"
                 fresh_items.append(entry)
 
-        total_items = len(inventory)
+        # total_items should count only active (non-zero) items
+        total_items = len(critical_items) + len(warning_items) + len(fresh_items)
         waste_risk_count = len(critical_items) + len(warning_items)
 
         yield {"type": "status", "data": {
@@ -421,32 +445,34 @@ class AnalyticsAgent(BaseChefAgent):
         }}
 
         # ── Ask Gemini ONLY for the creative summary ──────────────────────────
-        summary_prompt = (
-            f"You are the KozakEye Chef — witty, dramatic, Michelin-star persona.\n"
-            f"Based on these EXACT fridge stats, write ONE sentence as a chef's assessment:\n"
-            f"- Total items: {total_items}\n"
-            f"- Critical (use today): {len(critical_items)} items\n"
-            f"- Warning (use soon): {len(warning_items)} items\n"
-            f"- Fresh: {len(fresh_items)} items\n"
-            f"Critical items: {[i['name'] for i in critical_items]}\n"
-            f"Warning items: {[i['name'] for i in warning_items]}\n\n"
-            f"Rules: English only. One sentence. Personality-driven, slightly dramatic. "
-            f"Do NOT make up numbers — use only the ones given. "
-            f"Return ONLY the summary string (no JSON, no quotes wrapping the whole thing)."
-        )
-
         summary = "Inventory analysis complete."
-        try:
-            response = await client.aio.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=summary_prompt,
-                config=types.GenerateContentConfig(temperature=0.7)
+        if client:
+            summary_prompt = (
+                f"You are the KozakEye Chef — witty, dramatic, Michelin-star persona.\n"
+                f"Based on these EXACT fridge stats, write ONE sentence as a chef's assessment:\n"
+                f"- Total items: {total_items}\n"
+                f"- Critical (use today): {len(critical_items)} items\n"
+                f"- Warning (use soon): {len(warning_items)} items\n"
+                f"- Fresh: {len(fresh_items)} items\n"
+                f"Critical items: {[i.name for i in critical_items]}\n"
+                f"Warning items: {[i.name for i in warning_items]}\n\n"
+                f"Rules: English only. One sentence. Personality-driven, slightly dramatic. "
+                f"Do NOT make up numbers — use only the ones given. "
+                f"Return ONLY the summary string (no JSON, no quotes wrapping the whole thing)."
             )
-            raw = (response.text or "").strip().strip('"').strip("'")
-            if raw:
-                summary = raw
-        except Exception as e:
-            print(f"[AnalyticsAgent] Summary generation failed: {e}")
+            try:
+                response = await client.aio.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=summary_prompt,
+                    config=types.GenerateContentConfig(temperature=0.7)
+                )
+                raw = (response.text or "").strip().strip('"').strip("'")
+                if raw:
+                    summary = raw
+            except Exception as e:
+                print(f"[AnalyticsAgent] Summary generation failed: {e}")
+
+        if not summary or summary == "Inventory analysis complete.":
             # Fallback: generate a summary from Python-known facts
             if critical_items:
                 summary = f"{len(critical_items)} item(s) need immediate attention — your fridge is a ticking clock."
@@ -455,21 +481,23 @@ class AnalyticsAgent(BaseChefAgent):
             else:
                 summary = f"All {total_items} items are fresh. Chef approves — for now."
 
+        # ── Final payload assembled entirely in Python ────────────────────────
+        report = AnalyticsReportSchema(
+            summary=summary,
+            critical_items=critical_items,
+            warning_items=warning_items,
+            fresh_items=fresh_items,
+            total_items=total_items,
+            waste_risk_count=waste_risk_count
+        )
+
         context["generated_content"] = summary
         context["artifact_type"] = "ANALYTICS"
 
-        # ── Final payload assembled entirely in Python ────────────────────────
         payload = FinalArtifactPayload(
             artifact_type="ANALYTICS",
             content=summary,
-            metadata={
-                "summary": summary,
-                "critical_items": critical_items,
-                "warning_items": warning_items,
-                "fresh_items": fresh_items,
-                "total_items": total_items,
-                "waste_risk_count": waste_risk_count
-            }
+            metadata=report.model_dump()
         )
         yield {"type": "final", "data": {"payload": payload.model_dump()}}
 
@@ -493,6 +521,10 @@ class SinSieveAgent(BaseChefAgent):
             if artifact_type == "CHAT":
                 return
             yield {"type": "status", "data": {"text": "Sin-Sieve is auditing the recipe..."}}
+
+        if not client:
+            context["is_safe"] = True
+            return
 
         await asyncio.sleep(0.2)
 

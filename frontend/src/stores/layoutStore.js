@@ -185,22 +185,26 @@ export const useLayoutStore = defineStore('layout', () => {
   }
 
   // Phase 13.5: Chef Avatar Status Persistence (TTL: 15 mins)
-  const chefStatus = ref(localStorage.getItem('kozak_chef_status') || 'IDLE')
-  const statusTimestamp = ref(parseInt(localStorage.getItem('kozak_chef_status_ts') || '0'))
-
-  // Validate TTL on init
-  if (chefStatus.value !== 'IDLE') {
+  const getInitialStatus = () => {
+    const savedStatus = localStorage.getItem('kozak_chef_status') || 'IDLE'
+    const savedTs = parseInt(localStorage.getItem('kozak_chef_status_ts') || '0')
     const now = Date.now()
-    if (now - statusTimestamp.value > 15 * 60 * 1000) {
-      chefStatus.value = 'IDLE'
+    const TTL = 15 * 60 * 1000 // 15 minutes
+
+    if (savedStatus !== 'IDLE' && (now - savedTs > TTL)) {
       localStorage.removeItem('kozak_chef_status')
       localStorage.removeItem('kozak_chef_status_ts')
+      return 'IDLE'
     }
+    return savedStatus
   }
 
+  const chefStatus = ref(getInitialStatus())
+  const statusTimestamp = ref(parseInt(localStorage.getItem('kozak_chef_status_ts') || '0'))
+
   const setChefStatus = (status) => {
-    chefStatus.value = status
     const now = Date.now()
+    chefStatus.value = status
     statusTimestamp.value = now
     localStorage.setItem('kozak_chef_status', status)
     localStorage.setItem('kozak_chef_status_ts', now.toString())

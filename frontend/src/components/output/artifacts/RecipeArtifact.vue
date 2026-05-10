@@ -55,14 +55,28 @@
     <!-- Notes -->
     <p v-if="recipe.notes" class="text-xs italic text-slate-500 border-t border-slate-700/30 pt-2">{{ recipe.notes }}</p>
 
-    <!-- Cook It! Button: Compact & Minimal -->
-    <div class="border-t border-slate-700/40 pt-3 mt-1">
-      <!-- Post-cook feedback: simplified -->
+    <!-- Cook It! Button & Missing Items Feedback -->
+    <div class="border-t border-slate-700/40 pt-3 mt-1 space-y-3">
+      <!-- Phase 13.5: Transformed Missing Ingredients UI -->
       <Transition name="cook-result">
-        <div v-if="cookResult" class="mb-2 px-3 py-1.5 rounded-lg text-[11px]"
-             :class="cookResult.type === 'success' ? 'bg-emerald-900/20 border border-emerald-700/30 text-emerald-400/90' : 'bg-amber-900/20 border border-amber-700/30 text-amber-300/90'">
-          <p v-if="cookResult.deducted?.length" class="font-medium">✅ {{ cookResult.deducted.join(', ') }}</p>
-          <p v-if="cookResult.trollMessage" class="font-bold text-red-400 mt-0.5">{{ cookResult.trollMessage }}</p>
+        <div v-if="cookResult" class="px-3 py-2 rounded-xl bg-slate-800/40 border border-slate-700/30">
+          <p v-if="cookResult.deducted?.length" class="text-emerald-400/90 text-[11px] font-medium mb-2">
+            ✅ {{ cookResult.deducted.join(', ') }}
+          </p>
+          
+          <div v-if="cookResult.notFound?.length" class="space-y-2">
+            <!-- Snarky Chef Comment -->
+            <p class="text-red-400/90 text-[10px] font-black uppercase tracking-wider italic">
+              "{{ $t('chef.troll.short_comment') || 'Good luck without these:' }}"
+            </p>
+            <!-- Missing Items Tags/Chips -->
+            <div class="flex flex-wrap gap-1">
+              <span v-for="(item, i) in cookResult.notFound" :key="i"
+                    class="px-2 py-0.5 rounded-full bg-red-900/30 border border-red-500/20 text-[9px] font-bold text-red-300/80">
+                {{ item }}
+              </span>
+            </div>
+          </div>
         </div>
       </Transition>
 
@@ -120,7 +134,7 @@ const harmonyClass = computed(() => {
   return 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
 })
 
-// Fleeing Button State: Constrained to Artifact Boundaries
+// Fleeing Button State
 const isFleeing = ref(false)
 const isAlarmLocked = ref(false)
 const isShaking = ref(false)
@@ -137,10 +151,7 @@ const buttonStyle = computed(() => {
       transition: 'transform 0.15s ease-out'
     }
   }
-  return {
-    transform: 'translate(0px, 0px)',
-    transition: 'transform 0.3s ease-out'
-  }
+  return { transform: 'translate(0px, 0px)', transition: 'transform 0.3s ease-out' }
 })
 
 const buttonClasses = computed(() => {
@@ -159,44 +170,30 @@ const startFleeing = (missingIngredients) => {
     isAlarmLocked.value = true
     buttonTranslateX.value = 0
     buttonTranslateY.value = 0
-    
-    cookResult.value = {
-      ...cookResult.value,
-      trollMessage: t('chef.troll.button_fleeing', { missing_ingredients: missingIngredients.join(', ') })
-    }
   }, 8000)
 }
 
 const handleButtonHover = () => {
   if (!isFleeing.value || !buttonRef.value || !containerRef.value) return
-  
   const containerRect = containerRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
-  
-  // Phase 13.5: Strict boundaries — flee radius constrained to artifact inner space
   const fleeStep = 80
   let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeStep
   let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeStep
-  
-  // Constrain strictly to container to prevent overflow/scrolling
-  // Safety margin of 10px from edges
   const maxW = (containerRect.width / 2) - (btnRect.width / 2) - 10
   const maxH = (containerRect.height / 2) - (btnRect.height / 2) - 10
-
   buttonTranslateX.value = Math.max(-maxW, Math.min(newX, maxW))
   buttonTranslateY.value = Math.max(-maxH, Math.min(newY, maxH))
 }
 
 const handleCook = () => {
   if (cookLoading.value || cookDone.value || !ingredients.value.length) return
-  
   if (isAlarmLocked.value) {
     isShaking.value = false
     setTimeout(() => { isShaking.value = true }, 50)
     return
   }
   if (isFleeing.value) return 
-
   cookLoading.value = true
   cookResult.value = null
   emit('cook', ingredients.value)
@@ -205,48 +202,28 @@ const handleCook = () => {
 const onCookResult = (result) => {
   cookLoading.value = false
   const notFound = result.missing || result.not_found || []
-  
   cookResult.value = {
     type: result.status === 'error' ? 'error' : (notFound.length === ingredients.value.length ? 'warn' : 'success'),
     deducted: result.deducted || [],
     notFound: notFound
   }
-  
-  if (result.status === 'error' || notFound.length > 0) {
-    startFleeing(notFound)
-  } else {
-    cookDone.value = result.deducted?.length > 0
-  }
+  if (result.status === 'error' || notFound.length > 0) startFleeing(notFound)
+  else cookDone.value = result.deducted?.length > 0
 }
 
-onUnmounted(() => {
-  if (fleeTimer) clearTimeout(fleeTimer)
-})
-
+onUnmounted(() => { if (fleeTimer) clearTimeout(fleeTimer) })
 defineExpose({ onCookResult })
 </script>
 
 <style scoped>
-.cook-result-enter-active, .cook-result-leave-active {
-  transition: all 0.3s ease;
-}
-.cook-result-enter-from, .cook-result-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
+.cook-result-enter-active, .cook-result-leave-active { transition: all 0.3s ease; }
+.cook-result-enter-from, .cook-result-leave-to { opacity: 0; transform: translateY(-4px); }
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px) rotate(-2deg); }
   75% { transform: translateX(5px) rotate(2deg); }
 }
-.animate-shake {
-  animation: shake 0.3s ease-in-out;
-}
-.audit-enter-active, .audit-leave-active {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.audit-enter-from, .audit-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(-10px);
-}
+.animate-shake { animation: shake 0.3s ease-in-out; }
+.audit-enter-active, .audit-leave-active { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.audit-enter-from, .audit-leave-to { opacity: 0; transform: scale(0.95) translateY(-10px); }
 </style>
