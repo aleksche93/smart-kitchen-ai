@@ -26,26 +26,54 @@
     </div>
 
     <!-- CRITICAL tier -->
-    <ItemTier
-      v-if="data.critical_items?.length"
-      :items="data.critical_items"
-      :label="$t('artifact.analytics.critical')"
-      priority="CRITICAL"
-    />
+    <div v-if="data.critical_items?.length" class="space-y-1">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[9px] uppercase tracking-widest font-black text-red-400">
+          🔴 {{ $t('artifact.analytics.critical') }}
+        </span>
+        <div class="flex-1 h-px bg-red-400/20"></div>
+      </div>
+      <div v-for="(item, i) in data.critical_items" :key="`crit-${i}`"
+           class="flex items-center justify-between px-3 py-2 rounded-lg border
+                  bg-red-900/20 border-red-700/30 text-red-200 text-sm">
+        <span class="font-medium capitalize truncate">{{ item.name }}</span>
+        <div class="flex items-center gap-2 shrink-0 ml-2">
+          <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
+          <span v-if="item.days_left !== null && item.days_left !== undefined"
+                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-800/60 text-red-300">
+            {{ item.days_left }}d
+          </span>
+        </div>
+      </div>
+    </div>
 
     <!-- WARNING tier -->
-    <ItemTier
-      v-if="data.warning_items?.length"
-      :items="data.warning_items"
-      :label="$t('artifact.analytics.warning')"
-      priority="WARNING"
-    />
+    <div v-if="data.warning_items?.length" class="space-y-1">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-[9px] uppercase tracking-widest font-black text-amber-400">
+          🟡 {{ $t('artifact.analytics.warning') }}
+        </span>
+        <div class="flex-1 h-px bg-amber-400/20"></div>
+      </div>
+      <div v-for="(item, i) in data.warning_items" :key="`warn-${i}`"
+           class="flex items-center justify-between px-3 py-2 rounded-lg border
+                  bg-amber-900/20 border-amber-700/30 text-amber-200 text-sm">
+        <span class="font-medium capitalize truncate">{{ item.name }}</span>
+        <div class="flex items-center gap-2 shrink-0 ml-2">
+          <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
+          <span v-if="item.days_left !== null && item.days_left !== undefined"
+                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-800/60 text-amber-300">
+            {{ item.days_left }}d
+          </span>
+        </div>
+      </div>
+    </div>
 
-    <!-- FRESH tier (collapsible, closed by default) -->
+    <!-- FRESH tier (collapsible via native <details>) -->
     <details v-if="data.fresh_items?.length"
              class="group bg-slate-800/30 rounded-xl border border-slate-700/30 overflow-hidden">
-      <summary class="flex items-center justify-between px-4 py-2.5 cursor-pointer list-none
-                      [&::-webkit-details-marker]:hidden hover:bg-slate-700/20 transition-colors">
+      <summary class="flex items-center justify-between px-4 py-2.5 cursor-pointer
+                      list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700/20 transition-colors">
         <span class="text-[10px] uppercase tracking-widest font-black text-emerald-400/80">
           🌿 {{ $t('artifact.analytics.fresh') }} ({{ data.fresh_items.length }})
         </span>
@@ -54,8 +82,19 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
       </summary>
-      <div class="px-4 pb-3">
-        <ItemTier :items="data.fresh_items" priority="FRESH" />
+      <div class="px-4 pb-3 space-y-1 pt-1">
+        <div v-for="(item, i) in data.fresh_items" :key="`fresh-${i}`"
+             class="flex items-center justify-between px-3 py-2 rounded-lg border
+                    bg-slate-800/30 border-slate-700/20 text-slate-300 text-sm">
+          <span class="font-medium capitalize truncate">{{ item.name }}</span>
+          <div class="flex items-center gap-2 shrink-0 ml-2">
+            <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
+            <span v-if="item.days_left !== null && item.days_left !== undefined"
+                  class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-400">
+              {{ item.days_left }}d
+            </span>
+          </div>
+        </div>
       </div>
     </details>
 
@@ -69,58 +108,17 @@
 </template>
 
 <script setup>
-import { useI18n } from '../../../plugins/i18n'
-
-const { t } = useI18n()
-
+// Pure SFC — no inline component definitions (prevents Vue runtime compiler error in Vite).
 const props = defineProps({
   data: { type: Object, required: true }
 })
-
-// Inline sub-component for tier rows (no file needed, DRY)
-const ItemTier = {
-  props: { items: Array, label: String, priority: String },
-  template: `
-    <div class="space-y-1">
-      <div v-if="label" class="flex items-center gap-2 mb-2">
-        <span class="text-[9px] uppercase tracking-widest font-black"
-              :class="{
-                'text-red-400': priority === 'CRITICAL',
-                'text-amber-400': priority === 'WARNING',
-                'text-emerald-400': priority === 'FRESH'
-              }">
-          {{ priority === 'CRITICAL' ? '🔴' : priority === 'WARNING' ? '🟡' : '🟢' }} {{ label }}
-        </span>
-        <div class="flex-1 h-px bg-current opacity-20"></div>
-      </div>
-      <div v-for="(item, i) in items" :key="i"
-           class="flex items-center justify-between px-3 py-2 rounded-lg border text-sm"
-           :class="{
-             'bg-red-900/20 border-red-700/30 text-red-200': priority === 'CRITICAL',
-             'bg-amber-900/20 border-amber-700/30 text-amber-200': priority === 'WARNING',
-             'bg-slate-800/30 border-slate-700/20 text-slate-300': priority === 'FRESH'
-           }">
-        <span class="font-medium capitalize truncate">{{ item.name }}</span>
-        <div class="flex items-center gap-2 shrink-0 ml-2">
-          <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
-          <span v-if="item.days_left !== null && item.days_left !== undefined"
-                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                :class="{
-                  'bg-red-800/60 text-red-300': priority === 'CRITICAL',
-                  'bg-amber-800/60 text-amber-300': priority === 'WARNING',
-                  'bg-slate-700/60 text-slate-400': priority === 'FRESH'
-                }">
-            {{ item.days_left }}d
-          </span>
-        </div>
-      </div>
-    </div>
-  `
-}
 </script>
 
 <style scoped>
 .analytics-artifact {
   font-family: inherit;
+}
+details summary::-webkit-details-marker {
+  display: none;
 }
 </style>

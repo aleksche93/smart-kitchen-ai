@@ -34,16 +34,25 @@
             :class="msg.role === 'user'
               ? 'self-end bg-keBlue/20 text-keBlue px-4 py-2 rounded-2xl rounded-tr-sm max-w-[85%] break-words shadow-sm text-sm border border-keBlue/30'
               : 'self-start bg-slate-800/80 text-slate-300 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[85%] shadow-md text-sm border border-slate-700/50 flex flex-col space-y-2'">
-         <!-- Thought Trace: content-aware chef thoughts, visible before text arrives -->
-         <Transition name="thought-trace">
-           <div v-if="msg.role === 'assistant' && msg.thoughts && msg.thoughts.length && !msg.thoughtsCollapsed"
-                class="flex flex-col gap-0.5 pb-1">
+         <!-- Thought Trace: native <details> stays in DOM, collapses when first delta arrives -->
+         <details
+           v-if="msg.role === 'assistant' && msg.thoughts?.length"
+           :open="!msg.thoughtsCollapsed"
+           class="thought-trace-details"
+         >
+           <summary class="list-none cursor-pointer select-none flex items-center gap-1
+                          text-[10px] italic text-slate-500 hover:text-slate-400 transition-colors
+                          [&::-webkit-details-marker]:hidden">
+             <span class="opacity-60">&#9881;&#65039;</span>
+             {{ $t('chef.thoughts_label') }} ({{ msg.thoughts.length }})
+           </summary>
+           <div class="flex flex-col gap-0.5 pt-1 pb-1">
              <span v-for="(th, ti) in msg.thoughts" :key="ti"
-                   class="text-[10px] italic text-slate-500 leading-snug flex items-center gap-1">
-               <span class="opacity-50">&#9881;&#65039;</span> {{ th }}
+                   class="text-[10px] italic text-slate-500 leading-snug pl-3">
+               {{ th }}
              </span>
            </div>
-         </Transition>
+         </details>
          <!-- Typing indicator: 3 dots — visible ONLY before first chunk arrives -->
          <span v-if="msg.role === 'assistant' && msg.content === '' && isStreaming" class="flex items-center gap-1 py-0.5">
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 0ms"></span>
@@ -387,10 +396,27 @@ const handleAdvice = async () => {
           return
         }
 
-        // RECIPE / other artifact: emit to App.vue → AdviceDisplay
+        // RECIPE / ANALYTICS: push a localized confirmation message to chat history
+        const artifactType = actualPayload?.artifact_type || 'ORCHESTRATED_RESPONSE'
+        const confirmKey = artifactType === 'ANALYTICS'
+          ? 'chef.responses.analytics_ready'
+          : 'chef.responses.recipe_ready'
+        chatHistory.value = [
+          ...chatHistory.value,
+          {
+            _id: `confirm-${Date.now()}`,
+            role: 'assistant',
+            content: t(confirmKey),
+            thoughts: [],
+            thoughtsCollapsed: false
+          }
+        ]
+        scrollToBottom()
+
+        // Emit artifact to App.vue → AdviceDisplay
         const artifactData = actualPayload?.metadata || actualPayload
         emit('artifact', {
-          artifact_type: actualPayload?.artifact_type || 'ORCHESTRATED_RESPONSE',
+          artifact_type: artifactType,
           title: artifactData?.name || actualPayload?.title || queryToSend,
           data: artifactData
         })
@@ -424,12 +450,15 @@ const handleAdvice = async () => {
         ]
       }
     } else {
-      // RECIPE path: remove empty assistant placeholder (streaming went to AdviceDisplay)
-      const lastIdx = chatHistory.value.length - 1
-      const lastMsg = chatHistory.value[lastIdx]
-      if (lastMsg?.role === 'assistant' && !lastMsg.content) {
-        chatHistory.value = chatHistory.value.slice(0, lastIdx)
-      }
+      // RECIPE / ANALYTICS path: onFinal pushes a localized confirmation bubble.
+      // Only remove the ORIGINAL placeholder (the one added before streaming started),
+      // which is identified by having empty content AND not being the confirmation bubble.
+      // The confirmation bubble will always have content (from t('chef.responses.*')).
+      const allMsgs = chatHistory.value
+      // Find and remove empty placeholder bubbles (role=assistant, content='', no _id prefix 'confirm-')
+      chatHistory.value = allMsgs.filter(msg =>
+        !(msg.role === 'assistant' && !msg.content && !String(msg._id || '').startsWith('confirm-'))
+      )
     }
 
     // Persist to localStorage after every interaction

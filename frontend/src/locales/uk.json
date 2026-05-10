@@ -50,7 +50,12 @@
     },
     "troll": {
       "button_fleeing": "Важко влучити? Мені теж важко готувати без {missing_ingredients}!"
-    }
+    },
+    "responses": {
+      "analytics_ready": "Звіт за інвентарем готовий — зазирай до Панелі Порад! 📊",
+      "recipe_ready": "Рецепт чекає на тебе в Панелі Порад. Готовий готувати? 🍳"
+    },
+    "thoughts_label": "Думки Шефа"
   },
   "ui": {
     "identity": {

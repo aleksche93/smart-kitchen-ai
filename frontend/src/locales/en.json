@@ -49,7 +49,12 @@
     },
     "troll": {
       "button_fleeing": "Hard to hit? It's just as hard for me to cook without {missing_ingredients}!"
-    }
+    },
+    "responses": {
+      "analytics_ready": "Your inventory report is live in the Advice panel — go see what needs saving! 📊",
+      "recipe_ready": "Your recipe is waiting in the Advice panel. Ready to cook? 🍳"
+    },
+    "thoughts_label": "Chef's Thoughts"
   },
   "ui": {
     "identity": {

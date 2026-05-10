@@ -21,12 +21,20 @@ _UI_THOUGHT_PREFIXES = (
     "Analyzing",
     "Categorizing",
     "Checking",
-    "Sin-Sieve",
     "Warning:",
     "Fridge is empty",
     "Inventory looks",
     "Chef rejected",
     "Blocked:",
+)
+
+# Explicit blocklist — these must NEVER reach the UI thought trace.
+# They are internal technical logs, not chef narrative.
+_UI_THOUGHT_BLOCKLIST = (
+    "Intent:",
+    "Classifying",
+    "Sin-Sieve is auditing",
+    "Intent verified",
 )
 
 
@@ -64,11 +72,16 @@ class ChefOrchestrator:
         """
         Tags a status event as ui_thought=True if its text is a content-aware
         narrative thought (visible in the Thought Trace bubble).
-        Technical routing logs (e.g., 'Intent: RECIPE') are NOT tagged.
+
+        Blocklist takes priority — technical routing logs are never shown to users.
         """
         if event.get("type") != "status":
             return event
         text = event.get("data", {}).get("text", "")
+        # Blocklist check first — explicit deny
+        if any(text.startswith(b) for b in _UI_THOUGHT_BLOCKLIST):
+            return event  # NOT a ui_thought
+        # Prefix allowlist check
         is_ui_thought = any(text.startswith(p) for p in _UI_THOUGHT_PREFIXES)
         if is_ui_thought:
             return {**event, "data": {**event["data"], "ui_thought": True}}

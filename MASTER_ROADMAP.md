@@ -253,15 +253,6 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **AbortController:** Stop button preserved for all stream types.
 - [x] **i18n:** New keys: `chef.status.classifying`, `chef.proactive.expiring_warning`, `chef.magic.surprise_prompt`, `errors.generation_stopped`.
 
-- [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
-- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
-- [ ] **Skill: Bag Management:** Module for tracking consumable materials ("bag of bags").
-- [ ] **Search Trigger:** Function to invoke external search (Google Search/Gemini) through the Chef for complex queries.
-- [ ] **Financial Analyst Agent:** Proactive analytics of supermarket prices and offers.
-- [ ] **Loyalty-Tracker:** Agent that aggregates supermarket bonuses (_Silpo_, _ATB_) from OCR data.
-- [ ] **Chrono-Mise-en-place:** Visual timeline planner for parallel cooking processes.
-- [ ] **Voice Interaction:** Web Speech API (STT/TTS) — voice control of recipe steps.
-- [ ] **IoT Controller Stubs:** Creation of API endpoints for future integration with Home Assistant (ovens, refrigerators).
 
 ### Phase 13.3: Cognitive Intelligence & Artifact Resilience [100% COMPLETED] ✅
 - [x] **ANALYTICS Intent:** New `AnalyticsAgent` generates structured `InventoryReportArtifact` (Critical/Warning/Fresh tiers). `IntentClassifier` biased: inventory queries → ANALYTICS, named dishes → RECIPE, vague requests → CHAT.
@@ -275,15 +266,82 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **AdviceDisplay cleanup:** Removed redundant "Stop Generation" button. Single stop control in `InteractionZone`.
 - [x] **i18n:** `artifact.analytics.*` keys added to `en.json` + `uk.json` (critical, warning, fresh, total, at_risk, empty).
 
+### Phase 13.4: Critical Bug Fixes — Vue SFC, LLM Math, Chat UX [100% COMPLETED] ✅
+- [x] **Bug 1 — Vue Compiler Fix:** `AnalyticsArtifact.vue` rewritten as pure SFC. Eliminated inline `ItemTier` Options API component with string `template:` that triggered Vue runtime compiler error in Vite. All tier rows now use inline `v-for` blocks directly in `<template>`.
+- [x] **Bug 2 — LLM Math Fix:** Python now performs 100% of math in `AnalyticsAgent`. Items filtered by `days_left` (≤2 → CRITICAL, 3-5 → WARNING, else → FRESH). `total_items`, `waste_risk_count` calculated in Python. Gemini's sole task: write one witty `summary` sentence from pre-calculated facts.
+- [x] **Bug 3a — Thought Trace Filter:** Added `_UI_THOUGHT_BLOCKLIST` to `orchestrator.py` `_tag_thought()`. "Intent:", "Classifying", "Sin-Sieve is auditing", "Intent verified" are explicitly denied as `ui_thought` even if they match prefix allowlist.
+- [x] **Bug 3b — Confirmation Message:** `InteractionZone.vue` `onFinal` now pushes a localized assistant bubble for RECIPE/ANALYTICS artifacts using i18n keys `chef.responses.analytics_ready` / `chef.responses.recipe_ready`. No hardcoded English, no backend delta.
+- [x] **Bug 3c — Thought Trace Persistence:** Replaced `<Transition v-if="!thoughtsCollapsed">` with native `<details :open="!thoughtsCollapsed">/<summary>`. Thoughts stay in DOM, collapse on first delta, remain user-expandable forever.
+- [x] **i18n:** Added `chef.responses.analytics_ready`, `chef.responses.recipe_ready`, `chef.thoughts_label` to `en.json` + `uk.json`.
+
+### [NEW] Phase 13.5: Foundation Stability & Spatial Hygiene
+- [ ] **Database Integrity:** Audit DELETE/UPDATE logic to ensure "Ghost Items" are physically removed from SQLite.
+- [ ] **Avatar Persistence:** Implement `chefStatus` and `emotionTTL` in `layoutStore` (persist state for 15 mins via localStorage).
+- [ ] **UI Compacting:**
+    - [ ] Refactor `AnalyticsArtifact.vue` into a glanceable, grid-based "Status Dashboard".
+    - [ ] Minify `InventoryItem.vue` cards to increase information density on the Spatial Canvas.
+- [ ] **Artifact Footer & CTA:** Fix "Cook It" layout shifts; move missing items to a collapsible footer; prevent overflow.
+
+
+### Phase 13.2 (not realized)
+- [ ] **Instant Avatar Transitions:** Transition to instantaneous changes in the avatar's emotional states upon trigger (no delays).
+- [ ] **Kinetic Identity v2:** Deepened avatar animation (branding, shadow pulsation, emotion dependency).
+- [ ] **Skill: Bag Management:** Module for tracking consumable materials ("bag of bags").
+- [ ] **Search Trigger:** Function to invoke external search (Google Search/Gemini) through the Chef for complex queries.
+- [ ] **Financial Analyst Agent:** Proactive analytics of supermarket prices and offers.
+- [ ] **Loyalty-Tracker:** Agent that aggregates supermarket bonuses (_Silpo_, _ATB_) from OCR data.
+- [ ] **Chrono-Mise-en-place:** Visual timeline planner for parallel cooking processes.
+- [ ] **Voice Interaction:** Web Speech API (STT/TTS) — voice control of recipe steps.
+- [ ] **IoT Controller Stubs:** Creation of API endpoints for future integration with Home Assistant (ovens, refrigerators).
+
+### [NEW] Phase 14: The Conversational Pivot (Clarification Loop)
+- [ ] **Intent: CLARIFICATION:** Implement a routing logic where the Chef asks 1-2 clarifying questions before generating an artifact (unless "Magic" is triggered).
+- [ ] **Recipe Builder Mode:** Dedicated interactive mode where the user and Chef "collaborate" on a recipe before finalization.
+- [ ] **Sin-Sieve UI Polish:** Custom alert components for security/safety warnings (replacing raw Markdown).
 ---
 
 ## 🌌 STAGE V: NEXT-GEN AI & VISUALIZATION (PHASE 15+)
 *Future of the project: 3D, Edge Computing, total privacy, full autonomy, and immersion*
 
+### Opened questions:
 - [ ] **Digital Twin (3D Kitchen):** Kitchen visualization via Three.js/Rive. Animated 3D-Chef moves between modules depending on system state.
 - [ ] **Edge Computing (Local AI):** Migration of analytics to **Gemma 4** (via WebGPU/AI Edge) to ensure 100% data privacy (Local Privacy First).
 - [ ] **Vision Mentor:** Video stream analysis of cooking (Computer Vision) for real-time user training in slicing techniques.
 - [ ] **Imagen 3 Integration:** Generation of photorealistic food images based on recipes created by the Chef.
+
+### [NEW] Phase 15: Multi-Agent Workspace & Restaurant HUD
+- [ ] **Visual Agent Fleet:** Implement a "Restaurant" HUD section where sub-agents (InventoryScanner, FlavorArchitect, SinSieve) are represented by visual avatars/icons.
+- [ ] **Agent States:** Visual feedback for Idle, Working (processing), and Reporting (delivering to Chef).
+- [ ] **Multi-Agent Debate:** Implement "Consensus Logic" where sub-agents (e.g., Traditionalist vs. Experimentalist) briefly debate recipe choices in the "Thought Trace".
+- [ ] **TTS Integration:** Voice output for the Chef's final confirmation and thoughts ("Let me think...", "Recipe is ready!").
+
+### [FUTURE] Phase 16+: Vision, Automation & Quality Control
+- [ ] **Visual Product Recognition:** Add items to inventory via photo/camera (bypassing receipts).
+- [ ] **24/7 Kitchen Guardian:**
+    - [ ] Scheduled visual scans (3-4 times/day) to check fridge doors, food storage quality (plastic wrap), and surface hygiene.
+    - [ ] Visual alerts for food oxidation (e.g., "Meat is browning, use it now").
+- [ ] **Function Calling (Vision Requests):** Chef can proactively ask: "Can you show me the texture of that steak?" or "I suspect the milk is open, please show the shelf".
+
+### [FUTURE] Phase 17: Immersive Cooking & AR Guidance
+- [ ] **AR Recipe Overlay:** Implement Augmented Reality instructions projected onto the real cooking surface (using WebXR).
+- [ ] **Gesture Control:** Enable hands-free control during cooking (e.g., swipe to advance step).
+- [ ] **Food Temperature Vision:** Integrate thermal camera data (if available) to verify doneness.
+
+### [FUTURE] Phase 18: Advanced Analytics & Gamification
+- [ ] **Nutritional Breakdown:** Calculate calories/macros for generated recipes using local databases.
+- [ ] **Waste Prediction:** Implement a "Wastage Score" based on user habits and food decay rates.
+- [ ] **Gamification:** Introduce "Chef Levels" and "Perfect Week" badges for low waste.
+
+### [FUTURE] Phase 19: Hardware Integration & Automation
+- [ ] **IoT Recipe Execution:** Implement "Command Stubs" to control smart ovens, mixers, and Sous-Vide devices via Home Assistant.
+- [ ] **Smart Fridge Vision:** Internal camera integration to track items removed/added in real-time.
+- [ ] **Voice Control:** Full voice command interface for kitchen operation.
+
+### [FUTURE] Phase 20: Open Questions & Research
+- [ ] **Multimodal Consensus:** Can the "Brainstormer" Agent (LLM) collaborate with "Vision" Agents to debate the best way to store a complex item (e.g., a whole cabbage) without opening it?
+- [ ] **Predictive Ingredient Sourcing:** Can the system detect *falling* price trends for staple goods (e.g., chicken) and proactively suggest bulk purchases?
+- [ ] **Ethical Waste Prevention:** Is there a way to reward users for using "ugly" produce that would otherwise be thrown away by supermarkets?
+- [ ] **Flavor DNA Mapping:** Can we create a "Genetic Map" of user taste preferences that evolves with every meal cooked?
 
 ---
 
