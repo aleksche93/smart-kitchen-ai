@@ -55,34 +55,32 @@
     <!-- Notes -->
     <p v-if="recipe.notes" class="text-xs italic text-slate-500 border-t border-slate-700/30 pt-2">{{ recipe.notes }}</p>
 
-    <!-- Cook It! Button -->
-    <div class="border-t border-slate-700/40 pt-3 mt-2">
-      <!-- Post-cook feedback -->
+    <!-- Cook It! Button: Compact & Minimal -->
+    <div class="border-t border-slate-700/40 pt-3 mt-1">
+      <!-- Post-cook feedback: simplified -->
       <Transition name="cook-result">
-        <div v-if="cookResult" class="mb-2 px-3 py-2 rounded-lg text-xs space-y-0.5"
-             :class="cookResult.type === 'success' ? 'bg-emerald-900/30 border border-emerald-700/40 text-emerald-300' : 'bg-amber-900/30 border border-amber-700/40 text-amber-300'">
-          <p v-if="cookResult.deducted?.length" class="font-semibold">✅ Deducted: {{ cookResult.deducted.join(', ') }}</p>
-          <p v-if="cookResult.notFound?.length" class="opacity-70">⚠️ Missing in fridge: {{ cookResult.notFound.join(', ') }}</p>
-          <p v-if="cookResult.trollMessage" class="font-bold text-red-400 mt-1">{{ cookResult.trollMessage }}</p>
+        <div v-if="cookResult" class="mb-2 px-3 py-1.5 rounded-lg text-[11px]"
+             :class="cookResult.type === 'success' ? 'bg-emerald-900/20 border border-emerald-700/30 text-emerald-400/90' : 'bg-amber-900/20 border border-amber-700/30 text-amber-300/90'">
+          <p v-if="cookResult.deducted?.length" class="font-medium">✅ {{ cookResult.deducted.join(', ') }}</p>
+          <p v-if="cookResult.trollMessage" class="font-bold text-red-400 mt-0.5">{{ cookResult.trollMessage }}</p>
         </div>
       </Transition>
 
-      <div class="flex justify-end">
+      <div class="flex justify-end h-8">
         <button
           ref="buttonRef"
           @click="handleCook"
           @mouseover="handleButtonHover"
           :disabled="cookLoading || cookDone"
-          class="w-auto py-1.5 px-4 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm relative overflow-hidden"
+          class="w-auto h-full px-3 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all shadow-sm relative"
           :style="buttonStyle"
           :class="buttonClasses"
         >
-          <span v-if="cookLoading" class="flex items-center gap-2">
-            <svg class="animate-spin h-3 w-3 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            Cooking...
-          </span>
-          <span v-else-if="cookDone">🍽️ Cooked!</span>
-          <span v-else>🍳 Cook It!</span>
+          <template v-if="cookLoading">
+            <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          </template>
+          <span v-else-if="cookDone">🍽️ {{ $t('artifact.recipe.done') || 'Cooked' }}</span>
+          <span v-else>🍳 {{ $t('artifact.recipe.cook_btn') || 'Cook It' }}</span>
         </button>
       </div>
     </div>
@@ -122,7 +120,7 @@ const harmonyClass = computed(() => {
   return 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
 })
 
-// Fleeing Button State
+// Fleeing Button State: Constrained to Artifact Boundaries
 const isFleeing = ref(false)
 const isAlarmLocked = ref(false)
 const isShaking = ref(false)
@@ -136,7 +134,7 @@ const buttonStyle = computed(() => {
   if (isFleeing.value) {
     return {
       transform: `translate(${buttonTranslateX.value}px, ${buttonTranslateY.value}px)`,
-      transition: 'transform 0.2s ease-out'
+      transition: 'transform 0.15s ease-out'
     }
   }
   return {
@@ -151,7 +149,7 @@ const buttonClasses = computed(() => {
   if (isAlarmLocked.value) {
     return `bg-slate-800/60 border border-red-500/50 text-red-400 cursor-not-allowed ${isShaking.value ? 'animate-shake' : ''}`
   }
-  return 'bg-keYellow/10 hover:bg-keYellow/20 active:bg-keYellow/30 border border-keYellow/30 hover:border-keYellow/50 text-keYellow hover:shadow-[0_0_12px_rgba(250,204,21,0.2)] hover:-translate-y-0.5'
+  return 'bg-keYellow/10 hover:bg-keYellow/20 active:bg-keYellow/30 border border-keYellow/30 hover:border-keYellow/50 text-keYellow hover:shadow-[0_0_12px_rgba(250,204,21,0.2)]'
 })
 
 const startFleeing = (missingIngredients) => {
@@ -162,12 +160,11 @@ const startFleeing = (missingIngredients) => {
     buttonTranslateX.value = 0
     buttonTranslateY.value = 0
     
-    // Display troll message via Toast/Result box
     cookResult.value = {
       ...cookResult.value,
       trollMessage: t('chef.troll.button_fleeing', { missing_ingredients: missingIngredients.join(', ') })
     }
-  }, 10000)
+  }, 8000)
 }
 
 const handleButtonHover = () => {
@@ -176,29 +173,29 @@ const handleButtonHover = () => {
   const containerRect = containerRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
   
-  // Aggressive flee radius (2-3x further)
-  const fleeRadius = 150
-  let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeRadius
-  let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeRadius
+  // Phase 13.5: Strict boundaries — flee radius constrained to artifact inner space
+  const fleeStep = 80
+  let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeStep
+  let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeStep
   
-  // Constrain to prevent flying too far away from origin (but give it space)
-  const maxDisplacementX = Math.min(250, containerRect.width / 2 - btnRect.width / 2)
-  const maxDisplacementY = Math.min(200, containerRect.height / 2 - btnRect.height / 2)
+  // Constrain strictly to container to prevent overflow/scrolling
+  // Safety margin of 10px from edges
+  const maxW = (containerRect.width / 2) - (btnRect.width / 2) - 10
+  const maxH = (containerRect.height / 2) - (btnRect.height / 2) - 10
 
-  buttonTranslateX.value = Math.max(-maxDisplacementX, Math.min(newX, maxDisplacementX))
-  buttonTranslateY.value = Math.max(-maxDisplacementY, Math.min(newY, maxDisplacementY))
+  buttonTranslateX.value = Math.max(-maxW, Math.min(newX, maxW))
+  buttonTranslateY.value = Math.max(-maxH, Math.min(newY, maxH))
 }
 
 const handleCook = () => {
   if (cookLoading.value || cookDone.value || !ingredients.value.length) return
   
   if (isAlarmLocked.value) {
-    // Trigger shake animation every time user clicks locked button
     isShaking.value = false
     setTimeout(() => { isShaking.value = true }, 50)
     return
   }
-  if (isFleeing.value) return // Try catching me!
+  if (isFleeing.value) return 
 
   cookLoading.value = true
   cookResult.value = null

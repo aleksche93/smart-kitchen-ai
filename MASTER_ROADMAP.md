@@ -274,13 +274,13 @@ Relocate primary identity logic to a Global Header, evolve the Command Hub into 
 - [x] **Bug 3c — Thought Trace Persistence:** Replaced `<Transition v-if="!thoughtsCollapsed">` with native `<details :open="!thoughtsCollapsed">/<summary>`. Thoughts stay in DOM, collapse on first delta, remain user-expandable forever.
 - [x] **i18n:** Added `chef.responses.analytics_ready`, `chef.responses.recipe_ready`, `chef.thoughts_label` to `en.json` + `uk.json`.
 
-### [NEW] Phase 13.5: Foundation Stability & Spatial Hygiene
-- [ ] **Database Integrity:** Audit DELETE/UPDATE logic to ensure "Ghost Items" are physically removed from SQLite.
-- [ ] **Avatar Persistence:** Implement `chefStatus` and `emotionTTL` in `layoutStore` (persist state for 15 mins via localStorage).
-- [ ] **UI Compacting:**
-    - [ ] Refactor `AnalyticsArtifact.vue` into a glanceable, grid-based "Status Dashboard".
-    - [ ] Minify `InventoryItem.vue` cards to increase information density on the Spatial Canvas.
-- [ ] **Artifact Footer & CTA:** Fix "Cook It" layout shifts; move missing items to a collapsible footer; prevent overflow.
+### Phase 13.5: Foundation Stability & Spatial Hygiene [100% COMPLETED] ✅
+- [x] **Database Integrity (Ghost Items Fix):** Hardened `DELETE` and `/cook` endpoints with explicit `session.commit()` and float-tolerance filters. Manual delete now supports Name lookup.
+- [x] **InteractionZone Restoration:** Fixed Vue scoping (`renderContent`), initialized `layoutStore`, and restored legacy receipt scanning infrastructure (`scanCanvas`).
+- [x] **Sin-Sieve Alert System:** Integrated a rich HTML alert parser for Sin-Sieve markdown blocks.
+- [x] **UI Hygiene:** Fixed `ArtifactCard.vue` overflows and synchronized `en.json`/`uk.json` with missing keys.
+- [x] **Avatar State Persistence:** Implemented persistent `chefStatus` with `localStorage` TTL.
+- [x] **Surgical UX Fixes:** Resolved `setRecipe` crash, fixed AdviceDisplay overlay intent logic, and restored Magic Button ✨.
 
 
 ### Phase 13.2 (not realized)

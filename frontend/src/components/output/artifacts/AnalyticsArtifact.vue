@@ -1,114 +1,88 @@
 <template>
-  <div class="analytics-artifact space-y-4">
+  <div class="analytics-artifact space-y-3">
 
-    <!-- Chef's Summary -->
-    <div class="px-4 py-3 bg-slate-800/60 rounded-xl border border-cyan-500/20 shadow-inner">
-      <p class="text-sm text-slate-300 italic leading-relaxed">{{ data.summary }}</p>
+    <!-- Chef's Summary: Compact & Italic -->
+    <div class="px-3 py-2 bg-slate-800/60 rounded-xl border border-cyan-500/20 shadow-inner">
+      <p class="text-[12px] text-slate-300 italic leading-snug">{{ data.summary }}</p>
     </div>
 
-    <!-- Stats Row -->
+    <!-- Mini Stats Grid -->
     <div class="grid grid-cols-3 gap-2">
-      <div class="flex flex-col items-center p-2 bg-slate-800/40 rounded-lg border border-slate-700/40">
-        <span class="text-lg font-black text-slate-200">{{ data.total_items }}</span>
-        <span class="text-[9px] uppercase tracking-widest text-slate-400">{{ $t('artifact.analytics.total') }}</span>
+      <div class="flex flex-col items-center justify-center p-1.5 bg-slate-800/40 rounded-lg border border-slate-700/40">
+        <span class="text-sm font-black text-slate-200">{{ data.total_items }}</span>
+        <span class="text-[8px] uppercase tracking-tighter text-slate-500">{{ $t('artifact.analytics.total') }}</span>
       </div>
-      <div class="flex flex-col items-center p-2 rounded-lg border"
+      <div class="flex flex-col items-center justify-center p-1.5 rounded-lg border"
            :class="data.waste_risk_count > 0 ? 'bg-red-900/20 border-red-700/40' : 'bg-slate-800/40 border-slate-700/40'">
-        <span class="text-lg font-black" :class="data.waste_risk_count > 0 ? 'text-red-400' : 'text-slate-200'">
+        <span class="text-sm font-black" :class="data.waste_risk_count > 0 ? 'text-red-400' : 'text-slate-200'">
           {{ data.waste_risk_count }}
         </span>
-        <span class="text-[9px] uppercase tracking-widest text-slate-400">{{ $t('artifact.analytics.at_risk') }}</span>
+        <span class="text-[8px] uppercase tracking-tighter text-slate-500">{{ $t('artifact.analytics.at_risk') }}</span>
       </div>
-      <div class="flex flex-col items-center p-2 bg-emerald-900/20 rounded-lg border border-emerald-700/40">
-        <span class="text-lg font-black text-emerald-400">{{ data.fresh_items?.length || 0 }}</span>
-        <span class="text-[9px] uppercase tracking-widest text-slate-400">{{ $t('artifact.analytics.fresh') }}</span>
+      <div class="flex flex-col items-center justify-center p-1.5 bg-emerald-900/10 rounded-lg border border-emerald-700/30">
+        <span class="text-sm font-black text-emerald-400">{{ data.fresh_items?.length || 0 }}</span>
+        <span class="text-[8px] uppercase tracking-tighter text-slate-500">{{ $t('artifact.analytics.fresh') }}</span>
       </div>
     </div>
 
-    <!-- CRITICAL tier -->
-    <div v-if="data.critical_items?.length" class="space-y-1">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-[9px] uppercase tracking-widest font-black text-red-400">
-          🔴 {{ $t('artifact.analytics.critical') }}
-        </span>
-        <div class="flex-1 h-px bg-red-400/20"></div>
+    <!-- Items Grid: Critical & Warning -->
+    <div v-if="data.critical_items?.length || data.warning_items?.length" class="space-y-2">
+      <!-- Critical Chips -->
+      <div v-if="data.critical_items?.length" class="flex flex-wrap gap-1.5">
+        <div v-for="(item, i) in data.critical_items" :key="`crit-${i}`"
+             class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-900/30 border border-red-500/20 text-[11px] text-red-200">
+          <span class="font-bold truncate max-w-[80px]">{{ item.name }}</span>
+          <span class="text-[9px] opacity-60">{{ item.amount }}{{ item.unit }}</span>
+          <span class="px-1 py-0.5 rounded bg-red-800/60 text-[8px] font-black tracking-tighter">!{{ item.days_left }}d</span>
+        </div>
       </div>
-      <div v-for="(item, i) in data.critical_items" :key="`crit-${i}`"
-           class="flex items-center justify-between px-3 py-2 rounded-lg border
-                  bg-red-900/20 border-red-700/30 text-red-200 text-sm">
-        <span class="font-medium capitalize truncate">{{ item.name }}</span>
-        <div class="flex items-center gap-2 shrink-0 ml-2">
-          <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
-          <span v-if="item.days_left !== null && item.days_left !== undefined"
-                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-red-800/60 text-red-300">
-            {{ item.days_left }}d
-          </span>
+
+      <!-- Warning Chips -->
+      <div v-if="data.warning_items?.length" class="flex flex-wrap gap-1.5">
+        <div v-for="(item, i) in data.warning_items" :key="`warn-${i}`"
+             class="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-900/20 border border-amber-500/20 text-[11px] text-amber-100">
+          <span class="font-bold truncate max-w-[80px]">{{ item.name }}</span>
+          <span class="text-[9px] opacity-60">{{ item.amount }}{{ item.unit }}</span>
+          <span class="text-[9px] font-bold text-amber-400/80">{{ item.days_left }}d</span>
         </div>
       </div>
     </div>
 
-    <!-- WARNING tier -->
-    <div v-if="data.warning_items?.length" class="space-y-1">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-[9px] uppercase tracking-widest font-black text-amber-400">
-          🟡 {{ $t('artifact.analytics.warning') }}
-        </span>
-        <div class="flex-1 h-px bg-amber-400/20"></div>
-      </div>
-      <div v-for="(item, i) in data.warning_items" :key="`warn-${i}`"
-           class="flex items-center justify-between px-3 py-2 rounded-lg border
-                  bg-amber-900/20 border-amber-700/30 text-amber-200 text-sm">
-        <span class="font-medium capitalize truncate">{{ item.name }}</span>
-        <div class="flex items-center gap-2 shrink-0 ml-2">
-          <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
-          <span v-if="item.days_left !== null && item.days_left !== undefined"
-                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-800/60 text-amber-300">
-            {{ item.days_left }}d
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- FRESH tier (collapsible via native <details>) -->
+    <!-- Fresh Items (Micro-list in details) -->
     <details v-if="data.fresh_items?.length"
-             class="group bg-slate-800/30 rounded-xl border border-slate-700/30 overflow-hidden">
-      <summary class="flex items-center justify-between px-4 py-2.5 cursor-pointer
+             class="group bg-slate-800/20 rounded-lg border border-slate-700/20 overflow-hidden">
+      <summary class="flex items-center justify-between px-3 py-1.5 cursor-pointer
                       list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700/20 transition-colors">
-        <span class="text-[10px] uppercase tracking-widest font-black text-emerald-400/80">
+        <span class="text-[9px] uppercase tracking-widest font-black text-slate-500 group-open:text-emerald-500/70">
           🌿 {{ $t('artifact.analytics.fresh') }} ({{ data.fresh_items.length }})
         </span>
-        <svg class="w-3 h-3 text-slate-500 group-open:rotate-180 transition-transform duration-300"
+        <svg class="w-2.5 h-2.5 text-slate-600 group-open:rotate-180 transition-transform"
              fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
         </svg>
       </summary>
-      <div class="px-4 pb-3 space-y-1 pt-1">
+      <div class="px-2 pb-2 grid grid-cols-2 gap-1 pt-1">
         <div v-for="(item, i) in data.fresh_items" :key="`fresh-${i}`"
-             class="flex items-center justify-between px-3 py-2 rounded-lg border
-                    bg-slate-800/30 border-slate-700/20 text-slate-300 text-sm">
-          <span class="font-medium capitalize truncate">{{ item.name }}</span>
-          <div class="flex items-center gap-2 shrink-0 ml-2">
-            <span class="text-[10px] text-slate-400">{{ item.amount }}{{ item.unit }}</span>
-            <span v-if="item.days_left !== null && item.days_left !== undefined"
-                  class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-700/60 text-slate-400">
-              {{ item.days_left }}d
-            </span>
-          </div>
+             class="px-2 py-1 rounded border border-slate-700/10 bg-slate-800/10 text-[10px] text-slate-400 flex justify-between">
+          <span class="truncate max-w-[60px]">{{ item.name }}</span>
+          <span class="opacity-40">{{ item.days_left }}d</span>
         </div>
       </div>
     </details>
 
-    <!-- Empty state -->
-    <div v-if="!data.total_items" class="text-center py-6 text-slate-500">
-      <span class="text-2xl">🛒</span>
-      <p class="text-xs mt-2 italic">{{ $t('artifact.analytics.empty') }}</p>
+    <div v-if="!data.total_items" class="text-center py-4 text-slate-600">
+      <p class="text-[10px] italic">{{ $t('artifact.analytics.empty') }}</p>
     </div>
 
   </div>
 </template>
 
 <script setup>
-// Pure SFC — no inline component definitions (prevents Vue runtime compiler error in Vite).
+/**
+ * Phase 13.5: Compact Analytics UI.
+ * Uses a chip-based grid layout for maximum data density.
+ * Strictly SFC Script Setup.
+ */
 const props = defineProps({
   data: { type: Object, required: true }
 })

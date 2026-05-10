@@ -390,11 +390,15 @@ class AnalyticsAgent(BaseChefAgent):
         fresh_items = []
 
         for item in inventory:
+            amount = item.get("amount", 0)
+            if amount <= 0.001:
+                continue
+
             days = item.get("days_left")
             entry = {
                 "name": item.get("name", "unknown"),
                 "days_left": days,
-                "amount": item.get("amount", 0),
+                "amount": amount,
                 "unit": item.get("unit", ""),
                 "priority": ""
             }
@@ -532,7 +536,7 @@ class SinSieveAgent(BaseChefAgent):
                     context["is_safe"] = False
                     yield {"type": "status", "data": {"text": f"Blocked: {audit_data['reason']}"}}
                     yield {"type": "delta", "data": {
-                        "text": f"\n\n> [ACTION: AUDIT_WARNING] {audit_data.get('reason', 'Unsafe request detected.')}",
+                        "text": f"\n\n> ⚠️ **Sin-Sieve Audit**: {audit_data.get('reason', 'Unsafe request detected.')}",
                         "intent": "CHAT"
                     }}
                 else:
@@ -542,6 +546,13 @@ class SinSieveAgent(BaseChefAgent):
                 if audit_data.get("has_issues"):
                     msg = f"Audit found {len(audit_data.get('warnings', []))} issues ({audit_data.get('severity', 'LOW')})."
                     yield {"type": "status", "data": {"text": msg}}
+                    
+                    # Also append the warning to the narrative
+                    warning_text = ". ".join(audit_data.get("warnings", []))
+                    yield {"type": "delta", "data": {
+                        "text": f"\n\n> ⚠️ **Sin-Sieve Audit**: {warning_text}",
+                        "intent": "CHAT"
+                    }}
                 else:
                     yield {"type": "status", "data": {"text": "Recipe cleared by Sin-Sieve."}}
 

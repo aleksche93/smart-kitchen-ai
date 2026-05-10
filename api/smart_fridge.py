@@ -110,7 +110,7 @@ async def process_orchestrator(request: ProcessRequest):
                 fridge_query = await session.execute(
                     select(InventoryItemModel)
                     .where(InventoryItemModel.storage_location == 'Fridge')
-                    .where(InventoryItemModel.quantity > 0)
+                    .where(InventoryItemModel.quantity > 0.001)
                 )
                 all_items = fridge_query.scalars().all()
                 inventory_data = [
@@ -250,19 +250,37 @@ async def scan_receipt(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/v1/fridge/item/{item_id}")
-async def remove_fridge_item(item_id: str, session: AsyncSession = Depends(get_db)):
+@router.delete("/v1/fridge/item/{item_id_or_name}")
+async def remove_fridge_item(item_id_or_name: str, session: AsyncSession = Depends(get_db)):
     """
-    Phase 12.1-B: Legacy fridge logic ported from Fridge.remove_product().
+    Phase 13.5: Hardened manual delete supporting both UUID and direct name lookup.
+    Ensures absolute persistence with explicit commit.
     """
-    item = await session.get(InventoryItemModel, item_id)
+    try:
+        # 1. Try UUID lookup first
+        item = None
+        if len(item_id_or_name) == 36:
+            item = await session.get(InventoryItemModel, item_id_or_name)
+        
+        # 2. Fallback to Name lookup (case-insensitive) if ID fails
+        if not item:
+            q = await session.execute(
+                select(InventoryItemModel).where(InventoryItemModel.name.ilike(item_id_or_name))
+            )
+            item = q.scalars().first()
 
-    if item:
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        item_name = item.name
         await session.delete(item)
         await session.commit()
-        return {"status": "success", "message": f"Removed: {item.name}"}
-
-    raise HTTPException(status_code=404, detail=f"Product not found in the fridge, can't take it out.")
+        return {"status": "success", "message": f"Successfully removed {item_name}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 @router.post("/v1/fridge/cook")
 async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession = Depends(get_db)):
     """
@@ -313,12 +331,14 @@ async def deduct_cooked_ingredients(request: CookRequest, session: AsyncSession 
     items_to_delete = []
     items_to_update = []
     for matched, ingredient_str in matched_items:
-        if matched.quantity <= 1:
+        # Phase 13.5: Handle float quantities correctly to prevent ghost items
+        new_quantity = matched.quantity - 1
+        if new_quantity <= 0.001:
             items_to_delete.append(matched.id)
-            deducted.append(f"{matched.name} (removed — last unit used)")
+            deducted.append(f"{matched.name} (removed)")
         else:
-            items_to_update.append({"id": matched.id, "quantity": matched.quantity - 1})
-            deducted.append(f"{matched.name} ({matched.quantity - 1} left)")
+            items_to_update.append({"id": matched.id, "quantity": new_quantity})
+            deducted.append(f"{matched.name} ({new_quantity} left)")
 
     if items_to_delete:
         await session.execute(delete(InventoryItemModel).where(InventoryItemModel.id.in_(items_to_delete)))

@@ -37,9 +37,20 @@ _UI_THOUGHT_BLOCKLIST = (
     "Intent verified",
 )
 
+# Mapping of Agent classes to their Narrative Personas
+_AGENT_PERSONAS = {
+    "PersonaGuard": "Gatekeeper",
+    "InventoryScanner": "X-Ray Buddy",
+    "FlavorArchitect": "The Mad Alchemist",
+    "SinSieveAgent": "The Fun Police",
+    "IntentClassifierAgent": "Strategist",
+    "AnalyticsAgent": "Statistician",
+    "ConversationalAgent": "Chef",
+}
+
 
 def _sse(event: dict) -> str:
-    """Serialize a dict to a valid SSE data line with proper \\n\\n delimiter."""
+    """Serialize a dict to a valid SSE data line with proper \n\n delimiter."""
     return f"data: {json.dumps(event)}\n\n"
 
 
@@ -47,12 +58,6 @@ class ChefOrchestrator:
     """
     Single Source of Truth for all AI processing.
     Coordinates the full agent pipeline: Guard → Sieve → Classify → Route → Generate → Audit.
-
-    Stream protocol (SSE event types):
-      - status: {"type": "status", "data": {"text": "...", "intent"?: "CHAT"|"RECIPE"|"ANALYTICS", "ui_thought"?: true}}
-      - delta:  {"type": "delta",  "data": {"text": "...", "intent": "CHAT"|"RECIPE"|"ANALYTICS"}}
-      - final:  {"type": "final",  "data": {"payload": {...}}}
-
     The frontend routes delta chunks based on the 'intent' field:
       CHAT      → append to last assistant chat bubble (InteractionZone), typing effect
       RECIPE    → render in AdviceDisplay streaming view
@@ -68,12 +73,11 @@ class ChefOrchestrator:
         self.analytics = AnalyticsAgent()
         self.sieve = SinSieveAgent()
 
-    def _tag_thought(self, event: dict) -> dict:
+    def _tag_thought(self, event: dict, agent_name: str = None) -> dict:
         """
         Tags a status event as ui_thought=True if its text is a content-aware
         narrative thought (visible in the Thought Trace bubble).
-
-        Blocklist takes priority — technical routing logs are never shown to users.
+        Injects a persona prefix if agent_name is provided.
         """
         if event.get("type") != "status":
             return event
@@ -84,6 +88,10 @@ class ChefOrchestrator:
         # Prefix allowlist check
         is_ui_thought = any(text.startswith(p) for p in _UI_THOUGHT_PREFIXES)
         if is_ui_thought:
+            # Prepend Persona if available
+            persona = _AGENT_PERSONAS.get(agent_name)
+            if persona:
+                event["data"]["text"] = f"[{persona}] {text}"
             return {**event, "data": {**event["data"], "ui_thought": True}}
         return event
 
@@ -91,14 +99,14 @@ class ChefOrchestrator:
         try:
             # ── 1. Persona Guard (basic heuristic shield) ────────────────────
             async for event in self.guard.generate_stream(context):
-                yield _sse(self._tag_thought(event))
+                yield _sse(self._tag_thought(event, "PersonaGuard"))
 
             if not context.get("is_safe", True):
                 return
 
             # ── 2. Sin-Sieve — Input Audit (Fail-Fast firewall) ──────────────
             async for event in self.sieve.generate_stream(context):
-                yield _sse(self._tag_thought(event))
+                yield _sse(self._tag_thought(event, "SinSieveAgent"))
 
             if not context.get("is_safe", True):
                 return
@@ -112,18 +120,18 @@ class ChefOrchestrator:
 
             # ── 4. Inventory Scanner (all paths need fridge context) ──────────
             async for event in self.scanner.generate_stream(context):
-                yield _sse(self._tag_thought(event))
+                yield _sse(self._tag_thought(event, "InventoryScanner"))
 
             # ── 5a. ANALYTICS path ───────────────────────────────────────────
             if intent == "ANALYTICS":
                 async for event in self.analytics.generate_stream(context):
-                    yield _sse(self._tag_thought(event))
+                    yield _sse(self._tag_thought(event, "AnalyticsAgent"))
                 return  # EXIT — no recipe generation needed
 
             # ── 5b. CHAT path ────────────────────────────────────────────────
             if intent == "CHAT":
                 async for event in self.chat_agent.generate_stream(context):
-                    yield _sse(self._tag_thought(event))
+                    yield _sse(self._tag_thought(event, "ConversationalAgent"))
                 return  # EXIT — no artifact generation needed
 
             # ── 5c. RECIPE path — Flavor Architect ───────────────────────────
@@ -132,11 +140,11 @@ class ChefOrchestrator:
                 if event["type"] == "final":
                     final_artifact_event = event
                 else:
-                    yield _sse(self._tag_thought(event))
+                    yield _sse(self._tag_thought(event, "FlavorArchitect"))
 
             # ── 6. Sin-Sieve — Output Audit (RECIPE only) ────────────────────
             async for event in self.sieve.generate_stream(context):
-                yield _sse(self._tag_thought(event))
+                yield _sse(self._tag_thought(event, "SinSieveAgent"))
 
             # ── 7. Enrichment — Harmony Score & Pairing Tips ─────────────────
             if final_artifact_event and context.get("ingredients"):

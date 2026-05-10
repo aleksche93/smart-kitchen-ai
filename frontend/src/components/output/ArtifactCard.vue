@@ -18,7 +18,7 @@
          :class="glowClass"></div>
 
     <!-- Card Body -->
-    <div class="relative bg-slate-900/40 backdrop-blur-md rounded-2xl border transition-all duration-300"
+    <div class="relative bg-slate-900/40 backdrop-blur-md rounded-2xl border transition-all duration-300 overflow-hidden"
          @click.stop
          :class="isFocused ? `border-slate-500/60 shadow-2xl` : 'border-slate-700/30 shadow-sm'">
 
@@ -40,7 +40,7 @@
       </div>
 
       <!-- Dynamic Polymorphic Content -->
-      <div class="p-4 max-w-full break-words">
+      <div class="p-4 max-w-full break-words overflow-x-hidden custom-scrollbar max-h-[70vh] overflow-y-auto">
         <!-- Typed artifact component -->
         <component
           v-if="artifactComponent && artifact.data && !isDataMalformed"

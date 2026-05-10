@@ -184,10 +184,33 @@ export const useLayoutStore = defineStore('layout', () => {
     focusedArtifact.value = null
   }
 
+  // Phase 13.5: Chef Avatar Status Persistence (TTL: 15 mins)
+  const chefStatus = ref(localStorage.getItem('kozak_chef_status') || 'IDLE')
+  const statusTimestamp = ref(parseInt(localStorage.getItem('kozak_chef_status_ts') || '0'))
+
+  // Validate TTL on init
+  if (chefStatus.value !== 'IDLE') {
+    const now = Date.now()
+    if (now - statusTimestamp.value > 15 * 60 * 1000) {
+      chefStatus.value = 'IDLE'
+      localStorage.removeItem('kozak_chef_status')
+      localStorage.removeItem('kozak_chef_status_ts')
+    }
+  }
+
+  const setChefStatus = (status) => {
+    chefStatus.value = status
+    const now = Date.now()
+    statusTimestamp.value = now
+    localStorage.setItem('kozak_chef_status', status)
+    localStorage.setItem('kozak_chef_status_ts', now.toString())
+  }
+
   return {
     widgets, isLoaded, fetchLayout, focusWidget, saveLayout, sanitizeLayout,
     isAdviceMaximized, focusedArtifact, activeArtifacts,
     toggleAdviceMaximized, setFocusedArtifact, clearFocusedArtifact, bringToFront,
-    addArtifact, upsertArtifact, removeArtifact, clearAllArtifacts
+    addArtifact, upsertArtifact, removeArtifact, clearAllArtifacts,
+    chefStatus, setChefStatus
   }
 })

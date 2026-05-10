@@ -4,7 +4,7 @@
     <!-- Phase 12.1-B: Polymorphic Artifact Panel (Magic Bridge Output) -->
     <TransitionGroup name="artifact-reveal" tag="div" class="relative">
       <!-- Phase 13: Streaming View -->
-      <div v-if="isProcessing" key="streaming-view" class="mb-4 p-4 bg-slate-800/80 border border-keBlue/40 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.1)] relative group overflow-hidden">
+      <div v-if="isProcessing && (detectedIntent === 'RECIPE' || detectedIntent === 'ANALYTICS')" key="streaming-view" class="mb-4 p-4 bg-slate-800/80 border border-keBlue/40 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.1)] relative group overflow-hidden">
          <div class="absolute inset-0 bg-gradient-to-r from-keBlue/5 to-transparent pointer-events-none"></div>
          
          <div class="flex items-center gap-3 mb-4 relative z-10">
@@ -170,7 +170,7 @@ import { useLayoutStore } from '../../stores/layoutStore'
 import { useChefStream } from '../../composables/useChefStream'
 
 const layoutStore = useLayoutStore()
-const { isProcessing, streamingContent, abortGeneration } = useChefStream()
+const { isProcessing, streamingContent, detectedIntent, abortGeneration } = useChefStream()
 const { inventory } = useKitchenAPI()
 
 const hasIngredient = (ingStr) => {

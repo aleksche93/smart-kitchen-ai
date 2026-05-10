@@ -110,12 +110,18 @@
       "difficulty": "Difficulty"
     },
     "analytics": {
+      "title": "Inventory Report",
       "critical": "Critical — Use Today!",
       "warning": "Expiring Soon",
       "fresh": "Fresh Items",
       "total": "Total Items",
       "at_risk": "At Risk",
       "empty": "Your fridge is empty. Time to restock!"
+    },
+    "recipe": {
+      "cook_btn": "Cook It",
+      "missing_title": "Missing Ingredients",
+      "done": "Cooked"
     }
   }
 }

@@ -60,10 +60,7 @@
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
          </span>
          <!-- Content: renders as text arrives chunk by chunk (kinetic typing via SSE) -->
-         <span v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}<span
-           v-if="msg.role === 'assistant' && isStreaming && index === chatHistory.length - 1 && msg.content !== ''"
-           class="inline-block w-0.5 h-3.5 bg-keBlue ml-0.5 align-middle animate-pulse"
-         ></span></span>
+         <span v-else class="whitespace-pre-wrap leading-relaxed" v-html="renderContent(msg, index)"></span>
          <!-- Magic artifact trigger button -->
          <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-keYellow/10 hover:bg-keYellow/20 text-keYellow border border-keYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
             ✨ {{ $t('intents.magic_trigger_button') }}
@@ -83,6 +80,15 @@
             @keyup.enter="!isStreaming && handleAdvice()"
             :disabled="isStreaming"
           />
+          <!-- Phase 10.4: Magic Trigger Button ✨ (Restored) -->
+          <button 
+            v-if="!localInput && !isStreaming" 
+            @click="executeMagic()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-keYellow/60 hover:text-keYellow transition-all duration-300 p-1 hover:scale-125 hover:drop-shadow-[0_0_8px_rgba(250,204,21,0.4)]"
+            :title="$t('intents.magic_trigger_button')"
+          >
+            ✨
+          </button>
         </div>
         <!-- Morphing Send/Stop button: icon-only, fixed size, no text layout shifts -->
         <button
@@ -122,6 +128,9 @@
          @cancel="cancelCrop"
       />
     </Teleport>
+
+    <!-- Hidden canvas for receipt pre-processing -->
+    <canvas ref="scanCanvas" class="hidden"></canvas>
   </div>
 </template>
 
@@ -134,12 +143,16 @@ import ScannedReceiptOutput from './ScannedReceiptOutput.vue'
 import HybridCropper from '../vision/HybridCropper.vue'
 import { useI18n } from '../../plugins/i18n'
 import { useChefStore } from '../../stores/chefStore'
+import { useLayoutStore } from '../../stores/layoutStore'
 import { useChefStream } from '../../composables/useChefStream'
 
 const { t } = useI18n()
 const chefStore = useChefStore()
+const layoutStore = useLayoutStore()
 const { startProcess, abortGeneration } = useChefStream()
 const { error, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
+
+const scanCanvas = ref(null)
 
 const chatHistory = ref([])
 const chatContainer = ref(null)
@@ -252,6 +265,38 @@ const buildChatHistoryPayload = () => {
 }
 
 /**
+ * renderContent — Transforms markdown/tags into styled HTML.
+ * Intercepts Sin-Sieve warnings specifically.
+ */
+const renderContent = (msg, index) => {
+  if (msg.role === 'user') return msg.content
+  let html = msg.content || ''
+  
+  // 1. Intercept Sin-Sieve Audit Pattern
+  const auditLabel = t('chef.audit.warning')
+  const sieveRegex = new RegExp(`> ⚠️ \\*\\*${auditLabel}\\*\\*: (.*)`, 'g')
+  
+  html = html.replace(sieveRegex, (match, p1) => {
+    return `
+      <div class="sin-sieve-alert animate-fade-in">
+        <div class="sin-icon">⚠️</div>
+        <div class="sin-body">
+          <div class="sin-header">${auditLabel}</div>
+          <div class="sin-text">${p1}</div>
+        </div>
+      </div>
+    `.trim()
+  })
+
+  // 2. Add cursor for active streaming assistant bubble
+  if (isStreaming.value && index === chatHistory.value.length - 1 && msg.content !== '') {
+    html += '<span class="inline-block w-0.5 h-3.5 bg-keBlue ml-0.5 align-middle animate-pulse"></span>'
+  }
+
+  return html
+}
+
+/**
  * handleAdvice — Main entry point for all chat requests.
  * Routes through the unified /api/v1/chef/process endpoint.
  * Delta chunks with intent=CHAT flow into the chat bubble.
@@ -351,12 +396,14 @@ const handleAdvice = async () => {
       safeText = _accumulatedChatText.slice(0, -partialAudit[0].length)
     }
 
-    // Patch the last assistant bubble content
-    const idx = chatHistory.value.length - 1
-    chatHistory.value = [
-      ...chatHistory.value.slice(0, idx),
-      { ...chatHistory.value[idx], content: safeText }
-    ]
+    // Patch the assistant bubble content by ID
+    const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
+    if (msgIdx !== -1) {
+      chatHistory.value[msgIdx] = {
+        ...chatHistory.value[msgIdx],
+        content: safeText
+      }
+    }
 
     // Micro-delay for kinetic typing cadence
     const words = textChunk.trim().split(/\s+/)
@@ -366,6 +413,8 @@ const handleAdvice = async () => {
     scrollToBottom()
   }
 
+  // 2. Start streaming via orchestrator
+  layoutStore.setChefStatus('COOKING')
   try {
     await startProcess(
       payload,
@@ -379,47 +428,53 @@ const handleAdvice = async () => {
       // onFinal
       (finalData) => {
         const actualPayload = finalData?.payload || finalData
-        // If CHAT: no artifact to emit. Just finalize the bubble content.
+        
+        // If CHAT: finalize the bubble content
         if (actualPayload?.artifact_type === 'CHAT') {
-          // Final flush: ensure accumulated text is fully rendered
           const fullClean = _accumulatedChatText
             .replaceAll(MAGIC_TAG, '')
-            .replaceAll(AUDIT_TAG, `⚠️ **${t('chef.audit.warning')}**: `)
+            .replaceAll(AUDIT_TAG, `> ⚠️ **${t('chef.audit.warning')}**: `)
             .trimEnd()
-          if (fullClean) {
-            const idx = chatHistory.value.length - 1
-            chatHistory.value = [
-              ...chatHistory.value.slice(0, idx),
-              { ...chatHistory.value[idx], content: fullClean }
-            ]
+          
+          const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
+          if (msgIdx !== -1 && fullClean) {
+            chatHistory.value[msgIdx] = {
+              ...chatHistory.value[msgIdx],
+              content: fullClean
+            }
           }
           return
         }
 
-        // RECIPE / ANALYTICS: push a localized confirmation message to chat history
+        // RECIPE / ANALYTICS: Merge confirmation message into the existing assistant bubble
         const artifactType = actualPayload?.artifact_type || 'ORCHESTRATED_RESPONSE'
-        const confirmKey = artifactType === 'ANALYTICS'
-          ? 'chef.responses.analytics_ready'
-          : 'chef.responses.recipe_ready'
-        chatHistory.value = [
-          ...chatHistory.value,
-          {
-            _id: `confirm-${Date.now()}`,
-            role: 'assistant',
-            content: t(confirmKey),
-            thoughts: [],
-            thoughtsCollapsed: false
+        const confirmMsgText = t(`chef.responses.${artifactType.toLowerCase()}_ready`)
+        
+        const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
+        if (msgIdx !== -1) {
+          const existingContent = chatHistory.value[msgIdx].content || ''
+          chatHistory.value[msgIdx] = {
+            ...chatHistory.value[msgIdx],
+            content: existingContent + (existingContent ? '\n\n' : '') + confirmMsgText,
+            thoughtsCollapsed: true
           }
-        ]
+        }
+        
+        if (actualPayload?.artifact_type === 'RECIPE') {
+          layoutStore.upsertArtifact({
+            artifact_type: 'RECIPE',
+            title: actualPayload.name || 'Generated Recipe',
+            data: actualPayload
+          })
+        } else if (actualPayload?.artifact_type === 'ANALYTICS') {
+          layoutStore.upsertArtifact({
+            artifact_type: 'ANALYTICS',
+            title: t('artifact.analytics.title'),
+            data: actualPayload
+          })
+        }
+        
         scrollToBottom()
-
-        // Emit artifact to App.vue → AdviceDisplay
-        const artifactData = actualPayload?.metadata || actualPayload
-        emit('artifact', {
-          artifact_type: artifactType,
-          title: artifactData?.name || actualPayload?.title || queryToSend,
-          data: artifactData
-        })
       },
       // onChatDelta
       onChatDelta,
@@ -434,32 +489,7 @@ const handleAdvice = async () => {
   } finally {
     btnState.value = BUTTON_STATES.IDLE
     isStreaming.value = false
-
-    // Final flush for CHAT: ensure no partial buffer remains
-    if (_hasReceivedChatDelta) {
-      const fullClean = _accumulatedChatText
-        .replaceAll(MAGIC_TAG, '')
-        .replaceAll(AUDIT_TAG, `⚠️ **${t('chef.audit.warning')}**: `)
-        .trimEnd()
-      const lastIdx = chatHistory.value.length - 1
-      const lastMsg = chatHistory.value[lastIdx]
-      if (lastMsg?.role === 'assistant' && fullClean && fullClean !== lastMsg.content) {
-        chatHistory.value = [
-          ...chatHistory.value.slice(0, lastIdx),
-          { ...lastMsg, content: fullClean }
-        ]
-      }
-    } else {
-      // RECIPE / ANALYTICS path: onFinal pushes a localized confirmation bubble.
-      // Only remove the ORIGINAL placeholder (the one added before streaming started),
-      // which is identified by having empty content AND not being the confirmation bubble.
-      // The confirmation bubble will always have content (from t('chef.responses.*')).
-      const allMsgs = chatHistory.value
-      // Find and remove empty placeholder bubbles (role=assistant, content='', no _id prefix 'confirm-')
-      chatHistory.value = allMsgs.filter(msg =>
-        !(msg.role === 'assistant' && !msg.content && !String(msg._id || '').startsWith('confirm-'))
-      )
-    }
+    layoutStore.setChefStatus('IDLE')
 
     // Persist to localStorage after every interaction
     saveChatToStorage()
@@ -477,6 +507,8 @@ const executeMagic = async (query = lastQuery.value) => {
   showMagicButton.value = false
   chefState.showMagicTrigger = false
 
+  // 2. Start streaming via orchestrator
+  layoutStore.setChefStatus('COOKING')
   try {
     if (query !== lastQuery.value) lastQuery.value = query
 
@@ -516,6 +548,7 @@ const executeMagic = async (query = lastQuery.value) => {
     }
   } finally {
     btnState.value = BUTTON_STATES.IDLE
+    layoutStore.setChefStatus('IDLE')
   }
 }
 
@@ -532,6 +565,36 @@ const handleFileUpload = (event) => {
   error.value = null
   rawImageObject.value = URL.createObjectURL(file)
   event.target.value = ''
+}
+
+/**
+ * handleFileSelect — Legacy method restored for robustness.
+ * Reads file and prepares it via canvas.
+ */
+const handleFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => prepareImage(e.target.result)
+  reader.readAsDataURL(file)
+}
+
+/**
+ * prepareImage — Draws image to scanCanvas and extracts blob.
+ */
+const prepareImage = (src) => {
+  const img = new Image()
+  img.onload = () => {
+    if (!scanCanvas.value) return
+    const ctx = scanCanvas.value.getContext('2d')
+    scanCanvas.value.width = img.width
+    scanCanvas.value.height = img.height
+    ctx.drawImage(img, 0, 0)
+    scanCanvas.value.toBlob((blob) => {
+      handleCroppedImage(blob)
+    }, 'image/jpeg', 0.9)
+  }
+  img.src = src
 }
 
 const cancelCrop = () => {
@@ -606,5 +669,53 @@ const handleCroppedImage = async (blob) => {
 .thought-trace-leave-from {
   opacity: 1;
   max-height: 200px;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sin-Sieve Alert Styling */
+:deep(.sin-sieve-alert) {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(127, 29, 29, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 0.75rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+:deep(.sin-icon) {
+  font-size: 1.1rem;
+  filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+}
+
+:deep(.sin-body) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+:deep(.sin-header) {
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #f87171;
+}
+
+:deep(.sin-text) {
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.4;
 }
 </style>

@@ -25,11 +25,13 @@
            <!-- Identity Dropdown Header Module -->
          <div class="relative z-[2000]">
               <div @click="isMenuOpen = !isMenuOpen" class="flex items-center gap-3 cursor-pointer p-1.5 pr-3 rounded-full bg-slate-800/50 border border-slate-700 hover:border-keBlue transition-all">
-                 <!-- Avatar Small -->
-                 <ChefAvatar :mood="chefState.emotionDisplay" />
+                 <!-- Avatar Small: Syncs with persistent chefStatus or momentary emotion -->
+                 <ChefAvatar :mood="layoutStore.chefStatus !== 'IDLE' ? layoutStore.chefStatus : chefState.emotionDisplay" />
                  <div class="flex flex-col select-none">
                    <span class="text-xs font-bold text-slate-200 uppercase">{{ $t('ui.identity.title') }}</span>
-                   <span class="text-[10px] uppercase font-bold" :class="emotionTextStyles">{{ chefState.emotionDisplay }}</span>
+                   <span class="text-[10px] uppercase font-bold" :class="emotionTextStyles">
+                     {{ layoutStore.chefStatus !== 'IDLE' ? layoutStore.chefStatus : chefState.emotionDisplay }}
+                   </span>
                  </div>
                  <svg :class="{'rotate-180 text-keBlue': isMenuOpen}" class="w-4 h-4 ml-1 text-slate-500 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </div>
