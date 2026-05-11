@@ -4,7 +4,7 @@
       <div v-show="isVisible"
            ref="tickerEl"
            class="fixed z-[1000] select-none font-mono text-xs"
-           :style="{ left: pos.x + 'px', top: pos.y + 'px', width: isMinimized ? '48px' : '320px' }"
+           :style="{ left: pos.x + 'px', top: pos.y + 'px', width: isMinimized ? '48px' : '315px' }"
       >
         <!-- Minimized State -->
         <div v-if="isMinimized"
@@ -21,7 +21,7 @@
           
           <!-- Collapse Button Inside Container (Simplified to '-') -->
           <button @click.stop="isMinimized = true"
-                  class="absolute top-2 right-2 z-10 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-md px-2 py-0.5 transition-all shadow-sm border border-slate-600 font-bold" title="Fold Ticker">
+                  class="absolute top-1 right-2 z-10 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-md px-2 py-0.5 transition-all shadow-sm border border-slate-600 font-bold" title="Fold Ticker">
             -
           </button>
 
@@ -29,13 +29,13 @@
           <div class="flex items-center justify-between px-3 py-1.5 border-b border-slate-700/40 cursor-grab active:cursor-grabbing bg-slate-800/60 pr-8"
                @mousedown="startDrag">
             <div class="flex items-center gap-2">
-              <span class="text-green-400 animate-pulse text-[10px]">●</span>
-              <span class="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{{ $t('chef.status.thinking') }}</span>
+              <span class="text-green-400 animate-pulse text-[12px]">●</span>
+              <span class="text-[12px] uppercase tracking-widest text-slate-500 font-bold">{{ $t('chef.status.thinking') }}</span>
             </div>
           </div>
 
           <!-- Terminal Body -->
-          <div class="p-3 max-h-[160px] overflow-y-auto flex flex-col justify-end custom-scrollbar">
+          <div class="p-3 max-h-[130px] overflow-y-auto flex flex-col justify-end custom-scrollbar">
             <transition-group name="slide-up" tag="div" class="flex flex-col space-y-1">
               <!-- Idle State if no thoughts -->
               <div v-if="thoughts.length === 0" class="flex items-start opacity-50">
