@@ -11,8 +11,8 @@ Unlike typical stateless AI wrappers, this ecosystem features a **Stateful Artif
 3. **KozakEye Spatial OS:** A Spatial Desktop Paradigm built on Vue 3, utilizing `useDraggable.js` for free-form 2.5D widget manipulation within a strict 1440px canvas. It embraces a "Neo-Ukrainian Warmth" dark palette (Slate, Blue, Yellow, Wheat) to provide an immersive HUD experience.
 4. **Dual-Mode Chat & Artifact Hub:** Interaction logic is cleanly divided. General chat runs via the central Command Hub (`InteractionZone`), while polymorphic JSON recipes and alerts are rendered in the 'Chef's Advice' Artifact Hub with full `localStorage` persistence.
 5. **Ghost State Memory:** Prevents database bulk deletions from creating confusing UX. Products orphaned from deleted receipts retain local "Ghost Metadata" mappings in the UI.
-6. **Agentic Orchestration (Phase 13.5):** A multi-agent chain coordinates specialized workers (Scanner, Architect, Auditor, **Analytics**) via a hardened SSE stream. Features a **Sin-Sieve Audit** layer with rich HTML alerts, a **Flavor Harmony Score** driven by a local ChromaDB Flavor Bible, and an **ANALYTICS intent** for structured Inventory Reports. The orchestrator uses persona-driven prefixes (`[X-Ray Buddy]`, `[The Mad Alchemist]`) in the content-aware "Thought Trace".
-7. **Spatial OS Stability & Chat UX:** A zero-hallucination inventory engine ensures items are physically purged upon depletion. Interaction logic features **In-Place Message Merging**, where assistant bubbles are updated with confirmation text rather than pushing new messages. The system includes persistent **Chef Activity Status** (IDLE/COOKING) with a 15-minute TTL, surviving page reloads for long-running culinary processes.
+6. **Agentic Orchestration (Phase 13.6):** A multi-agent chain coordinates specialized workers (Scanner, Architect, Auditor, **Analytics**) via a hardened SSE stream. Features a **Sin-Sieve Audit** layer with rich HTML alerts, a **Flavor Harmony Score**, and an **ANALYTICS intent** utilizing 100% Python-side math for hallucination-free inventory reports. The orchestrator embeds a native `<details>` "Thought Trace" with persona-driven prefixes (`[X-Ray Buddy]`, `[The Fun Police]`).
+7. **Spatial OS Stability & Chat UX:** A zero-hallucination inventory engine ensures items are physically purged upon depletion. Interaction logic features **In-Place Message Merging**, a morphing **Chef's Knife (🔪) Action Button**, and elegant UI chips for missing recipe ingredients. The system includes persistent **Chef Activity Status** (IDLE/COOKING) with a 15-minute TTL, surviving page reloads.
 8. **Agentic RAG (ChromaDB):** Asynchronously fetches "classic flavor pairings" from a local knowledge base to rescue expiring ingredients. Driven by **Gemini 2.5 Flash** and **Sentence Transformers**, ensuring high-precision culinary logic.
 
 ## 👁️ Advanced Vision Pipeline & Security (Phase 9 Integration)
@@ -131,6 +131,7 @@ In Phase 10, we introduced a fully dynamic workspace (Layout Engine) and transit
     - **Spatial OS Paradigm**: The workspace completely ditches rigid CSS grids in favor of a fluid, absolute-positioned 2.5D desktop environment using the custom `useDraggable` compositor.
     - **Window Resizing & The Dock**: Widgets can be freely dragged, resized via their bottom corners, and minimized directly to the top-header "Dock" for an uncluttered workspace.
     - **Z-Index Physics**: Clicking any widget automatically brings it to the forefront, mimicking native desktop window management.
+- **Phase 13 Architecture**: Full transition to a 3-Tier SSE Protocol (`status` → `delta` → `final`). Integration of multi-turn conversational memory, proactive inventory warnings (Chef's Special ✨), and the Sin-Sieve dual-mode firewall.
 - **Persistent Memory**: Upon page refresh, all your custom layout preferences (X/Y coordinates, width, height, z-index, and minimized states) are restored automatically via SQLite!
 
 ## 🐳 Deployment (Dockerized)
@@ -155,4 +156,3 @@ The API will be available at http://localhost:8000. Interactive documentation (S
 
 ## 🗺️ Roadmap & Tasks
 Please check `docs/MASTER_ROADMAP.md` and `docs/CHANGELOG.md` for historical phases, current task tracking, and future iterations.
-

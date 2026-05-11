@@ -33,9 +33,9 @@
     </Transition>
 
     <!-- Ingredients -->
-    <div v-if="ingredients.length" class="space-y-2">
+    <div v-if="ingredients.length" class="space-y-1">
       <h5 class="text-xs uppercase tracking-widest text-slate-400 font-bold">Ingredients</h5>
-      <div class="grid grid-cols-2 gap-1.5">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">  
         <div v-for="(ing, i) in ingredients" :key="i"
              class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/40 text-sm text-slate-300">
           <span class="text-xs opacity-60">•</span>
@@ -80,7 +80,7 @@
         </div>
       </Transition>
 
-      <div class="flex justify-end h-8">
+    <div class="flex justify-end h-8" ref="buttonWrapperRef">
         <button
           ref="buttonRef"
           @click="handleCook"
@@ -142,13 +142,14 @@ const buttonTranslateX = ref(0)
 const buttonTranslateY = ref(0)
 const containerRef = ref(null)
 const buttonRef = ref(null)
+const buttonWrapperRef = ref(null)
 let fleeTimer = null
 
 const buttonStyle = computed(() => {
   if (isFleeing.value) {
     return {
       transform: `translate(${buttonTranslateX.value}px, ${buttonTranslateY.value}px)`,
-      transition: 'transform 0.15s ease-out'
+      transition: 'transform 0.08s ease-out'
     }
   }
   return { transform: 'translate(0px, 0px)', transition: 'transform 0.3s ease-out' }
@@ -173,17 +174,38 @@ const startFleeing = (missingIngredients) => {
   }, 8000)
 }
 
-const handleButtonHover = () => {
-  if (!isFleeing.value || !buttonRef.value || !containerRef.value) return
+const handleButtonHover = (e) => {
+  if (!isFleeing.value || !buttonRef.value || !containerRef.value || !buttonWrapperRef.value) return
   const containerRect = containerRef.value.getBoundingClientRect()
+  const wrapperRect = buttonWrapperRef.value.getBoundingClientRect()
   const btnRect = buttonRef.value.getBoundingClientRect()
-  const fleeStep = 80
-  let newX = buttonTranslateX.value + (Math.random() * 2 - 1) * fleeStep
-  let newY = buttonTranslateY.value + (Math.random() * 2 - 1) * fleeStep
-  const maxW = (containerRect.width / 2) - (btnRect.width / 2) - 10
-  const maxH = (containerRect.height / 2) - (btnRect.height / 2) - 10
-  buttonTranslateX.value = Math.max(-maxW, Math.min(newX, maxW))
-  buttonTranslateY.value = Math.max(-maxH, Math.min(newY, maxH))
+
+  // Original static absolute position without current translations
+  // Using wrapperRect prevents drift caused by measuring animating CSS transforms
+  const origRight = wrapperRect.right
+  const origLeft = origRight - btnRect.width
+  const origTop = wrapperRect.top
+  const origBottom = wrapperRect.bottom
+
+  // Vector direction (away from cursor) + noise to prevent trapping
+  const btnCenterX = btnRect.left + btnRect.width / 2
+  const btnCenterY = btnRect.top + btnRect.height / 2
+  let dx = btnCenterX - e.clientX + (Math.random() - 0.5) * 30
+  let dy = btnCenterY - e.clientY + (Math.random() - 0.5) * 30
+
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1
+  const fleeStep = 150 // Faster, longer jumps
+  let newX = buttonTranslateX.value + (dx / dist) * fleeStep
+  let newY = buttonTranslateY.value + (dy / dist) * fleeStep
+
+  // Strict boundaries based on container layout (15px padding from edges)
+  const minX = containerRect.left - origLeft + 15
+  const maxX = containerRect.right - origRight - 15
+  const maxY = containerRect.bottom - origBottom - 15
+  const minY = Math.min(maxY, (containerRect.top + containerRect.height / 2) - origTop) // limit to bottom half
+
+  buttonTranslateX.value = Math.max(minX, Math.min(newX, maxX))
+  buttonTranslateY.value = Math.max(minY, Math.min(newY, maxY))
 }
 
 const handleCook = () => {
