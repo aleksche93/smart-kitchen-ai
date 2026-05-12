@@ -61,10 +61,12 @@
          </span>
          <!-- Content -->
          <span v-else class="whitespace-pre-wrap leading-relaxed" v-html="renderContent(msg, index)"></span>
-         <!-- Magic artifact trigger button -->
-         <button v-if="msg.role === 'assistant' && index === chatHistory.length - 1 && showMagicButton" @click="executeMagic()" class="self-start mt-1 px-3 py-1.5 bg-keYellow/10 hover:bg-keYellow/20 text-keYellow border border-keYellow/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(250,204,21,0.1)]">
-            ✨ {{ $t('intents.magic_trigger_button') }}
-         </button>
+         <!-- Magic artifact trigger button (Inline Chat Actions) -->
+         <div v-if="msg.role === 'assistant' && msg.hasMagicAction" class="chat-actions mt-2 flex justify-start">
+           <button @click="executeMagic(undefined, msg)" class="px-3 py-1.5 bg-keBlue/10 hover:bg-keBlue/20 text-keBlue border border-keBlue/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(59,130,246,0.1)]">
+              ✨ {{ $t('intents.magic_trigger_button', 'Generate Recipe') }}
+           </button>
+         </div>
        </div>
     </div>
 
@@ -95,19 +97,19 @@
           @click="isStreaming ? handleAbort() : handleAdvice()"
           :disabled="!isStreaming && !localInput.trim()"
           :title="isStreaming ? $t('chef.actions.stop') : $t('ui.actions.send')"
-          class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 shadow-md disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden"
+          class="w-12 h-12 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 active:scale-90 shadow-md disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden group"
           :class="isStreaming
             ? 'bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 text-red-400'
             : 'bg-keBlue hover:bg-blue-600 text-white border border-transparent'"
         >
-          <!-- Stop icon (square) -->
-          <svg v-if="isStreaming" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <!-- Stop icon (square), visible ONLY when streaming AND hovered -->
+          <svg v-if="isStreaming" class="w-4 h-4 hidden group-hover:block" fill="currentColor" viewBox="0 0 24 24">
             <rect x="5" y="5" width="14" height="14" rx="2" />
           </svg>
-          <!-- Chef's Knife icon (🔪) — Replaces paper plane -->
-          <svg v-else class="w-6 h-6 transform rotate-[45deg] group-hover:-translate-y-0.5 transition-all duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M18 3L21 6L6 21H3V18L18 3Z" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 6L18 9" opacity="0.4" />
+          <!-- Professional Chef's Knife icon (🔪) -->
+          <svg :class="['w-7 h-7 transform rotate-[45deg] transition-all duration-300', isStreaming ? 'block group-hover:hidden' : 'group-hover:-translate-y-0.5 group-hover:-translate-x-0.5']" fill="currentColor" viewBox="0 0 24 24">
+            <!-- Chef Knife realistic path -->
+            <path d="M21.36,3.33A2,2,0,0,0,19.9,2.75C17.7,2.83,12,4.36,7.6,8.76L6.5,9.86l-.8-.8a1,1,0,0,0-1.41,0L2.88,10.47a1,1,0,0,0,0,1.41l3.54,3.54L2,19.86,4.14,22l4.44-4.44,3.54,3.54a1,1,0,0,0,1.41,0l1.41-1.41a1,1,0,0,0,0-1.41l-.8-.8L15.24,16.4C19.64,12,21.17,6.3,21.25,4.1A2,2,0,0,0,21.36,3.33ZM5,14,3.59,12.59l1.41-1.41L6.41,12.59ZM9.59,19,8.17,17.59l1.41-1.41L11,17.59ZM14.18,15l-4.24-4.24,1.06-1.06C14.77,6,19.34,4.72,20,4c-.72.66-2,5.23-5.71,8.94Z"/>
           </svg>
         </button>
       </div>
@@ -329,8 +331,10 @@ const handleAdvice = async () => {
     const regexMagic = /\[ACTION: MAGIC_TRIGGER\]/g
     const regexAudit = /\[ACTION: AUDIT_WARNING\]/g
 
+    let hasMagic = false
     if (regexMagic.test(_accumulatedChatText)) {
       _accumulatedChatText = _accumulatedChatText.replace(regexMagic, '')
+      hasMagic = true
       if (!showMagicButton.value) showMagicButton.value = true
     }
     if (regexAudit.test(_accumulatedChatText)) {
@@ -348,7 +352,9 @@ const handleAdvice = async () => {
 
     const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
     if (msgIdx !== -1) {
-      chatHistory.value[msgIdx] = { ...chatHistory.value[msgIdx], content: safeText }
+      const updatedMsg = { ...chatHistory.value[msgIdx], content: safeText }
+      if (hasMagic) updatedMsg.hasMagicAction = true
+      chatHistory.value[msgIdx] = updatedMsg
     }
 
     const words = textChunk.trim().split(/\s+/)
@@ -370,6 +376,8 @@ const handleAdvice = async () => {
         const actualPayload = finalData?.payload || finalData
         
         if (actualPayload?.artifact_type === 'CHAT') {
+          const hasMagic = _accumulatedChatText.includes(MAGIC_TAG) || chatHistory.value.find(m => m._id === assistantMsgId)?.hasMagicAction
+          
           const fullClean = _accumulatedChatText
             .replaceAll(MAGIC_TAG, '')
             .replaceAll(AUDIT_TAG, `> ⚠️ **${t('chef.audit.warning')}**: `)
@@ -377,7 +385,9 @@ const handleAdvice = async () => {
           
           const msgIdx = chatHistory.value.findIndex(m => m._id === assistantMsgId)
           if (msgIdx !== -1 && fullClean) {
-            chatHistory.value[msgIdx] = { ...chatHistory.value[msgIdx], content: fullClean }
+            const finalMsg = { ...chatHistory.value[msgIdx], content: fullClean }
+            if (hasMagic) finalMsg.hasMagicAction = true
+            chatHistory.value[msgIdx] = finalMsg
           }
           return
         }
@@ -422,12 +432,13 @@ const handleAdvice = async () => {
   }
 }
 
-const executeMagic = async (query = lastQuery.value) => {
+const executeMagic = async (query = lastQuery.value, sourceMsg = null) => {
   if (btnState.value === BUTTON_STATES.ACTIVE) return
   error.value = null
   btnState.value = BUTTON_STATES.ACTIVE
   showMagicButton.value = false
   chefState.showMagicTrigger = false
+  if (sourceMsg) sourceMsg.hasMagicAction = false
 
   layoutStore.setChefStatus('COOKING')
   try {
@@ -497,6 +508,7 @@ const handleCroppedImage = async (blob) => {
   scannedItems.value = []
 
   const fileToUpload = new File([blob], "receipt_cropped.jpg", { type: "image/jpeg" })
+  layoutStore.setChefStatus('ANALYZING')
   chefStore.logThought(t('ticker.checking_traps'))
   chefStore.logThought(t('ticker.processing'))
 
@@ -516,6 +528,8 @@ const handleCroppedImage = async (blob) => {
   } catch (err) {
     error.value = err.message || t('errors.connection_lost')
     if (err.message?.toLowerCase().includes('duplicate')) fetchFridge()
+  } finally {
+    if (layoutStore.chefStatus === 'ANALYZING') layoutStore.setChefStatus('IDLE')
   }
 }
 </script>

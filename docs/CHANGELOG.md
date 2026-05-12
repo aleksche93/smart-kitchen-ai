@@ -2,6 +2,17 @@
 
 All notable changes to the KozakEye Smart Kitchen AI project will be documented in this file.
 
+## [Phase 14.0] - 2026-05-12
+### Added
+- **Session Termination Ritual:** New `/kinec` command that performs automated session end-of-life: trait extraction, memory update, and chat clearing.
+- **User Trait Extraction:** Integrated `extract_user_traits` helper using `gemini-2.5-flash` to analyze psychological and culinary profiles (preferences, personality, skill level) from chat history.
+- **Contextual Magic Button:** The "Generate Recipe" button is now tied to specific messages via `hasMagicAction` property, preventing UI "ghosting" and improving contextual flow.
+
+### Changed
+- **Clarification Loop UX:** Re-tuned `IntentClassifierAgent` to aggressively favor `CHAT`. The Chef now prioritizes discussion and clarification before triggering artifact generation.
+- **Magic Trigger Protocol:** The `MAGIC_TRIGGER` signal now requires explicit user confirmation within the chat history to prevent premature artifact generation.
+- **Backend Language Standard:** Enforced strict English-only system messages in `api/smart_fridge.py` final events.
+
 ## [Phase 13.6] - 2026-05-10
 ### Added
 - **Thought Trace UI:** Native `<details>` element in chat bubbles to display Chef's reasoning (`ui_thought` streaming) without cluttering the chat.

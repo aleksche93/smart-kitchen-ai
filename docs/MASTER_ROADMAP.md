@@ -23,10 +23,10 @@
 *Expanding capabilities through specialized modules and cognitive orchestration.*
 
 - [x] **Phase 13.1-13.6:** Cognitive Brain & SSE Orchestrator (Intent Routing, Agentic Architecture, UI Evolution & Bug Fixes).
-- [ ] **Phase 14: The Conversational Pivot (Clarification Loop)**
-- [ ] **Intent: CLARIFICATION:** Implement a routing logic where the Chef asks 1-2 clarifying questions before generating an artifact (unless "Magic" is triggered).
-- [ ] **Recipe Builder Mode:** Dedicated interactive mode where the user and Chef "collaborate" on a recipe before finalization.
-- [ ] **Sin-Sieve UI Polish:** Custom alert components for security/safety warnings (replacing raw Markdown).
+- [x] **Phase 14: The Conversational Pivot (Clarification Loop) & Session Management**
+    - [x] **Intent: CLARIFICATION:** Implementation of a routing logic where the Chef asks 1-2 clarifying questions before generating an artifact.
+    - [x] **Session End Ritual (/kinec):** Automated trait extraction (psychological/culinary) and session cleanup.
+    - [x] **Contextual UI Actions:** Inline "Generate Recipe" buttons tied to specific Chef messages.
 ---
 
 ## 🌌 STAGE V: NEXT-GEN AI & VISUALIZATION (PHASES 15–20)

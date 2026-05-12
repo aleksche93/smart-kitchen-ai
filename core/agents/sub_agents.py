@@ -145,21 +145,17 @@ class IntentClassifierAgent(BaseChefAgent):
             "You are an Intent Classifier for a Smart Kitchen Assistant.\n"
             "Classify the user input into exactly ONE of: 'CHAT', 'RECIPE', or 'ANALYTICS'.\n\n"
             "STRICT RULES:\n"
-            "- 'ANALYTICS': ONLY for inventory/stock/expiry queries. Triggers:\n"
-            "  * 'what's in my fridge?', 'show me inventory', 'what's expiring?'\n"
-            "  * 'what do I have?', 'what should I use first?', 'any waste risk?'\n"
-            "  * 'check my stock', 'fridge contents', 'what items expire soon?'\n\n"
-            "- 'CHAT': Use for EVERYTHING that is NOT a specific dish request AND not an inventory query:\n"
-            "  * Vague recipe requests: 'can you make a recipe?', 'suggest something'\n"
-            "  * Questions about cooking techniques, nutrition, chef advice\n"
-            "  * Small talk, personality questions, 'what do you think?'\n"
-            "  * ANYTHING where the user hasn't explicitly named a specific dish or asked about stock\n\n"
-            "- 'RECIPE': ONLY when the user explicitly names a SPECIFIC dish they want to cook:\n"
-            "  * 'make me pasta carbonara', 'how to cook chicken tikka masala'\n"
-            "  * 'I want to cook beef stew', 'recipe for banana bread'\n"
-            "  * A named dish MUST be present — generic words like 'recipe', 'dish', 'food' do NOT count\n\n"
-            "BIAS: When uncertain between CHAT and ANALYTICS, choose ANALYTICS for fridge/food stock questions.\n"
-            "BIAS: When uncertain between CHAT and RECIPE, choose CHAT.\n\n"
+            "- 'ANALYTICS': Use this IMMEDIATELY for any explicit inventory, stock, or expiry queries WITHOUT an immediate request to cook.\n"
+            "  * EXAMPLES: 'check my stock', 'fridge contents', 'what\\'s expiring?', 'what\\'s in my fridge?', 'show me my fridge'.\n"
+            "  * These queries MUST go to ANALYTICS, bypassing CHAT completely.\n\n"
+            "- 'CHAT': Use this for ALMOST EVERYTHING else, including:\n"
+            "  * Vague AND specific recipe requests: 'can you make a recipe?', 'make me pasta carbonara', 'give me a recipe for pancakes'\n"
+            "  * 'I want to cook borscht', 'how to cook chicken tikka masala'\n"
+            "  * Requests for analytics where the user intends to cook: 'what can I cook with what\\'s in my fridge?'\n"
+            "  * Questions about cooking techniques, nutrition, chef advice, small talk\n"
+            "  * ANY request for a recipe MUST first route to a CLARIFICATION loop (CHAT).\n\n"
+            "- 'RECIPE': ONLY if explicitly forced by the system (which bypasses this LLM anyway), or if the user explicitly says 'proceed with the recipe generation' in a very final manner.\n\n"
+            "BIAS: When uncertain between CHAT and anything else, choose CHAT (except for clear stock/inventory questions which must be ANALYTICS).\n\n"
             "Respond with JSON strictly: {\"intent\": \"CHAT\" or \"RECIPE\" or \"ANALYTICS\", \"reasoning\": \"one sentence\"}."
         )
         try:
@@ -177,6 +173,39 @@ class IntentClassifierAgent(BaseChefAgent):
         except Exception as e:
             print(f"[IntentClassifier] Classification failed: {e}")
             return "CHAT"
+
+
+async def extract_user_traits(chat_history: list) -> dict:
+    """
+    Analyzes chat history to extract psychological and culinary traits.
+    Used during session termination (/kinec).
+    """
+    if not client:
+        return {}
+
+    system_prompt = (
+        "You are a psychological and culinary profiler.\n"
+        "Analyze the provided chat history between a user and a Chef assistant.\n"
+        "Extract key insights about the user: their flavor preferences (e.g., spicy, vegan, dislikes garlic), "
+        "their personality traits (e.g., impatient, polite, indecisive), and their cooking skill level if apparent.\n"
+        "Respond STRICTLY with a valid JSON object. Example: {\"preferences\": [\"likes spicy\", \"dislikes fish\"], \"personality\": [\"polite\", \"curious\"], \"skill_level\": \"beginner\"}\n"
+    )
+
+    history_text = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in chat_history])
+
+    try:
+        response = await client.aio.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=system_prompt + f"\n\nChat History:\n{history_text}",
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.2
+            )
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"[TraitExtraction] Failed to extract traits: {e}")
+        return {}
 
 
 class ConversationalAgent(BaseChefAgent):
@@ -216,10 +245,13 @@ class ConversationalAgent(BaseChefAgent):
             "2. Stay in character: philosophical, intense, sarcastic where appropriate.\n"
             "3. NEVER output raw JSON, code blocks, or step-by-step ingredient lists in this mode.\n"
             "4. Do NOT repeat what the user just said.\n\n"
-            "ARTIFACT SIGNAL PROTOCOL: If — and ONLY IF — a recipe, shopping list, or waste audit "
-            "would directly solve the user's need, respond naturally FIRST, then append EXACTLY "
-            "'[ACTION: MAGIC_TRIGGER]' on a new line at the END. This tag is invisible to the user. "
-            "Only use it when truly warranted — not for every response.\n\n"
+            "ARTIFACT SIGNAL PROTOCOL (THE CLARIFICATION LOOP):\n"
+            "If the user asks for a recipe or analytics, you MUST NOT generate it immediately.\n"
+            "Instead, engage in a CLARIFICATION loop:\n"
+            "1. Discuss the request with the user. Ask about their preferences, check if they want to use specific ingredients from the fridge, or suggest ideas.\n"
+            "2. ONLY when the user explicitly CONFIRMS they want a specific dish (e.g., 'Yes, let's cook that', 'Give me the recipe for the pasta'), you append EXACTLY '[ACTION: MAGIC_TRIGGER]' on a new line at the END of your response.\n"
+            "3. Do NOT use the trigger during the initial suggestion or discussion phase. Wait for mutual agreement.\n"
+            "This tag is invisible to the user and will render a 'Generate' button in the UI.\n\n"
             f"Current fridge inventory:\n{inventory_summary}"
             f"{expiring_note}"
         )

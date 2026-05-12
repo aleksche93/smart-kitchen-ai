@@ -92,6 +92,94 @@ async def process_orchestrator(request: ProcessRequest):
         user_input_text = (request.context_parameters or request.title or "").strip()
         try:
             async with async_session() as session:
+                # ---------------------------------------------------------------------------
+                # Phase 14: Session Termination Ritual (/kinec)
+                # ---------------------------------------------------------------------------
+                if user_input_text.lower().startswith("/kinec"):
+                    from core.agents.sub_agents import extract_user_traits
+                    from sqlalchemy import delete
+                    
+                    yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Chef is packing up... analyzing your session...'}})}\n\n"
+                    
+                    # 1. Fetch current chat history for analysis
+                    sess_q = await session.execute(
+                        sa_select(ChefSessionModel)
+                        .where(ChefSessionModel.user_id == DEFAULT_USER_ID)
+                        .order_by(ChefSessionModel.created_at.desc())
+                    )
+                    active_session = sess_q.scalars().first()
+                    
+                    if active_session:
+                        msg_q = await session.execute(
+                            sa_select(ChatMessageModel)
+                            .where(ChatMessageModel.session_id == active_session.id)
+                            .order_by(ChatMessageModel.created_at.asc())
+                        )
+                        db_msgs = msg_q.scalars().all()
+                        chat_history_for_extraction = [{"role": m.role, "content": m.content} for m in db_msgs]
+                        
+                        # 2. Extract traits
+                        traits = await extract_user_traits(chat_history_for_extraction)
+                        
+                        # 3. Update ChefMemoryModel
+                        mem_q = await session.execute(
+                            sa_select(ChefMemoryModel)
+                            .where(ChefMemoryModel.user_id == DEFAULT_USER_ID)
+                        )
+                        memory_obj = mem_q.scalars().first()
+                        if memory_obj:
+                            existing_traits = memory_obj.traits or {}
+                            # Merge traits (deduplicate and keep clean)
+                            if traits.get('preferences'):
+                                existing_traits['preferences'] = list(set(existing_traits.get('preferences', []) + traits['preferences']))
+                            if traits.get('personality'):
+                                existing_traits['personality'] = list(set(existing_traits.get('personality', []) + traits['personality']))
+                            if traits.get('skill_level'):
+                                existing_traits['skill_level'] = traits['skill_level']
+                            memory_obj.traits = existing_traits
+                        
+                        # 4. Generate user-facing summary in their language
+                        summary_text = "Session ended. Memory updated."
+                        if client and chat_history_for_extraction:
+                            # Detect language from last user message or default to Ukrainian
+                            last_user_msg = next((m["content"] for m in reversed(chat_history_for_extraction) if m["role"] == "user"), "")
+                            prompt = (
+                                f"You are the Chef. Summarize the following extracted traits into a short, witty farewell message (max 2 sentences). "
+                                f"IMPORTANT: Respond in the exact same language as the user's last message: '{last_user_msg}'. "
+                                f"If unsure, use Ukrainian. Traits: {json.dumps(traits)}"
+                            )
+                            try:
+                                sum_resp = await client.aio.models.generate_content(
+                                    model='gemini-2.5-flash',
+                                    contents=prompt,
+                                    config=types.GenerateContentConfig(temperature=0.7)
+                                )
+                                if sum_resp.text:
+                                    summary_text = sum_resp.text.strip()
+                            except Exception as e:
+                                logging.warning(f"Failed to generate localized summary: {e}")
+                        
+                        yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Memory updated. Closing kitchen...'}})}\n\n"
+                        
+                        # Send summary via delta so UI renders it in the bubble
+                        yield f"data: {json.dumps({'type': 'delta', 'data': {'text': summary_text, 'intent': 'CHAT'}})}\n\n"
+                        
+                        # Final payload
+                        final_payload = {
+                            "artifact_type": "CHAT",
+                            "text": summary_text,
+                            "metadata": {}
+                        }
+                        yield f"data: {json.dumps({'type': 'final', 'data': {'payload': final_payload}})}\n\n"
+                        
+                        # 5. Clear the session LAST to ensure stream completes safely
+                        # We delete messages to effectively start a fresh conversation loop next time
+                        await session.execute(
+                            delete(ChatMessageModel).where(ChatMessageModel.session_id == active_session.id)
+                        )
+                        await session.commit()
+                        return
+
                 fridge_query = await session.execute(
                     select(InventoryItemModel)
                     .where(InventoryItemModel.storage_location == 'Fridge')

@@ -112,7 +112,11 @@ class ChefOrchestrator:
                 return
 
             # ── 3. Intent Classification ─────────────────────────────────────
-            yield _sse({"type": "status", "data": {"text": "Classifying intent..."}})
+            if context.get("force_intent") == "RECIPE":
+                yield _sse({"type": "status", "data": {"text": "Chef is orchestrating the recipe..."}})
+            else:
+                yield _sse({"type": "status", "data": {"text": "Classifying intent..."}})
+                
             intent = await self.classifier.classify(context)
 
             # Broadcast intent so frontend configures routing — NOT a ui_thought (technical)
