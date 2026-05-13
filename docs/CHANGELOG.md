@@ -2,6 +2,19 @@
 
 All notable changes to the KozakEye Smart Kitchen AI project will be documented in this file.
 
+## [Phase 14.5 Jules Audit Cleanup & Testing] - 2026-05-13
+### Testing Coverage
+- **Locales Testing:** Created `test_locales.py` for `I18nManager` coverage.
+- **Orchestration Utils:** Created `test_orchestrator_utils.py` and `test_sub_agents_utils.py` for private utility functions.
+- **Cognitive Logic:** Created `test_persona.py` and `test_fsm.py` to cover state transitions and persona reactions.
+- **Persistence & Memory:** Created `test_memory.py` for memory graph logic and trait extraction error handling.
+- **API Robustness:** Created `test_api_endpoints.py` for edge cases in session and receipt management.
+- **Flavor Edge Cases:** Created `test_flavor_service_edge.py` for empty ingredient list handling.
+
+### Code Hygiene
+- **Import Cleanup:** Safely removed unused imports in `app.py`, `api/smart_fridge.py`, `flavor_service.py`, `base.py`, and test files while preserving critical side-effect imports (`AnalyticsReportSchema`).
+- **Strict Compliance:** Verified all cleanup against actual code usage to prevent runtime regressions.
+
 ## [Phase 14.4 Jules Audit Integration] - 2026-05-13
 ### Security & Architecture Fixes
 - **Empty Artifact Fix:** Patched `InteractionZone.vue` (`upsertArtifact` and `executeMagic`) to strictly check `Object.keys(metadata).length > 0` before prioritizing it over the full payload.

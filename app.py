@@ -1,7 +1,7 @@
 import os
 import json
-import aiofiles
 import uuid
+import aiofiles
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,7 +17,7 @@ from pathlib import Path
 # New database and core imports
 from db.database import get_db, init_db, async_session
 from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel, ChatMessageModel
-from core.fsm import ChefFSM, ChefTrigger
+from core.fsm import ChefFSM
 from core.persona import ChefPersona
 from core.memory import extract_and_store_traits
 from api.smart_fridge import router as smart_fridge_router

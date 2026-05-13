@@ -1,6 +1,5 @@
 import chromadb
 from chromadb.utils import embedding_functions
-import numpy as np
 
 try:
     # Use internal docker host

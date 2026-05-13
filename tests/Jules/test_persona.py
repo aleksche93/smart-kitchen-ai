@@ -1,64 +1,41 @@
 import pytest
-from core.fsm import ChefFSM, ChefTrigger, ChefState
+from unittest.mock import MagicMock
 from core.persona import ChefPersona
+from core.fsm import ChefFSM, ChefState
 
-# Lightweight mocks for DB models to ensure fast unit testing
-class MockStateDB:
-    def __init__(self):
-        self.current_state = ChefState.IDLE.value
-        self.emotion_value = 0.0
-        self.personality_profile = "neutral"
+@pytest.fixture
+def mock_fsm():
+    fsm = MagicMock(spec=ChefFSM)
+    fsm.state_db = MagicMock()
+    fsm.state_db.current_state = ChefState.IDLE.value
+    fsm.memory_db = MagicMock()
+    fsm.memory_db.preferences = {}
+    fsm.memory_db.cooking_sins = {}
+    fsm.session_db = MagicMock()
+    fsm.session_db.ui_events = []
+    return fsm
 
-class MockMemoryDB:
-    def __init__(self):
-        self.preferences = {}
-        self.traits = {}
-        self.cooking_sins = {}
-        self.long_term_counters = {}
+@pytest.fixture
+def persona(mock_fsm):
+    return ChefPersona(fsm=mock_fsm)
 
-class MockSessionDB:
-    def __init__(self):
-        self.recent_triggers = []
-        self.ui_events = []
+def test_update_preferences_spicy(persona, mock_fsm):
+    persona.update_preferences("chili pepper")
+    assert mock_fsm.memory_db.preferences["likes_spicy"] is True
 
+def test_update_preferences_chicken(persona, mock_fsm):
+    persona.update_preferences("roast chicken")
+    assert mock_fsm.memory_db.preferences["likes_chicken"] is True
 
-def test_fsm_transitions():
-    state_db = MockStateDB()
-    memory_db = MockMemoryDB()
-    session_db = MockSessionDB()
-    
-    fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
-    
-    # Test triggering Toxicity to raise emotion and change state
-    # IDLE -> depends on weights, TOXICITY gives +5. 
-    # With neutral personality patience=1, annoyed_thresh = 4
-    # So 5 >= 4, it should transition to ANNOYED
-    new_state = fsm.trigger(ChefTrigger.TOXICITY)
-    assert state_db.emotion_value > 0
-    assert new_state == ChefState.ANNOYED.value
-    
-    # Respect should slowly lower the emotion level
-    fsm.trigger(ChefTrigger.RESPECT)
-    fsm.trigger(ChefTrigger.RESPECT)
-    assert state_db.emotion_value < 5.0
+from unittest.mock import MagicMock, patch
 
-def test_cooking_sins_accumulation():
-    state_db = MockStateDB()
-    memory_db = MockMemoryDB()
-    session_db = MockSessionDB()
-    
-    fsm = ChefFSM(state_db=state_db, memory_db=memory_db, session_db=session_db)
-    persona = ChefPersona(fsm=fsm)
-    
-    # Adding proteins
-    persona.react_to_ingredient("chicken")
-    # First protein should be fine
-    assert "protein_chaos" not in memory_db.cooking_sins
-    
-    persona.react_to_ingredient("beef")
-    # Second protein should still be fine
-    assert "protein_chaos" not in memory_db.cooking_sins
-    
-    # Third protein -> chaos
-    reaction = persona.react_to_ingredient("salmon")
-    assert memory_db.cooking_sins.get("protein_chaos") is True
+def test_react_to_ingredient_fallback(persona):
+    with patch("core.persona.i18n.get", return_value="Interesting."):
+        reaction = persona.react_to_ingredient("mysterious substance")
+        assert reaction == "Interesting."
+
+def test_generate_system_prompt(persona):
+    prompt = persona.generate_system_prompt()
+    assert "IDLE" in prompt
+    assert "Chaotic Genius" in prompt
+    assert len(prompt) > 50

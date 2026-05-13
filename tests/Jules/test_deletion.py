@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-import os
 
 @pytest.mark.asyncio
 async def test_bulk_deletion_architecture():

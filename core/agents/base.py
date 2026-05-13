@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Any
+from typing import AsyncGenerator
 
 class BaseChefAgent(ABC):
     """

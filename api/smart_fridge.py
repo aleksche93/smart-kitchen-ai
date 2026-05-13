@@ -8,11 +8,10 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, update
 from datetime import datetime
-import aiofiles
 
 from db.database import get_db, async_session
-from db.models import InventoryItemModel, ChefStateModel, ChefMemoryModel, ChefSessionModel
-from core.fsm import ChefFSM, ChefTrigger
+from db.models import InventoryItemModel, ChefMemoryModel, ChefSessionModel
+from core.fsm import ChefFSM
 from core.persona import ChefPersona
 from core.services.artifact_service import ARTIFACT_SCHEMAS
 from core.agents.orchestrator import ChefOrchestrator
