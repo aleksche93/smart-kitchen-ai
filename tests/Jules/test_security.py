@@ -19,6 +19,7 @@ class MockLayout:
 @pytest.mark.asyncio
 async def test_save_ui_layout():
     mock_session = AsyncMock()
+    mock_session.add_all = MagicMock()
     app.dependency_overrides[get_db] = lambda: mock_session
     
     mock_result = MagicMock()
@@ -53,6 +54,7 @@ async def test_save_ui_layout():
 @pytest.mark.asyncio
 async def test_save_ui_layout_idempotency():
     mock_session = AsyncMock()
+    mock_session.add_all = MagicMock()
     app.dependency_overrides[get_db] = lambda: mock_session
     
     mock_result = MagicMock()
@@ -86,6 +88,7 @@ async def test_save_ui_layout_idempotency():
 async def test_sql_injection_defense():
     """Verify that the layout save endpoint resists basic SQL injection via widget_id"""
     mock_session = AsyncMock()
+    mock_session.add_all = MagicMock()
     app.dependency_overrides[get_db] = lambda: mock_session
     
     # We simulate that the DB saved the sanitized literal string

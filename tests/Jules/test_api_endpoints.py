@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 @pytest.mark.asyncio
 async def test_clear_session_no_session():
     mock_session = AsyncMock()
+    mock_session.add = MagicMock()
     app.dependency_overrides[get_db] = lambda: mock_session
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
