@@ -10,3 +10,4 @@ aiosqlite >=0.20.0
 python-dotenv>=1.2.2
 chromadb>=0.4.20
 sentence-transformers>=2.2.2
+rpds-py>=0.30.0

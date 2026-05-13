@@ -2,6 +2,17 @@
 
 All notable changes to the KozakEye Smart Kitchen AI project will be documented in this file.
 
+## [Phase 14.4 Jules Audit Integration] - 2026-05-13
+### Security & Architecture Fixes
+- **Empty Artifact Fix:** Patched `InteractionZone.vue` (`upsertArtifact` and `executeMagic`) to strictly check `Object.keys(metadata).length > 0` before prioritizing it over the full payload.
+- **CORS Hardening:** Removed wildcard `"*"` from `allow_origins` in `app.py`, restricting access strictly to trusted local development origins (`http://localhost:5173` and `http://127.0.0.1:5173`).
+- **N+1 Query Performance:** Refactored `get_harmony_score` in `flavor_service.py` to batch ChromaDB queries by passing the entire `ingredients` array to `query_texts`, drastically reducing I/O overhead.
+- **Traceback Exposure:** Replaced unsafe `traceback.print_exc()` with sanitized `logging.error(..., exc_info=False)` in `smart_fridge.py`, `sub_agents.py`, and `orchestrator.py` to prevent architecture leaks to logs.
+- **XSS Prevention:** Removed `v-html` for user messages in the chat interface, replacing it with secure text interpolation (`{{ msg.content }}`).
+- **Stream Pacing:** Removed artificial `asyncio.sleep` blocks from the backend `/kinec` generator, offloading typing animations entirely to the frontend.
+- **Code Hygiene:** Removed unused `AnalyticsItemReport` import from `smart_fridge.py`.
+- **Test Coverage:** Added `test_security_cors.py` and `test_flavor_service.py` to ensure long-term stability of the newly implemented constraints.
+
 ## [Phase 14.3 Final Hotfix] - 2026-05-13
 ### Fixed
 - **Fatal Database Crash:** Resolved an `AttributeError` during `/kinec` session termination by ordering `ChatMessageModel` queries by `.id` instead of a non-existent `.created_at` column.

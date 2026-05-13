@@ -62,7 +62,7 @@ class ChefResponse(BaseModel):
 # Used for ANALYTICS intent inventory reports (avoids 500 on event: final)
 # ---------------------------------------------------------------------------
 
-from core.agents.sub_agents import AnalyticsItemReport, AnalyticsReportSchema
+from core.agents.sub_agents import AnalyticsReportSchema
 
 class ProcessRequest(BaseModel):
     """Unified request model for all Orchestrator interactions (chat + recipe)."""
@@ -180,7 +180,6 @@ async def process_orchestrator(request: ProcessRequest):
                         for i, word in enumerate(words):
                             space = " " if i > 0 else ""
                             yield f"data: {json.dumps({'type': 'delta', 'data': {'text': space + word, 'intent': 'CHAT'}})}\n\n"
-                            await asyncio.sleep(0.05)
                         
                         # Final payload
                         final_payload = {
@@ -337,8 +336,8 @@ async def scan_receipt(file: UploadFile = File(...)):
         # Save to DB logic here (skipped for conciseness as per existing pattern)
         return {"status": "success", "items": items_data}
     except Exception as e:
-        import traceback
-        print(f"[ReceiptScanner] Error: {traceback.format_exc()}")
+        import logging
+        logging.error(f"[ReceiptScanner] Error: {e}", exc_info=False)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/v1/fridge/item/{item_id_or_name}")

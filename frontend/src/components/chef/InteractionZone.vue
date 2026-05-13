@@ -60,7 +60,8 @@
            <span class="w-2 h-2 bg-keBlue rounded-full animate-bounce" style="animation-delay: 300ms"></span>
          </span>
          <!-- Content -->
-         <span v-else class="whitespace-pre-wrap leading-relaxed" v-html="renderContent(msg, index)"></span>
+         <span v-else-if="msg.role === 'assistant'" class="whitespace-pre-wrap leading-relaxed" v-html="renderContent(msg, index)"></span>
+         <span v-else class="whitespace-pre-wrap leading-relaxed">{{ msg.content }}</span>
          <!-- Magic artifact trigger button (Inline Chat Actions) -->
          <div v-if="msg.role === 'assistant' && msg.hasMagicAction" class="chat-actions mt-2 flex justify-start">
            <button @click="executeMagic(undefined, msg)" class="px-3 py-1.5 bg-keBlue/10 hover:bg-keBlue/20 text-keBlue border border-keBlue/30 rounded-full text-xs font-bold uppercase tracking-wider transition-all transform hover:scale-105 animate-fade-in-up flex items-center shadow-[0_0_10px_rgba(59,130,246,0.1)]">
@@ -412,7 +413,7 @@ const handleAdvice = async () => {
         }
         
         // Phase 13.5: Fix Empty Artifact - Pass metadata to upsertArtifact
-        const artifactData = actualPayload?.metadata || actualPayload
+        const artifactData = (actualPayload?.metadata && Object.keys(actualPayload.metadata).length > 0) ? actualPayload.metadata : actualPayload
         
         layoutStore.upsertArtifact({
           artifact_type: artifactType,
@@ -463,7 +464,7 @@ const executeMagic = async (query = lastQuery.value, sourceMsg = null) => {
       (statusMsg) => chefStore.logThought(statusMsg),
       (finalData) => {
         const actualPayload = finalData?.payload || finalData
-        const artifactData = actualPayload?.metadata || actualPayload
+        const artifactData = (actualPayload?.metadata && Object.keys(actualPayload.metadata).length > 0) ? actualPayload.metadata : actualPayload
 
         emit('artifact', {
           artifact_type: actualPayload?.artifact_type || 'ORCHESTRATED_RESPONSE',

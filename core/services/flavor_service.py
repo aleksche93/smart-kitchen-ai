@@ -22,30 +22,24 @@ def get_harmony_score(ingredients: list[str]) -> float:
     total_score = 0.0
     pairs_checked = 0
 
-    # Check pairs (simplified: check each ingredient against others)
-    for i, ing in enumerate(ingredients):
-        try:
-            # Search for pairings for this ingredient
-            results = flavor_col.query(
-                query_texts=[ing],
-                n_results=5
-            )
-            
-            # Check if any of the other ingredients are in the results
-            for other_ing in ingredients[i+1:]:
-                # If the other ingredient appears in the matched "pairings" documents
-                found_match = any(other_ing.lower() in doc.lower() for doc in results['documents'][0])
+    try:
+        # Batch search for pairings for all ingredients
+        results = flavor_col.query(
+            query_texts=ingredients,
+            n_results=5
+        )
+        
+        for i, ing in enumerate(ingredients):
+            for j, other_ing in enumerate(ingredients[i+1:]):
+                found_match = any(other_ing.lower() in doc.lower() for doc in results['documents'][i])
                 if found_match:
-                    total_score += 1.0 # High harmony
+                    total_score += 1.0
                 else:
-                    # Check distance as a fallback for harmony
-                    # Closer distance = more harmonic context
-                    dist = results['distances'][0][0] if results['distances'] else 1.0
+                    dist = results['distances'][i][0] if results['distances'] and results['distances'][i] else 1.0
                     total_score += max(0, 1.0 - dist)
-                
                 pairs_checked += 1
-        except:
-            continue
+    except:
+        pass
 
     if pairs_checked == 0:
         return 2.5

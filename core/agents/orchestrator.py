@@ -181,6 +181,6 @@ class ChefOrchestrator:
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            import traceback
-            print(f"[ChefOrchestrator] Unhandled error:\n{traceback.format_exc()}")
+            import logging
+            logging.error(f"[ChefOrchestrator] Unhandled error: {e}", exc_info=False)
             yield _sse({"type": "status", "data": {"text": f"Orchestrator error: {str(e)}"}})

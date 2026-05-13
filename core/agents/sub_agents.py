@@ -403,9 +403,8 @@ class FlavorArchitect(BaseChefAgent):
             yield {"type": "final", "data": {"payload": payload.model_dump()}}
 
         except Exception as e:
-            import traceback
-            error_trace = traceback.format_exc()
-            print(f"[FlavorArchitect] CRITICAL ERROR:\n{error_trace}")
+            import logging
+            logging.error(f"[FlavorArchitect] CRITICAL ERROR: {e}", exc_info=False)
             yield {"type": "status", "data": {"text": f"Error: {str(e)}"}}
             yield {"type": "delta", "data": {"text": f"\n\n> **Chef's Diagnostic:** Generation failed. {str(e)}", "intent": "RECIPE"}}
 
