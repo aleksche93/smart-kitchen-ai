@@ -2,8 +2,31 @@
 
 All notable changes to the KozakEye Smart Kitchen AI project will be documented in this file.
 
+## [Phase 14.3 Final Hotfix] - 2026-05-13
+### Fixed
+- **Fatal Database Crash:** Resolved an `AttributeError` during `/kinec` session termination by ordering `ChatMessageModel` queries by `.id` instead of a non-existent `.created_at` column.
+- **Empty /kinec Bubble:** Fixed the frontend filtering issue by ensuring the `intent: "CHAT"` property is explicitly included in both the `status` and `delta` payloads during the session termination stream.
+- **Thought Trace Spam:** Suppressed repetitive `[The X-Ray Buddy]` warnings by adding an `is_first_message` check in the Orchestrator, ensuring proactive inventory scans only appear in the UI on the first message of a session.
+
+## [Phase 14.2 Hotfix] - 2026-05-12
+### Fixed
+- **F5 State Hydration:** Updated `saveChatToStorage` in `InteractionZone.vue` to properly serialize the `thoughts` array and `thoughtsCollapsed` state, preventing thought trace loss on page reload.
+- **Session History Deletion:** Removed the destructive `delete(ChatMessageModel)` call from `/kinec` to retain historical chat logs for future features (e.g., chat history sidebar).
+- **Stream Pacing:** Improved the `/kinec` summary stream by tokenizing the string and yielding words with an explicit delay to match the frontend's natural typing simulation.
+
+## [Phase 14.1] - 2026-05-12
+- **Instant Visual Feedback:** Introduced immediate `COOKING` and `ANALYZING` avatar states triggered before backend fulfillment for Magic Button and Receipt Scanning.
+- **Localized /kinec Summaries:** Session termination now dynamically generates farewell messages matching the user's input language, preserving cultural context.
+
+### Changed
+- **Intent Classifier Re-balancing:** Retuned `IntentClassifierAgent` to instantly route pure inventory queries (e.g., "What's in my fridge?") to the `ANALYTICS` artifact, bypassing the Chat Clarification loop.
+- **Morphing Send Button:** Upgraded the chat input button to feature a realistic professional chef's knife SVG that intelligently morphs into a stop button exclusively on hover during stream processing.
+- **Inline Button Hygiene:** The inline "Generate Recipe" button now automatically hides itself from the message history once clicked.
+
+### Fixed
+- **Empty /kinec Bubble:** Resolved the visual "black hole" during session termination by yielding the summary via `delta` events before the database is cleared.
+
 ## [Phase 14.0] - 2026-05-12
-### Added
 - **Session Termination Ritual:** New `/kinec` command that performs automated session end-of-life: trait extraction, memory update, and chat clearing.
 - **User Trait Extraction:** Integrated `extract_user_traits` helper using `gemini-2.5-flash` to analyze psychological and culinary profiles (preferences, personality, skill level) from chat history.
 - **Contextual Magic Button:** The "Generate Recipe" button is now tied to specific messages via `hasMagicAction` property, preventing UI "ghosting" and improving contextual flow.

@@ -193,7 +193,13 @@ const CHAT_STORAGE_KEY = 'chef_chat_history_v1'
 
 const saveChatToStorage = () => {
   try {
-    const serializable = chatHistory.value.map(m => ({ role: m.role, content: m.content }))
+    const serializable = chatHistory.value.map(m => ({
+      role: m.role,
+      content: m.content,
+      thoughts: m.thoughts || [],
+      thoughtsCollapsed: m.thoughtsCollapsed ?? true,
+      hasMagicAction: m.hasMagicAction || false
+    }))
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(serializable))
   } catch (e) { /* storage unavailable */ }
 }

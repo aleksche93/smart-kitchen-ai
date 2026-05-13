@@ -27,6 +27,8 @@
     - [x] **Intent: CLARIFICATION:** Implementation of a routing logic where the Chef asks 1-2 clarifying questions before generating an artifact.
     - [x] **Session End Ritual (/kinec):** Automated trait extraction (psychological/culinary) and session cleanup.
     - [x] **Contextual UI Actions:** Inline "Generate Recipe" buttons tied to specific Chef messages.
+    - [x] **Phase 14.1 UX Refinement:** Instant visual feedback (COOKING/ANALYZING states), localized `/kinec` summaries, Intent Classifier re-balancing for Analytics, and morphing SVG Send button.
+    - [x] **Phase 14.2-14.3 UX Hotfixes:** Thought Trace F5-hydration, spam deduplication, and stream database hardening.
 ---
 
 ## 🌌 STAGE V: NEXT-GEN AI & VISUALIZATION (PHASES 15–20)

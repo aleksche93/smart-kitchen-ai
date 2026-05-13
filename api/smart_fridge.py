@@ -99,7 +99,7 @@ async def process_orchestrator(request: ProcessRequest):
                     from core.agents.sub_agents import extract_user_traits
                     from sqlalchemy import delete
                     
-                    yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Chef is packing up... analyzing your session...'}})}\n\n"
+                    yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Chef is packing up... analyzing your session...', 'intent': 'CHAT'}})}\n\n"
                     
                     # 1. Fetch current chat history for analysis
                     sess_q = await session.execute(
@@ -113,7 +113,7 @@ async def process_orchestrator(request: ProcessRequest):
                         msg_q = await session.execute(
                             sa_select(ChatMessageModel)
                             .where(ChatMessageModel.session_id == active_session.id)
-                            .order_by(ChatMessageModel.created_at.asc())
+                            .order_by(ChatMessageModel.id.asc())
                         )
                         db_msgs = msg_q.scalars().all()
                         chat_history_for_extraction = [{"role": m.role, "content": m.content} for m in db_msgs]
@@ -122,21 +122,35 @@ async def process_orchestrator(request: ProcessRequest):
                         traits = await extract_user_traits(chat_history_for_extraction)
                         
                         # 3. Update ChefMemoryModel
-                        mem_q = await session.execute(
-                            sa_select(ChefMemoryModel)
-                            .where(ChefMemoryModel.user_id == DEFAULT_USER_ID)
-                        )
-                        memory_obj = mem_q.scalars().first()
-                        if memory_obj:
-                            existing_traits = memory_obj.traits or {}
-                            # Merge traits (deduplicate and keep clean)
-                            if traits.get('preferences'):
-                                existing_traits['preferences'] = list(set(existing_traits.get('preferences', []) + traits['preferences']))
-                            if traits.get('personality'):
-                                existing_traits['personality'] = list(set(existing_traits.get('personality', []) + traits['personality']))
-                            if traits.get('skill_level'):
-                                existing_traits['skill_level'] = traits['skill_level']
-                            memory_obj.traits = existing_traits
+                        try:
+                            mem_q = await session.execute(
+                                sa_select(ChefMemoryModel)
+                                .where(ChefMemoryModel.user_id == DEFAULT_USER_ID)
+                            )
+                            memory_obj = mem_q.scalars().first()
+                            if memory_obj:
+                                existing_traits = memory_obj.traits or {}
+                                traits = traits or {}
+                                # Merge traits safely
+                                if traits.get('preferences'):
+                                    prefs = traits['preferences'] if isinstance(traits['preferences'], list) else [traits['preferences']]
+                                    exist_prefs = existing_traits.get('preferences', [])
+                                    exist_prefs = exist_prefs if isinstance(exist_prefs, list) else []
+                                    existing_traits['preferences'] = list(set(exist_prefs + prefs))
+                                    
+                                if traits.get('personality'):
+                                    pers = traits['personality'] if isinstance(traits['personality'], list) else [traits['personality']]
+                                    exist_pers = existing_traits.get('personality', [])
+                                    exist_pers = exist_pers if isinstance(exist_pers, list) else []
+                                    existing_traits['personality'] = list(set(exist_pers + pers))
+                                    
+                                if traits.get('skill_level'):
+                                    existing_traits['skill_level'] = traits['skill_level']
+                                    
+                                memory_obj.traits = existing_traits
+                                await session.commit()
+                        except Exception as e:
+                            logging.error(f"Failed to merge traits: {e}")
                         
                         # 4. Generate user-facing summary in their language
                         summary_text = "Session ended. Memory updated."
@@ -159,10 +173,14 @@ async def process_orchestrator(request: ProcessRequest):
                             except Exception as e:
                                 logging.warning(f"Failed to generate localized summary: {e}")
                         
-                        yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Memory updated. Closing kitchen...'}})}\n\n"
+                        yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Memory updated. Closing kitchen...', 'intent': 'CHAT'}})}\n\n"
                         
-                        # Send summary via delta so UI renders it in the bubble
-                        yield f"data: {json.dumps({'type': 'delta', 'data': {'text': summary_text, 'intent': 'CHAT'}})}\n\n"
+                        # Send summary via delta word by word so UI renders it properly
+                        words = summary_text.split()
+                        for i, word in enumerate(words):
+                            space = " " if i > 0 else ""
+                            yield f"data: {json.dumps({'type': 'delta', 'data': {'text': space + word, 'intent': 'CHAT'}})}\n\n"
+                            await asyncio.sleep(0.05)
                         
                         # Final payload
                         final_payload = {
@@ -172,12 +190,7 @@ async def process_orchestrator(request: ProcessRequest):
                         }
                         yield f"data: {json.dumps({'type': 'final', 'data': {'payload': final_payload}})}\n\n"
                         
-                        # 5. Clear the session LAST to ensure stream completes safely
-                        # We delete messages to effectively start a fresh conversation loop next time
-                        await session.execute(
-                            delete(ChatMessageModel).where(ChatMessageModel.session_id == active_session.id)
-                        )
-                        await session.commit()
+                        # Session remains in database for future conversational history features.
                         return
 
                 fridge_query = await session.execute(

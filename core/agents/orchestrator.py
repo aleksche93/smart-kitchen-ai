@@ -73,7 +73,7 @@ class ChefOrchestrator:
         self.analytics = AnalyticsAgent()
         self.sieve = SinSieveAgent()
 
-    def _tag_thought(self, event: dict, agent_name: str = None) -> dict:
+    def _tag_thought(self, event: dict, agent_name: str = None, seen_thoughts: set = None) -> dict:
         """
         Tags a status event as ui_thought=True if its text is a content-aware
         narrative thought (visible in the Thought Trace bubble).
@@ -91,22 +91,30 @@ class ChefOrchestrator:
             # Prepend Persona if available
             persona = _AGENT_PERSONAS.get(agent_name)
             if persona:
-                event["data"]["text"] = f"[{persona}] {text}"
+                text = f"[{persona}] {text}"
+                event["data"]["text"] = text
+            
+            if seen_thoughts is not None:
+                if text in seen_thoughts:
+                    return event
+                seen_thoughts.add(text)
+                
             return {**event, "data": {**event["data"], "ui_thought": True}}
         return event
 
     async def process(self, context: dict) -> AsyncGenerator[str, None]:
+        seen_ui_thoughts = set()
         try:
             # ── 1. Persona Guard (basic heuristic shield) ────────────────────
             async for event in self.guard.generate_stream(context):
-                yield _sse(self._tag_thought(event, "PersonaGuard"))
+                yield _sse(self._tag_thought(event, "PersonaGuard", seen_ui_thoughts))
 
             if not context.get("is_safe", True):
                 return
 
             # ── 2. Sin-Sieve — Input Audit (Fail-Fast firewall) ──────────────
             async for event in self.sieve.generate_stream(context):
-                yield _sse(self._tag_thought(event, "SinSieveAgent"))
+                yield _sse(self._tag_thought(event, "SinSieveAgent", seen_ui_thoughts))
 
             if not context.get("is_safe", True):
                 return
@@ -123,19 +131,24 @@ class ChefOrchestrator:
             yield _sse({"type": "status", "data": {"text": f"Intent: {intent}", "intent": intent}})
 
             # ── 4. Inventory Scanner (all paths need fridge context) ──────────
+            is_first_message = not bool(context.get("chat_history"))
             async for event in self.scanner.generate_stream(context):
-                yield _sse(self._tag_thought(event, "InventoryScanner"))
+                tagged_event = self._tag_thought(event, "InventoryScanner", seen_ui_thoughts)
+                # Prevent proactive X-Ray warnings from spamming the Thought Trace on every subsequent message
+                if not is_first_message and "ui_thought" in tagged_event.get("data", {}):
+                    del tagged_event["data"]["ui_thought"]
+                yield _sse(tagged_event)
 
             # ── 5a. ANALYTICS path ───────────────────────────────────────────
             if intent == "ANALYTICS":
                 async for event in self.analytics.generate_stream(context):
-                    yield _sse(self._tag_thought(event, "AnalyticsAgent"))
+                    yield _sse(self._tag_thought(event, "AnalyticsAgent", seen_ui_thoughts))
                 return  # EXIT — no recipe generation needed
 
             # ── 5b. CHAT path ────────────────────────────────────────────────
             if intent == "CHAT":
                 async for event in self.chat_agent.generate_stream(context):
-                    yield _sse(self._tag_thought(event, "ConversationalAgent"))
+                    yield _sse(self._tag_thought(event, "ConversationalAgent", seen_ui_thoughts))
                 return  # EXIT — no artifact generation needed
 
             # ── 5c. RECIPE path — Flavor Architect ───────────────────────────
@@ -144,11 +157,11 @@ class ChefOrchestrator:
                 if event["type"] == "final":
                     final_artifact_event = event
                 else:
-                    yield _sse(self._tag_thought(event, "FlavorArchitect"))
+                    yield _sse(self._tag_thought(event, "FlavorArchitect", seen_ui_thoughts))
 
             # ── 6. Sin-Sieve — Output Audit (RECIPE only) ────────────────────
             async for event in self.sieve.generate_stream(context):
-                yield _sse(self._tag_thought(event, "SinSieveAgent"))
+                yield _sse(self._tag_thought(event, "SinSieveAgent", seen_ui_thoughts))
 
             # ── 7. Enrichment — Harmony Score & Pairing Tips ─────────────────
             if final_artifact_event and context.get("ingredients"):
