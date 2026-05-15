@@ -37,7 +37,8 @@
 *Future of the project: 3D, Edge Computing, total privacy, full autonomy, and immersion*
 
 - [ ] **Phase 15: Multi-Agent Workspace & Restaurant HUD**
-    - Visual Agent Fleet (InventoryScanner, FlavorArchitect, SinSieve) represented by visual avatars/icons in a dedicated dashboard.
+    - [x] **Phase 15.1 Graph Memory Infrastructure:** Implemented native Graph RAG using NetworkX, nx-cugraph, and SQLite JSON. Integrated asynchronous graph extraction via BackgroundTasks.
+    - [x] **Phase 15.2 Multi-Agent HUD & SSE Demultiplexing:** Implemented `shallowRef` buffering and Demultiplexer in `useChefStream.js` to route multi-agent logs. Upgraded `ThoughtTicker.vue` to Agent Fleet HUD with hardware-accelerated CSS avatars. Fixed spatial persistence amnesia via `localStorage`. Implemented robust sticky agent animation (4s) and backend stability checks for Graph RAG extraction. `[STABLE]` ✅
     - Multi-Agent Debate & Consensus Logic represented dynamically in the Thought Trace.
 - [ ] **Phase 16: Zero-Trust Edge Computing & Privacy**
     - Migration of analytics to Local AI (Gemma 4 via WebGPU) ensuring 100% data privacy without sacrificing intelligence.

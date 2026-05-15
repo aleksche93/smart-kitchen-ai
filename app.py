@@ -16,7 +16,7 @@ from pathlib import Path
 
 # New database and core imports
 from db.database import get_db, init_db, async_session
-from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel, ChatMessageModel
+from db.models import UserModel, ChefStateModel, ChefMemoryModel, ChefSessionModel, UILayoutModel, ChatMessageModel, GraphMemoryModel
 from core.fsm import ChefFSM
 from core.persona import ChefPersona
 from core.memory import extract_and_store_traits
@@ -152,6 +152,7 @@ async def lifespan(fastapi_app: FastAPI):
                 session.add(chef_session_db)
                 await session.commit()
             logging.info("DB Boot: ChefMemoryModel verified.")
+            logging.info("DB Boot: GraphMemoryModel verified.")
 
     yield
     logging.info("Web API: Shutting down, disposing database connection pool...")
@@ -517,8 +518,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
         raise HTTPException(status_code=400, detail="No active session")
     session_id_val = session_db.id
 
-    if user_message.lower() != "/kinec":
-        background_tasks.add_task(extract_and_store_traits, user_message, session_id_val)
+    # Graph RAG Phase 15.1: Background extraction is now triggered via /kinec instead of per-message
 
     async def event_generator():
         full_assistant_reply = ""
@@ -554,6 +554,18 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     emotion = "FOCUSED"
                     yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
 
+                    # 1. Prepare history for Graph RAG extraction
+                    msg_q = await async_sess.execute(
+                        select(ChatMessageModel)
+                        .where(ChatMessageModel.session_id == session_id_val)
+                        .order_by(ChatMessageModel.timestamp.asc())
+                    )
+                    all_db_msgs = msg_q.scalars().all()
+                    chat_history_for_extraction = [{"role": m.role, "content": m.content} for m in all_db_msgs]
+                    
+                    # 2. Trigger asynchronous Graph RAG extraction
+                    background_tasks.add_task(extract_and_store_traits, session_id_val, chat_history_for_extraction)
+
                     system_prompt = "You are the KitchenOS Library Agent. Analyze the session history. Summarize traits updated, culinary sins recorded, and User-Chef memory graph status. LANGUAGE RULE: Detect the language of the recent conversation history. Output the summary report strictly in that same language (Ukrainian or English). Keep it brief and structured."
                     user_prompt = f"{history_text}\nGenerate the session summary report based on the chat history."
                 else:
@@ -564,10 +576,10 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
                     yield f"data: {json.dumps({'type': 'metadata', 'emotion': emotion})}\n\n"
 
                     # Lightweight conversational system prompt — no JSON pipeline needed for /chat
-                    prefs = memory_db.preferences or {}
                     sins = memory_db.cooking_sins or {}
-                    sins_str = ", ".join([k for k, v in sins.items() if v]) if sins else "none"
-                    prefs_str = ", ".join([k for k, v in prefs.items() if v]) if prefs else "none"
+                    prefs = memory_db.preferences or {}
+                    sins_str = ", ".join([k for k, v in sins.items() if v]) if (sins and hasattr(sins, 'items')) else "none"
+                    prefs_str = ", ".join([k for k, v in prefs.items() if v]) if (prefs and hasattr(prefs, 'items')) else "none"
 
                     system_prompt = (
                         "You are a Michelin-star 'Chaotic Genius' Chef — sarcastic, witty, passionate, and slightly unhinged about food. "
@@ -619,7 +631,7 @@ async def get_chef_chat(payload: ChatRequest, background_tasks: BackgroundTasks,
             logging.error("SSE Generator error", exc_info=True)
             yield f"data: {json.dumps({'type': 'error', 'message': 'Internal server error'})}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(event_generator(), media_type="text/event-stream", background=background_tasks)
 
 @app.delete("/api/v1/fridge/receipt/{receipt_id}")
 async def delete_receipt(receipt_id: str, session: AsyncSession = Depends(get_db)):

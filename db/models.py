@@ -115,3 +115,10 @@ class UILayoutModel(Base):
     w = Column(Integer, nullable=True)
     h = Column(Integer, nullable=True)
     is_minimized = Column(Boolean, default=False)
+
+class GraphMemoryModel(Base):
+    """Stores serialized NetworkX graph data for the Graph RAG pipeline."""
+    __tablename__ = 'graph_memory'
+    session_id = Column(String(36), primary_key=True)
+    graph_data = Column(JSON, default=dict)
+    updated_at = Column(DateTime, default=lambda: datetime.utcnow())

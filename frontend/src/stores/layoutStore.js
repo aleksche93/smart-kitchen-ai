@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 export const useLayoutStore = defineStore('layout', () => {
-  // Default grid setup if no DB record exists
-  const widgets = ref([])
+  // Phase 15.2: Prioritize localStorage to prevent widget jumps during backend disconnects
+  const widgets = ref(JSON.parse(localStorage.getItem('kozak_layout')) || [])
   const isLoaded = ref(false)
   let _debounceTimer = null
 
@@ -23,9 +23,12 @@ export const useLayoutStore = defineStore('layout', () => {
     }
   }
 
-  // Push layout to backend
+  // Push layout to backend and LocalStorage
   const saveLayout = async () => {
     if (!isLoaded.value) return
+
+    // Immediately save to localStorage for persistence across reloads/reconnects
+    localStorage.setItem('kozak_layout', JSON.stringify(widgets.value))
 
     clearTimeout(_debounceTimer)
     _debounceTimer = setTimeout(async () => {
@@ -36,7 +39,7 @@ export const useLayoutStore = defineStore('layout', () => {
           body: JSON.stringify({ layout: widgets.value })
         })
       } catch (e) {
-        console.warn('Failed to persist UI layout', e)
+        console.warn('Failed to persist UI layout to backend', e)
       }
     }, 500) // 500ms debounce
   }

@@ -153,7 +153,7 @@ import { useChefStream } from '../../composables/useChefStream'
 const { t } = useI18n()
 const chefStore = useChefStore()
 const layoutStore = useLayoutStore()
-const { startProcess, abortGeneration } = useChefStream()
+const { startProcess, abortGeneration, clearAgentBuffers } = useChefStream()
 const { error, scanReceipt, fetchFridge, fetchSessionHistory, clearSession } = useKitchenAPI()
 
 const scanCanvas = ref(null)
@@ -236,6 +236,7 @@ const handleClearSession = async () => {
   chefState.chatMessage = ''
   chefState.showMagicTrigger = false
   showMagicButton.value = false
+  if (clearAgentBuffers) clearAgentBuffers()
   try { localStorage.removeItem(CHAT_STORAGE_KEY) } catch (e) { /* ignore */ }
 }
 

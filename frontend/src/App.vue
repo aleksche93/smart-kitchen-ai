@@ -52,10 +52,10 @@
         </div>
         
         <!-- Phase 12.2: The Dock (Top Header) -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
           <template v-for="w in minimizedWidgets" :key="w.widget_id">
              <button @click="restoreWidget(w)"
-                     class="p-2 px-3 bg-slate-800/50 hover:bg-slate-700/80 rounded-xl border border-slate-600/50 transition-all shadow-lg hover:shadow-keBlue/20 hover:border-keBlue/50 group flex items-center gap-2"
+                     class="p-2 px-2 bg-slate-800/50 hover:bg-slate-700/80 rounded-xl border border-slate-600/50 transition-all shadow-lg hover:shadow-keBlue/20 hover:border-keBlue/50 group flex  items-center gap-1"
                      :title="`Restore ${getWidgetTitle(w.widget_id)}`">
                <svg class="w-4 h-4 text-keBlue group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
                <span class="text-xs uppercase font-bold text-slate-300 group-hover:text-keBlue">{{ getWidgetTitle(w.widget_id) }}</span>

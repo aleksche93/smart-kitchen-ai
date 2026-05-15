@@ -80,4 +80,4 @@ graph TD
 
 ---
 
-*Current Stable Version: Phase 14 (Conversational Pivot, Memory Protocol & Full Audit Coverage)*
+*Current Stable Version: Phase 15.2 (Multi-Agent HUD, Graph Memory & SSE Demultiplexing)*

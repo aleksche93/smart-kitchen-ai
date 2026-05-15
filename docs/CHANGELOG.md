@@ -2,6 +2,17 @@
 
 All notable changes to the KozakEye Smart Kitchen AI project will be documented in this file.
 
+## [Phase 15.2 Multi-Agent HUD & SSE Demultiplexing] - 2026-05-14
+### Frontend Enhancements
+- **[BUGFIX] Sticky Agent Animations:** Implemented a robust 4-second "stickiness" timer in `useChefStream.js` to ensure Auditor and Architect animations remain visible during high-frequency streaming. Fixed logic to prevent generic Chef events from overriding active agents.
+- **[CRITICAL BUGFIX] Spatial Persistence:** Patched `layoutStore.js` and `ThoughtTicker.vue` to prioritize reading widget X/Y coordinates directly from `localStorage` on init, fixing the "amnesia" bug where widgets would jump to default coordinates if the backend restarted or SSE disconnected.
+- **Multi-Agent Demultiplexer:** Completely rewrote `useChefStream.js` to support routing SSE chunks based on `agent_id` metadata. Implemented `shallowRef` buffering to prevent VDOM locking during high-frequency text streaming.
+- **Agent Fleet HUD:** Upgraded `ThoughtTicker.vue` to display active AI fleet avatars (Chef, Auditor, Architect) with hardware-accelerated CSS animations (`will-change: filter`, `animate-pulse`) tied to active agent states.
+- **Graceful Log Degradation:** Wrapped raw agent text streams inside a native `<details>` HTML tag within the HUD to maintain spatial layout clean while keeping raw data accessible for debugging.
+
+### Backend Enhancements
+- **[CRITICAL BACKEND FIX] Graph Memory Stability:** Patched `core/memory.py` and `app.py` with defensive checks to prevent `AttributeError` crashes when LLM extraction returns `None` or when session history is empty.
+
 ## [Phase 14.5 Jules Audit Cleanup & Testing] - 2026-05-13
 ### Testing Coverage
 - **Locales Testing:** Created `test_locales.py` for `I18nManager` coverage.
@@ -95,7 +106,7 @@ All notable changes to the KozakEye Smart Kitchen AI project will be documented 
 ## [Phase 13.4] - 2026-04-28
 ### Added
 - **Confirmation Messages:** `InteractionZone.vue` `onFinal` now pushes localized assistant bubbles for RECIPE/ANALYTICS.
-- **Thought Trace Persistence:** Replaced `<Transition>` with native `<details>`/`<summary>`. Thoughts stay in DOM, collapse on first delta, remain expandable.
+- **Thought Trace UI:** Replaced `<Transition>` with native `<details>`/`<summary>`. Thoughts stay in DOM, collapse on first delta, remain expandable.
 
 ### Changed
 - **Thought Trace Filter:** Added `_UI_THOUGHT_BLOCKLIST` to `orchestrator.py` `_tag_thought()`. Technical intents explicitly denied.

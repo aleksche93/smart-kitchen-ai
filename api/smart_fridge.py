@@ -1,7 +1,7 @@
 import json
 import re
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -75,7 +75,7 @@ class ProcessRequest(BaseModel):
 
 
 @router.post("/v1/chef/process")
-async def process_orchestrator(request: ProcessRequest):
+async def process_orchestrator(request: ProcessRequest, background_tasks: BackgroundTasks):
     """
     Single Orchestrator endpoint for ALL interactions (chat and artifact generation).
     Implements 3-Tier SSE Protocol: status → delta (with intent field) → final.
@@ -116,6 +116,10 @@ async def process_orchestrator(request: ProcessRequest):
                         )
                         db_msgs = msg_q.scalars().all()
                         chat_history_for_extraction = [{"role": m.role, "content": m.content} for m in db_msgs]
+                        
+                        # Graph RAG Phase 15.1: Asynchronous Trait Extraction
+                        from core.memory import extract_and_store_traits
+                        background_tasks.add_task(extract_and_store_traits, active_session.id, chat_history_for_extraction)
                         
                         # 2. Extract traits
                         traits = await extract_user_traits(chat_history_for_extraction)
@@ -280,7 +284,7 @@ async def process_orchestrator(request: ProcessRequest):
             logging.error(f"[/process] Unhandled error: {e}", exc_info=True)
             yield f"data: {json.dumps({'type': 'status', 'data': {'text': 'Fatal error occurred.'}})}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(event_generator(), media_type="text/event-stream", background=background_tasks)
 
 class WasteAlertSchema(BaseModel):
     severity: str
